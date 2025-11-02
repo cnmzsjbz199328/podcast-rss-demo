@@ -1,0 +1,48 @@
+{
+  "name": "podcast-rss-demo",
+  "version": "1.0.0",
+  "description": "AI-powered automated news podcast generator with RSS feed",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "node --test tests/",
+    "validate": "node index.js --validate",
+    "deploy": "wrangler deploy",
+    "build": "echo 'No build step required'",
+    "lint": "echo 'Add linting if needed'"
+  },
+  "keywords": [
+    "podcast",
+    "rss",
+    "ai",
+    "news",
+    "automation",
+    "cloudflare",
+    "gemini",
+    "tts"
+  ],
+  "author": "AI Podcast Generator",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.400.0",
+    "@google/genai": "^0.2.0",
+    "@gradio/client": "^0.7.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/podcast-rss-demo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/podcast-rss-demo/issues"
+  },
+  "homepage": "https://github.com/your-username/podcast-rss-demo#readme"
+}

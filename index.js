@@ -1,94 +1,169 @@
-// Podcast RSS Feed Generator
-// This script generates an RSS feed for a podcast with audio files and subtitles hosted on Cloudflare R2
+#!/usr/bin/env node
 
-const fs = require('fs');
+/**
+ * 本地测试和演示脚本
+ */
 
-// Configuration
-const config = {
-  title: 'My Podcast Demo',
-  description: 'A minimal podcast implementation demo',
-  link: 'https://your-domain.com',
-  language: 'zh-CN',
-  author: 'Podcast Author',
-  email: 'podcast@example.com',
-  category: 'Technology',
-  imageUrl: 'https://your-r2-bucket.r2.cloudflarestorage.com/podcast-cover.jpg',
-  baseUrl: 'https://your-r2-bucket.r2.cloudflarestorage.com'
-};
+import { PodcastGenerator } from './src/core/PodcastGenerator.js';
+import { createServices } from './src/factory.js';
+import { Logger } from './src/utils/logger.js';
 
-// Sample podcast episodes with audio and subtitle files
-const episodes = [
-  {
-    title: 'Episode 1: Introduction to Podcasting',
-    description: 'This is the first episode where we introduce podcast basics.',
-    pubDate: new Date('2024-01-15').toUTCString(),
-    audioUrl: `${config.baseUrl}/audio/episode-001.mp3`,
-    audioLength: 15234567, // bytes
-    duration: '25:30',
-    subtitleUrl: `${config.baseUrl}/subtitles/episode-001.vtt`,
-    guid: 'episode-001'
-  },
-  {
-    title: 'Episode 2: Advanced Podcast Techniques',
-    description: 'In this episode, we explore advanced podcasting strategies.',
-    pubDate: new Date('2024-01-22').toUTCString(),
-    audioUrl: `${config.baseUrl}/audio/episode-002.mp3`,
-    audioLength: 18456789, // bytes
-    duration: '32:45',
-    subtitleUrl: `${config.baseUrl}/subtitles/episode-002.vtt`,
-    guid: 'episode-002'
+const logger = new Logger('Main');
+
+/**
+ * 主函数 - 生成播客
+ */
+async function main() {
+  try {
+    logger.info('Starting podcast generation demo');
+
+    // 1. 创建服务实例
+    const services = createServices();
+
+    // 2. 创建播客生成器
+    const generator = new PodcastGenerator(services);
+
+    // 3. 生成郭德纲风格播客
+    logger.info('Generating Guo De Gang style podcast...');
+    const guoDeGangResult = await generator.generatePodcast('guo-de-gang');
+
+    logger.info('Guo De Gang podcast generated', {
+      episodeId: guoDeGangResult.episodeId,
+      scriptUrl: guoDeGangResult.scriptUrl,
+      audioUrl: guoDeGangResult.audioUrl
+    });
+
+    // 4. 生成新闻播报风格播客
+    logger.info('Generating News Anchor style podcast...');
+    const newsAnchorResult = await generator.generatePodcast('news-anchor');
+
+    logger.info('News Anchor podcast generated', {
+      episodeId: newsAnchorResult.episodeId,
+      scriptUrl: newsAnchorResult.scriptUrl,
+      audioUrl: newsAnchorResult.audioUrl
+    });
+
+    // 5. 输出结果摘要
+    console.log('\n🎉 Podcast generation completed successfully!');
+    console.log('📊 Results:');
+    console.log(`   Guo De Gang: ${guoDeGangResult.audioUrl}`);
+    console.log(`   News Anchor: ${newsAnchorResult.audioUrl}`);
+
+  } catch (error) {
+    logger.error('Podcast generation failed', error);
+    console.error('\n❌ Error:', error.message);
+    process.exit(1);
   }
-];
-
-// Generate RSS Feed
-function generateRSSFeed() {
-  let rss = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" 
-     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
-     xmlns:content="http://purl.org/rss/1.0/modules/content/">
-  <channel>
-    <title>${config.title}</title>
-    <link>${config.link}</link>
-    <description>${config.description}</description>
-    <language>${config.language}</language>
-    <itunes:author>${config.author}</itunes:author>
-    <itunes:email>${config.email}</itunes:email>
-    <itunes:category text="${config.category}"/>
-    <itunes:image href="${config.imageUrl}"/>
-`;
-
-  episodes.forEach(episode => {
-    rss += `    <item>
-      <title>${episode.title}</title>
-      <description>${episode.description}</description>
-      <pubDate>${episode.pubDate}</pubDate>
-      <guid isPermaLink="false">${episode.guid}</guid>
-      <enclosure url="${episode.audioUrl}" length="${episode.audioLength}" type="audio/mpeg"/>
-      <itunes:duration>${episode.duration}</itunes:duration>
-      <itunes:subtitle>${episode.description}</itunes:subtitle>
-      <content:encoded><![CDATA[
-        <p>${episode.description}</p>
-        <p><a href="${episode.subtitleUrl}">Download Subtitles (VTT)</a></p>
-      ]]></content:encoded>
-    </item>
-`;
-  });
-
-  rss += `  </channel>
-</rss>`;
-
-  return rss;
 }
 
-// Save RSS to file
-const rssContent = generateRSSFeed();
-fs.writeFileSync('rss.xml', rssContent, 'utf8');
+/**
+ * 测试服务创建
+ */
+async function testServiceCreation() {
+  try {
+    console.log('🔧 Testing service creation...');
 
-console.log('RSS feed generated successfully!');
-console.log('\nRSS Feed Preview:');
-console.log(rssContent);
+    // 设置测试环境变量，避免验证失败
+    process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'test-api-key';
+    process.env.R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || 'test-access-key';
+    process.env.R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || 'test-secret-key';
+    process.env.R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'test-bucket';
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { generateRSSFeed, config, episodes };
+    const services = createServices();
+
+    console.log('✅ Services created successfully:');
+    console.log(`   RSS Service: ${services.rssService.constructor.name}`);
+    console.log(`   Script Service: ${services.scriptService.constructor.name}`);
+    console.log(`   Voice Service: ${services.voiceService.constructor.name}`);
+    console.log(`   Storage Service: ${services.storageService.constructor.name}`);
+
+    console.log('✅ Service creation test passed!');
+
+  } catch (error) {
+    logger.error('Service creation test failed', error);
+    console.error('❌ Service creation failed:', error.message);
+    process.exit(1);
+  }
+}
+
+/**
+ * 显示帮助信息
+ */
+function showHelp() {
+  console.log(`
+Podcast RSS Demo - 本地测试脚本
+
+用法:
+  node index.js [options]
+
+选项:
+  --help, -h           显示帮助信息
+  --style STYLE        指定生成风格 (guo-de-gang 或 news-anchor)
+  --validate           只验证服务配置，不生成播客
+  --test-services      测试服务创建是否正常
+
+示例:
+  node index.js                           # 生成两种风格的播客
+  node index.js --style guo-de-gang      # 只生成郭德纲风格
+  node index.js --validate               # 验证配置
+
+环境变量:
+  GEMINI_API_KEY     - Gemini API密钥
+  R2_ACCESS_KEY_ID   - R2访问密钥ID
+  R2_SECRET_ACCESS_KEY - R2秘密访问密钥
+
+更多信息请查看 README.md
+  `);
+}
+
+/**
+ * 验证服务配置
+ */
+async function validateServices() {
+  try {
+    logger.info('Validating services configuration...');
+
+    // 设置测试环境变量以通过配置验证
+    const originalEnv = { ...process.env };
+    process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'test-api-key';
+    process.env.R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || 'test-access-key';
+    process.env.R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || 'test-secret-key';
+    process.env.R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'test-bucket';
+
+    const services = createServices();
+
+    const { validateAllServices } = await import('./src/factory.js');
+    const isValid = await validateAllServices(services);
+
+    // 恢复原始环境变量
+    Object.assign(process.env, originalEnv);
+
+    if (isValid) {
+      console.log('✅ All services validated successfully');
+    } else {
+      console.log('❌ Some services failed validation');
+      process.exit(1);
+    }
+
+  } catch (error) {
+    logger.error('Service validation failed', error);
+    console.error('❌ Validation error:', error.message);
+    process.exit(1);
+  }
+}
+
+// 解析命令行参数
+const args = process.argv.slice(2);
+
+if (args.includes('--help') || args.includes('-h')) {
+  showHelp();
+  process.exit(0);
+}
+
+if (args.includes('--validate')) {
+  validateServices();
+} else if (args.includes('--test-services')) {
+  testServiceCreation();
+} else {
+  main();
 }
