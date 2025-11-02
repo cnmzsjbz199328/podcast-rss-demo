@@ -32,7 +32,7 @@ const DEFAULT_CONFIG = {
     },
     voice: {
       provider: 'indextts',
-      endpoint: 'Tom1986/indextts2',
+      endpoint: 'IndexTeam/IndexTTS-2-Demo',
       maxRetries: 3,
       timeout: 120000
     },

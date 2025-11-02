@@ -11,7 +11,12 @@
     "validate": "node index.js --validate",
     "deploy": "wrangler deploy",
     "build": "echo 'No build step required'",
-    "lint": "echo 'Add linting if needed'"
+    "lint": "echo 'Add linting if needed'",
+    "test:gradio": "node test-gradio-simple.js",
+    "test:voice": "node test-voice-clone.js",
+    "test:unit": "node test-voice-unit.js",
+    "test:api": "node test-api-endpoints.js",
+    "test:all": "echo '运行所有测试...' && npm run test:api && npm run test:unit && npm run test:voice"
   },
   "keywords": [
     "podcast",
