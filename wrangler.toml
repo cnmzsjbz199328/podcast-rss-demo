@@ -1,0 +1,9 @@
+name = "podcast-rss-demo"
+main = "worker.js"
+# Enable Node.js built-in compatibility so modules like fs/path/http can be bundled
+compatibility_flags = ["nodejs_compat"]
+# Set a compatibility date (use the runtime's latest supported date or one >= 2024-09-23)
+compatibility_date = "2025-10-11"
+
+# Optional: add account_id when you deploy. Not required for local `wrangler dev`.
+# account_id = ""
