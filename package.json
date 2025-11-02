@@ -6,17 +6,16 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "node index.js",
+    "dev": "wrangler dev",
+    "dev:local": "wrangler dev --local",
     "test": "node --test tests/",
     "validate": "node index.js --validate",
     "deploy": "wrangler deploy",
     "build": "echo 'No build step required'",
     "lint": "echo 'Add linting if needed'",
-    "test:gradio": "node test-gradio-simple.js",
-    "test:voice": "node test-voice-clone.js",
-    "test:unit": "node test-voice-unit.js",
-    "test:api": "node test-api-endpoints.js",
-    "test:all": "echo '运行所有测试...' && npm run test:api && npm run test:unit && npm run test:voice"
+    "test:functions": "node test-functions.js --full",
+    "test:integration": "node test-full-integration.js",
+    "check:deploy": "node check-deployment.js"
   },
   "keywords": [
     "podcast",
