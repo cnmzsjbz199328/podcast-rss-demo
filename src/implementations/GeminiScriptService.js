@@ -72,12 +72,9 @@ export class GeminiScriptService extends IScriptService {
     });
 
     try {
-      const model = this.client.models.getGenerativeModel({
-        model: this.config.model || 'gemini-2.5-flash'
-      });
-
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      const result = await this.client.models.generateContent({
+        model: this.config.model || 'gemini-2.0-flash-exp',
+        contents: prompt,
         generationConfig: {
           temperature: this.config.temperature || 0.8,
           topK: 40,
@@ -96,8 +93,7 @@ export class GeminiScriptService extends IScriptService {
         ],
       });
 
-      const response = result.response;
-      const generatedText = response.text();
+      const generatedText = result.candidates[0].content.parts[0].text;
 
       if (!generatedText || generatedText.trim().length === 0) {
         throw new Error('Empty response from Gemini API');
@@ -110,9 +106,7 @@ export class GeminiScriptService extends IScriptService {
         generatedAt: new Date().toISOString(),
         metadata: {
           model: this.config.model,
-          promptTokens: response.usageMetadata?.promptTokenCount,
-          candidatesTokens: response.usageMetadata?.candidatesTokenCount,
-          totalTokens: response.usageMetadata?.totalTokenCount,
+          usageMetadata: result.usageMetadata,
           styleConfig: styleConfig.name
         }
       };
