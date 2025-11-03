@@ -43,6 +43,7 @@ const DEFAULT_CONFIG = {
       accessKeyId: process.env.R2_ACCESS_KEY_ID,
       secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
       baseUrl: process.env.R2_BASE_URL,
+      accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
       maxFileSize: 50 * 1024 * 1024 // 50MB
     }
   },

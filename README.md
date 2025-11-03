@@ -1,266 +1,130 @@
-# Podcast RSS Demo
+# 🎙️ AI Podcast Generator
 
-一个自动化生成新闻播客的演示项目。通过BBC RSS获取热点新闻，使用Gemini API整理成各种风格的脚本，通过语音克隆API生成音频，并将脚本和音频文件存储在Cloudflare R2中。最后，通过Cloudflare Worker动态生成RSS Feed，实现Podcast频道订阅。
+> **基于 Cloudflare Workers 的全自动播客生成系统**
 
-## 项目结构
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare)](https://workers.cloudflare.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## ⚡ 快速开始
+
+这是一个完全自动化的播客生成系统，从新闻获取到语音合成，一键完成。
+
+### 核心特性
+
+- 🤖 **AI 驱动**: 使用 Google Gemini AI 生成播客脚本
+- 🎵 **语音合成**: 采用 IndexTTS 进行自然语音转换
+- 📡 **RSS 支持**: 自动生成 RSS Feed，兼容所有播客客户端
+- 🌍 **边缘计算**: 基于 Cloudflare Workers，全球低延迟
+- 💾 **云端存储**: R2 + D1 存储，无限容量
+- 🎨 **多种风格**: 新闻主播、相声风格、情感播报等
+
+### 一键部署
+
+```bash
+# 1. 克隆项目
+git clone <repository-url>
+cd podcast-rss-demo
+
+# 2. 安装依赖
+npm install
+
+# 3. 登录 Cloudflare
+npx wrangler login
+
+# 4. 创建基础设施
+npx wrangler r2 bucket create podcast-files
+npx wrangler d1 create podcast-database
+# 复制 database_id 到 wrangler.toml
+
+# 5. 初始化数据库
+npx wrangler d1 execute podcast-database --remote --file=./schema.sql
+
+# 6. 配置 API Key
+npx wrangler secret put GEMINI_API_KEY
+
+# 7. 部署上线
+npx wrangler deploy
+
+# 8. 测试
+npm run test:production
+```
+
+### 快速测试
+
+```bash
+# 健康检查
+curl https://your-worker.workers.dev/health
+
+# 生成播客（约30秒）
+curl -X POST "https://your-worker.workers.dev/generate?style=news-anchor"
+
+# 查看剧集列表
+curl https://your-worker.workers.dev/episodes
+
+# RSS Feed
+curl https://your-worker.workers.dev/rss.xml
+```
+
+## 📖 完整文档
+
+详细使用说明请查看：**[PROJECT-GUIDE.md](./PROJECT-GUIDE.md)**
+
+包含以下内容：
+- 🏗️ 架构设计
+- 🚀 部署指南
+- 📡 API 文档
+- 🧪 测试说明
+- 🔧 故障排除
+- 💻 开发指南
+
+## 📂 项目结构
 
 ```
 podcast-rss-demo/
-├── src/
-│   ├── rss-fetcher.js      # BBC RSS 获取模块
-│   ├── script-generator.js # Gemini API 脚本生成模块
-│   ├── voice-cloner.js     # 语音克隆 API 模块
-│   └── rss-generator.js    # RSS Feed 生成器
-├── worker.js               # Cloudflare Worker 主文件
-├── index.js                # 本地测试和演示脚本
-├── rss.xml                 # 生成的 RSS Feed 示例文件
-├── config.js               # 配置文件（API 密钥等）
-└── README.md               # 项目说明文档
+├── src/                      # 源代码
+│   ├── core/                 # 核心业务逻辑
+│   ├── implementations/      # 服务实现
+│   ├── services/             # 接口定义
+│   └── utils/                # 工具函数
+├── worker.js                 # Worker 入口
+├── schema.sql                # D1 数据库 Schema
+├── wrangler.toml             # Cloudflare 配置
+├── test-production-e2e.js    # E2E 测试
+└── PROJECT-GUIDE.md          # 完整文档
 ```
 
-## 功能特性
+## 🛠️ 技术栈
 
-- ✅ 从 BBC RSS 获取实时热点新闻
-- ✅ 使用 Gemini API 将新闻整理成各种风格的脚本（如郭德纲相声风格）
-- ✅ 通过语音克隆 API 生成不同风格的音频（如郭德纲风格的声音）
-- ✅ 自动生成符合 Podcast 标准的 RSS Feed
-- ✅ 支持音频文件（MP3 格式）和字幕文件（VTT 格式）
-- ✅ 脚本和音频文件存储在 Cloudflare R2
-- ✅ 通过 Cloudflare Worker 动态生成 RSS，实现 Podcast 订阅
-- ✅ 包含 iTunes 标签支持
-- ✅ 易于扩展和自定义
+- **运行时**: Cloudflare Workers (V8 Isolates)
+- **AI**: Google Gemini 1.5 Flash
+- **TTS**: IndexTTS v2
+- **存储**: Cloudflare R2 (S3 兼容)
+- **数据库**: Cloudflare D1 (SQLite)
+- **语言**: JavaScript (ES Modules)
 
-## 快速开始
+## 📊 系统状态
 
-### 1. 安装依赖
+部署后可访问健康检查接口：
 
 ```bash
-npm install
+GET /health
 ```
 
-### 2. 配置
-
-创建 `config.js` 文件并配置 API 密钥：
-
-```javascript
-module.exports = {
-  // Podcast 配置
-  podcast: {
-    title: '新闻播客',
-    description: '每日热点新闻播报',
-    link: 'https://your-worker.yourdomain.workers.dev',
-    language: 'zh-CN',
-    author: 'AI 播客生成器',
-    email: 'podcast@example.com',
-    category: 'News',
-    imageUrl: 'https://your-r2-bucket.r2.cloudflarestorage.com/podcast-cover.jpg',
-    baseUrl: 'https://your-r2-bucket.r2.cloudflarestorage.com'
-  },
-  // API 配置
-  apis: {
-    gemini: {
-      apiKey: 'your-gemini-api-key',
-      model: 'gemini-pro'
-    },
-    voiceClone: {
-      apiKey: 'your-voice-clone-api-key',
-      endpoint: 'https://api.voiceclone.com/generate'
-    }
-  },
-  // BBC RSS 来源
-  bbcRssUrl: 'https://feeds.bbci.co.uk/news/rss.xml',
-  // Cloudflare 配置
-  cloudflare: {
-    r2: {
-      accountId: 'your-account-id',
-      accessKeyId: 'your-access-key-id',
-      secretAccessKey: 'your-secret-access-key',
-      bucketName: 'your-bucket-name'
-    },
-    worker: {
-      scriptName: 'podcast-rss-demo'
-    }
+返回示例：
+```json
+{
+  "status": "healthy",
+  "services": {
+    "database": true,
+    "storage": true
   }
-};
+}
 ```
 
-### 3. 本地测试
+## 📝 License
 
-运行本地演示脚本：
+MIT
 
-```bash
-node index.js
-```
+## 👤 Author
 
-这将从 BBC 获取新闻，使用 Gemini 生成脚本，使用语音克隆生成音频，并生成示例 RSS Feed。
-
-### 4. 部署到 Cloudflare Worker
-
-```bash
-# 安装 Wrangler CLI
-npm install -g wrangler
-
-# 登录 Cloudflare
-wrangler login
-
-# 部署 Worker
-wrangler deploy
-```
-
-部署后，你的 Podcast RSS Feed 将在 `https://your-worker.yourdomain.workers.dev/rss.xml` 可用。
-
-## Cloudflare R2 配置
-
-### 创建 R2 桶
-
-1. 登录 Cloudflare Dashboard
-2. 导航到 R2 Object Storage
-3. 创建新的 R2 桶（例如：`my-podcast-files`）
-4. 配置公开访问（如果需要）或使用自定义域名
-
-### 上传文件结构
-
-将你的音频和字幕文件按以下结构上传到 R2 桶：
-
-```
-your-r2-bucket/
-├── audio/
-│   ├── episode-001.mp3
-│   └── episode-002.mp3
-├── subtitles/
-│   ├── episode-001.vtt
-│   └── episode-002.vtt
-└── podcast-cover.jpg
-```
-
-### 配置自定义域名（推荐）
-
-在 R2 桶设置中绑定自定义域名，例如：
-- `https://cdn.yourpodcast.com`
-- `https://files.yourpodcast.com`
-
-## 测试音频和字幕链接示例
-
-项目中已包含两个测试剧集的占位链接：
-
-1. **Episode 1: Introduction to Podcasting**
-   - 音频：`https://your-r2-bucket.r2.cloudflarestorage.com/audio/episode-001.mp3`
-   - 字幕：`https://your-r2-bucket.r2.cloudflarestorage.com/subtitles/episode-001.vtt`
-
-2. **Episode 2: Advanced Podcast Techniques**
-   - 音频：`https://your-r2-bucket.r2.cloudflarestorage.com/audio/episode-002.mp3`
-   - 字幕：`https://your-r2-bucket.r2.cloudflarestorage.com/subtitles/episode-002.vtt`
-
-## 部署思路
-
-### 主要部署方案：Cloudflare Worker + R2 存储 (推荐)
-
-1. **自动化流程**：
-   - Worker 定时触发（或按需）从 BBC RSS 获取新闻
-   - 使用 Gemini API 生成不同风格的脚本
-   - 调用语音克隆 API 生成对应风格的音频
-   - 将脚本和音频上传到 R2 存储
-   - 动态生成包含最新剧集的 RSS Feed
-
-2. **存储结构**：
-   ```
-   your-r2-bucket/
-   ├── scripts/         # 脚本文件（.txt 或 .json）
-   │   ├── 2024-01-01-guo-de-gang.txt
-   │   └── 2024-01-02-news-anchor.txt
-   ├── audio/           # 音频文件
-   │   ├── 2024-01-01-guo-de-gang.mp3
-   │   └── 2024-01-02-news-anchor.mp3
-   └── podcast-cover.jpg
-   ```
-
-3. **Worker 端点**：
-   - `GET /rss.xml` - 生成 RSS Feed
-   - `POST /generate` - 手动触发新剧集生成
-
-### GitHub Actions 自动化部署
-
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy to Cloudflare Worker
-on:
-  push:
-    branches: [main]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Deploy Worker
-        uses: cloudflare/wrangler-action@2.0.0
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-```
-
-## RSS Feed 验证
-
-生成 RSS Feed 后，可以使用以下工具验证：
-
-- [Cast Feed Validator](https://castfeedvalidator.com/)
-- [Podbase RSS Validator](https://podba.se/validate/)
-- [W3C Feed Validation Service](https://validator.w3.org/feed/)
-
-## 剧集生成流程
-
-项目采用全自动化生成，不需要手动添加剧集：
-
-1. **新闻获取**：定时从 BBC RSS 拉取最新热点新闻
-2. **脚本生成**：使用 Gemini API 将新闻整理成指定风格的播客脚本（如相声、新闻播报等）
-3. **音频生成**：调用语音克隆 API，使用对应风格的声音生成音频文件
-4. **存储上传**：将脚本和音频文件上传到 Cloudflare R2
-5. **RSS 更新**：Worker 动态生成包含最新剧集的 RSS Feed
-
-### 自定义风格配置
-
-在 `config.js` 中添加新的播客风格：
-
-```javascript
-styles: [
-  {
-    name: 'guo-de-gang',
-    description: '郭德纲相声风格',
-    prompt: '请用郭德纲的相声风格讲述这些新闻...',
-    voiceId: 'guo-de-gang-clone'
-  },
-  {
-    name: 'news-anchor',
-    description: '专业新闻播报',
-    prompt: '请用专业新闻播报员的风格整理这些新闻...',
-    voiceId: 'news-anchor-clone'
-  }
-]
-```
-
-## 技术栈
-
-- **Node.js**: 后端逻辑和脚本处理
-- **Cloudflare Workers**: 动态 RSS 生成和 API 调用
-- **Cloudflare R2**: 脚本和音频文件存储
-- **Gemini API**: AI 脚本生成
-- **语音克隆 API**: 音频生成和语音合成
-- **BBC RSS**: 新闻数据源
-- **RSS 2.0**: Podcast 标准格式
-- **iTunes Podcast Namespace**: 增强的 Podcast 支持
-
-## 注意事项
-
-1. **API 密钥安全**：妥善保管 Gemini 和语音克隆 API 的密钥，不要提交到版本控制
-2. **R2 存储费用**：注意音频文件存储和传输产生的费用
-3. **Worker 限制**：Cloudflare Worker 有执行时间和内存限制
-4. **RSS 更新频率**：避免过于频繁生成新剧集，以免违反 API 限制
-5. **内容合规**：确保生成的播客内容符合相关法律法规和平台政策
-6. **版权考虑**：新闻内容的使用应注意版权问题
-
-## 许可证
-
-MIT License
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
+tangjiang

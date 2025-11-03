@@ -8,3 +8,24 @@ compatibility_date = "2025-10-11"
 # Cloudflare account configuration
 # Replace with your actual Cloudflare account ID
 account_id = "e5bb181bf10eddf30de93f35885a5479"
+
+# R2 存储绑定 - 用于存储音频文件
+[[r2_buckets]]
+binding = "PODCAST_BUCKET"  # Worker 中访问的变量名
+bucket_name = "podcast-files"  # R2 bucket 名称
+
+# D1 数据库绑定 - 用于存储播客元数据
+[[d1_databases]]
+binding = "DB"  # Worker 中访问的变量名
+database_name = "podcast-database"  # D1 数据库名称
+database_id = "35f75221-6253-4202-8aa7-a285a29432fb"  # ✅ 已配置
+
+# Environment variables
+[vars]
+BBC_RSS_URL = "https://feeds.bbci.co.uk/news/rss.xml"
+NODE_ENV = "production"
+CLOUDFLARE_ACCOUNT_ID = "e5bb181bf10eddf30de93f35885a5479"
+# R2 公网访问 URL (用于生成音频文件的公网链接)
+R2_BASE_URL = "https://pub-d5b744245f574abcac229cefccabaa2f.r2.dev"
+# 可选：自定义域名 (初始化完成后取消注释)
+# R2_BASE_URL = "https://podcast.badtom.dpdns.org"

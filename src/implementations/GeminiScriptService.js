@@ -73,7 +73,7 @@ export class GeminiScriptService extends IScriptService {
 
     try {
       const result = await this.client.models.generateContent({
-        model: this.config.model || 'gemini-2.0-flash-exp',
+      model: this.config.model || 'gemini-2.5-flash',
         contents: prompt,
         generationConfig: {
           temperature: this.config.temperature || 0.8,
@@ -256,12 +256,9 @@ ${item.description}
       const { GoogleGenAI } = await import('@google/genai');
       const client = new GoogleGenAI({ apiKey: this.config.apiKey });
 
-      const model = client.models.getGenerativeModel({
-        model: 'gemini-2.5-flash'
-      });
-
       // 发送一个简单的测试请求
-      await model.generateContent({
+      await client.models.generateContent({
+        model: 'gemini-2.5-flash',
         contents: [{ role: 'user', parts: [{ text: 'Hello' }] }],
         generationConfig: { maxOutputTokens: 1 }
       });

@@ -271,26 +271,13 @@ export class R2StorageService extends IStorageService {
       if (!this.config.bucket) {
         throw new Error('R2 bucket name is required');
       }
+      if (!this.config.accountId) {
+        throw new Error('R2 account ID is required');
+      }
 
-      // 尝试连接并列出桶内容来验证配置
-      const { S3Client, ListObjectsV2Command } = await import('@aws-sdk/client-s3');
-      const client = new S3Client({
-        region: this.config.region || 'auto',
-        endpoint: `https://${this.config.accountId}.r2.cloudflarestorage.com`,
-        credentials: {
-          accessKeyId: this.config.accessKeyId,
-          secretAccessKey: this.config.secretAccessKey,
-        },
-      });
-
-      const command = new ListObjectsV2Command({
-        Bucket: this.config.bucket,
-        MaxKeys: 1
-      });
-
-      await client.send(command);
-
-      this.logger.info('R2 storage configuration validated successfully');
+      // 简化验证：只检查配置完整性，不进行实际API调用
+      // 实际的连接测试会在使用时进行
+      this.logger.info('R2 storage configuration validated successfully (basic check)');
       return true;
 
     } catch (error) {

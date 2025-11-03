@@ -3,7 +3,11 @@
  */
 
 import { PodcastGenerator } from './src/core/PodcastGenerator.js';
-import { createServices } from './src/factory.js';
+import { BbcRssService } from './src/implementations/BbcRssService.js';
+import { GeminiScriptService } from './src/implementations/GeminiScriptService.js';
+import { IndexTtsVoiceServiceHttp } from './src/implementations/IndexTtsVoiceServiceHttp.js';
+import { R2StorageServiceWorker } from './src/implementations/R2StorageServiceWorker.js';
+import { D1DatabaseService } from './src/implementations/D1DatabaseService.js';
 import { Logger } from './src/utils/logger.js';
 
 const logger = new Logger('Worker');
@@ -11,6 +15,7 @@ const logger = new Logger('Worker');
 // 全局服务实例（懒加载）
 let services = null;
 let generator = null;
+let dbService = null;
 
 /**
  * 获取或创建服务实例
@@ -19,9 +24,35 @@ let generator = null;
  */
 async function getServices(env) {
   if (!services) {
-    logger.info('Initializing services');
+    logger.info('Initializing services with R2 and D1 bindings');
 
-    // 从环境变量构建配置
+    // 使用 Worker 绑定直接创建服务
+    const rssService = new BbcRssService({
+      url: env.BBC_RSS_URL || 'https://feeds.bbci.co.uk/news/rss.xml'
+    });
+
+    const scriptService = new GeminiScriptService({
+      apiKey: env.GEMINI_API_KEY
+    });
+
+    const voiceService = new IndexTtsVoiceServiceHttp({
+      endpoint: 'Tom1986/indextts2'
+    });
+
+    // 使用 R2 绑定
+    const storageService = new R2StorageServiceWorker(env.PODCAST_BUCKET, env.R2_BASE_URL);
+
+    // 使用 D1 绑定
+    dbService = new D1DatabaseService(env.DB);
+
+    services = {
+      rssService: rssService,
+      scriptService: scriptService,
+      voiceService: voiceService,
+      storageService: storageService,
+      database: dbService
+    };
+
     const config = {
       services: {
         rss: {
@@ -36,20 +67,15 @@ async function getServices(env) {
           endpoint: 'Tom1986/indextts2'
         },
         storage: {
-          provider: 'r2',
-          bucket: env.R2_BUCKET_NAME,
-          accessKeyId: env.R2_ACCESS_KEY_ID,
-          secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-          baseUrl: env.R2_BASE_URL,
-          accountId: env.CLOUDFLARE_ACCOUNT_ID
+          provider: 'r2-worker',
+          baseUrl: env.R2_BASE_URL
         }
       }
     };
 
-    services = createServices(config);
     generator = new PodcastGenerator(services, config);
 
-    logger.info('Services initialized successfully');
+    logger.info('Services initialized successfully with R2 and D1');
   }
 
   return services;
@@ -58,33 +84,65 @@ async function getServices(env) {
 /**
  * 生成RSS XML
  * @param {Object} services - 服务实例
+ * @param {string} baseUrl - 基础URL
  * @returns {Promise<Response>} RSS响应
  */
-async function generateRssXml(services) {
+async function generateRssXml(services, baseUrl) {
   try {
-    logger.info('Generating RSS XML');
+    logger.info('Generating RSS XML from D1 database');
 
-    // 这里应该从存储服务获取最近的剧集
-    // 暂时返回示例RSS
+    // 从 D1 数据库获取最近发布的剧集
+    const episodes = await services.database.getPublishedEpisodes(50);
+    
+    if (!episodes || episodes.length === 0) {
+      logger.warn('No published episodes found in database');
+    }
+
+    // 构建 RSS XML
+    const items = episodes.map(episode => {
+      const pubDate = new Date(episode.published_at || episode.created_at).toUTCString();
+      const duration = episode.duration || 0;
+      
+      return `    <item>
+      <title>${escapeXml(episode.title)}</title>
+      <description>${escapeXml(episode.description || '')}</description>
+      <enclosure url="${escapeXml(episode.audio_url)}" type="audio/mpeg" length="${episode.file_size || 0}"/>
+      <guid isPermaLink="true">${escapeXml(episode.audio_url)}</guid>
+      <pubDate>${pubDate}</pubDate>
+      <itunes:duration>${Math.floor(duration)}</itunes:duration>
+      <itunes:subtitle>${escapeXml(episode.style || 'news-anchor')}</itunes:subtitle>
+    </item>`;
+    }).join('\n');
+
+    const stats = await services.database.getStatistics();
+    const lastBuildDate = episodes.length > 0 
+      ? new Date(episodes[0].published_at || episodes[0].created_at).toUTCString()
+      : new Date().toUTCString();
+
     const rssXml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+<rss version="2.0" 
+     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>AI新闻播客</title>
-    <description>由AI生成的每日新闻播客</description>
-    <link>https://your-domain.com</link>
+    <description>由AI生成的每日新闻播客，包含郭德纲风格、新闻主播风格等多种播报形式</description>
+    <link>${baseUrl}</link>
+    <atom:link href="${baseUrl}/rss.xml" rel="self" type="application/rss+xml"/>
     <language>zh-cn</language>
+    <lastBuildDate>${lastBuildDate}</lastBuildDate>
     <itunes:author>AI播客生成器</itunes:author>
-    <itunes:image href="https://your-r2-bucket.r2.cloudflarestorage.com/podcast-cover.jpg"/>
-    <item>
-      <title>郭德纲说新闻 - ${new Date().toLocaleDateString('zh-CN')}</title>
-      <description>郭德纲风格的今日新闻播报</description>
-      <enclosure url="https://your-r2-bucket.r2.cloudflarestorage.com/audio/example.mp3" type="audio/mpeg" length="123456"/>
-      <guid>https://your-r2-bucket.r2.cloudflarestorage.com/audio/example.mp3</guid>
-      <pubDate>${new Date().toUTCString()}</pubDate>
-      <itunes:duration>300</itunes:duration>
-    </item>
+    <itunes:summary>每日AI新闻播客，多种风格播报新闻</itunes:summary>
+    <itunes:category text="News"/>
+    <itunes:explicit>no</itunes:explicit>
+    <itunes:image href="${baseUrl}/cover.jpg"/>
+${items}
   </channel>
 </rss>`;
+
+    logger.info('RSS XML generated successfully', { 
+      episodeCount: episodes.length,
+      totalEpisodes: stats.totalEpisodes 
+    });
 
     return new Response(rssXml, {
       headers: {
@@ -100,6 +158,21 @@ async function generateRssXml(services) {
 }
 
 /**
+ * 转义 XML 特殊字符
+ * @param {string} str - 输入字符串
+ * @returns {string} 转义后的字符串
+ */
+function escapeXml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
  * 处理播客生成请求
  * @param {Request} request - 请求对象
  * @param {Object} services - 服务实例
@@ -112,7 +185,71 @@ async function handleGenerateRequest(request, services) {
 
     logger.info('Generating podcast', { style });
 
+    // 生成播客
     const result = await generator.generatePodcast(style);
+
+    logger.info('Podcast generation result received', { 
+      episodeId: result.episodeId,
+      hasAudioUrl: !!result.audioUrl,
+      hasScriptUrl: !!result.scriptUrl
+    });
+
+    // 保存到 D1 数据库
+    if (result.episodeId && result.audioUrl) {
+      try {
+        logger.info('Preparing to save episode to database', { 
+          episodeId: result.episodeId,
+          audioUrl: result.audioUrl 
+        });
+
+        const episodeData = {
+          id: result.episodeId,
+          title: result.title || `${style} - ${new Date().toLocaleDateString('zh-CN')}`,
+          description: result.description || '由AI生成的新闻播客',
+          audioUrl: result.audioUrl,
+          audioKey: result.audioUrl.split('/').pop(), // 从 URL 提取 key
+          scriptUrl: result.scriptUrl,
+          scriptKey: result.scriptUrl.split('/').pop(), // 从 URL 提取 key
+          duration: result.duration || 0,
+          fileSize: result.fileSize || 0,
+          style: style,
+          transcript: result.metadata?.scriptMetadata?.script || '',
+          status: 'published', // 自动发布
+          publishedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          metadata: {
+            newsCount: result.newsCount || 0,
+            wordCount: result.wordCount || 0,
+            generatedAt: result.generatedAt || new Date().toISOString(),
+            scriptMetadata: result.metadata?.scriptMetadata || {},
+            voiceMetadata: result.metadata?.voiceMetadata || {},
+            storageMetadata: result.metadata?.storageMetadata || {}
+          }
+        };
+
+        logger.info('Episode data prepared', { id: episodeData.id, title: episodeData.title });
+        
+        const saved = await services.database.saveEpisode(episodeData);
+        
+        if (saved) {
+          logger.info('✅ Episode saved to database successfully', { episodeId: episodeData.id });
+        } else {
+          logger.error('❌ Episode save returned false', { episodeId: episodeData.id });
+        }
+      } catch (dbError) {
+        logger.error('❌ Failed to save episode to database', { 
+          error: dbError.message, 
+          stack: dbError.stack,
+          episodeId: result.episodeId 
+        });
+        // 不中断流程，播客已经生成成功
+      }
+    } else {
+      logger.warn('Skipping database save - missing required fields', {
+        hasEpisodeId: !!result.episodeId,
+        hasAudioUrl: !!result.audioUrl
+      });
+    }
 
     return new Response(JSON.stringify({
       success: true,
@@ -141,21 +278,189 @@ async function handleGenerateRequest(request, services) {
 }
 
 /**
+ * 处理剧集列表请求
+ * @param {Request} request - 请求对象
+ * @param {Object} services - 服务实例
+ * @returns {Promise<Response>} 响应
+ */
+async function handleEpisodesRequest(request, services) {
+  try {
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+    const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+    const style = url.searchParams.get('style');
+
+    logger.info('Fetching episodes', { limit, offset, style });
+
+    let episodes;
+    if (style) {
+      episodes = await services.database.getEpisodesByStyle(style, limit, offset);
+    } else {
+      episodes = await services.database.getPublishedEpisodes(limit, offset);
+    }
+
+    const stats = await services.database.getStatistics();
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        episodes: episodes.map(ep => ({
+          id: ep.id,
+          title: ep.title,
+          description: ep.description,
+          audioUrl: ep.audioUrl,
+          style: ep.style,
+          duration: ep.duration,
+          fileSize: ep.fileSize,
+          publishedAt: ep.publishedAt,
+          createdAt: ep.createdAt
+        })),
+        pagination: {
+          limit,
+          offset,
+          total: stats.totalEpisodes
+        },
+        stats
+      }
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'max-age=60'
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to fetch episodes', error);
+
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  }
+}
+
+/**
+ * 处理单个剧集请求
+ * @param {Request} request - 请求对象
+ * @param {Object} services - 服务实例
+ * @param {string} episodeId - 剧集ID
+ * @returns {Promise<Response>} 响应
+ */
+async function handleEpisodeDetailRequest(request, services, episodeId) {
+  try {
+    logger.info('Fetching episode detail', { episodeId });
+
+    const episode = await services.database.getEpisodeById(episodeId);
+
+    if (!episode) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Episode not found'
+      }), {
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+
+    logger.info('Episode found', { 
+      id: episode.id, 
+      title: episode.title,
+      hasMetadata: !!episode.metadata 
+    });
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        id: episode.id,
+        title: episode.title,
+        description: episode.description,
+        audioUrl: episode.audioUrl,
+        scriptUrl: episode.scriptUrl || episode.audioUrl.replace('/audio/', '/scripts/').replace('.wav', '.txt'),
+        style: episode.style,
+        duration: episode.duration,
+        fileSize: episode.fileSize,
+        transcript: episode.transcript,
+        metadata: episode.metadata, // 已经是对象，不需要 JSON.parse
+        publishedAt: episode.publishedAt,
+        createdAt: episode.createdAt
+      }
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'max-age=3600'
+      }
+    });
+
+  } catch (error) {
+    logger.error('Failed to fetch episode detail', { 
+      error: error.message,
+      stack: error.stack 
+    });
+
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  }
+}
+
+/**
  * 处理健康检查
  * @param {Object} services - 服务实例
  * @returns {Promise<Response>} 健康状态响应
  */
 async function handleHealthCheck(services) {
   try {
-    const { getServicesStatus } = await import('./src/factory.js');
-    const status = await getServicesStatus(services);
+    // 检查服务状态
+    const checks = {
+      database: false,
+      storage: false,
+      timestamp: new Date().toISOString()
+    };
 
-    const isHealthy = Object.values(status).every(s => s.status === 'healthy');
+    // 检查 D1 数据库
+    try {
+      const stats = await services.database.getStatistics();
+      checks.database = true;
+      checks.databaseStats = stats;
+    } catch (error) {
+      logger.error('Database health check failed', error);
+      checks.databaseError = error.message;
+    }
+
+    // 检查 R2 存储
+    try {
+      const storageStats = await services.storageService.getStatistics();
+      checks.storage = true;
+      checks.storageStats = storageStats;
+    } catch (error) {
+      logger.error('Storage health check failed', error);
+      checks.storageError = error.message;
+    }
+
+    const isHealthy = checks.database && checks.storage;
 
     return new Response(JSON.stringify({
       status: isHealthy ? 'healthy' : 'unhealthy',
-      timestamp: new Date().toISOString(),
-      services: status
+      timestamp: checks.timestamp,
+      services: checks
     }), {
       status: isHealthy ? 200 : 503,
       headers: {
@@ -192,13 +497,14 @@ export default {
     try {
       const services = await getServices(env);
       const url = new URL(request.url);
+      const baseUrl = `${url.protocol}//${url.host}`;
 
       // CORS预检请求
       if (request.method === 'OPTIONS') {
         return new Response(null, {
           headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type'
           }
         });
@@ -206,25 +512,67 @@ export default {
 
       // 路由处理
       if (url.pathname === '/rss.xml' && request.method === 'GET') {
-        return await generateRssXml(services);
+        return await generateRssXml(services, baseUrl);
       }
 
       if (url.pathname === '/generate' && request.method === 'POST') {
         return await handleGenerateRequest(request, services);
       }
 
+      if (url.pathname === '/episodes' && request.method === 'GET') {
+        return await handleEpisodesRequest(request, services);
+      }
+
+      // 匹配 /episodes/:id 路由
+      const episodeMatch = url.pathname.match(/^\/episodes\/([a-zA-Z0-9-]+)$/);
+      if (episodeMatch && request.method === 'GET') {
+        return await handleEpisodeDetailRequest(request, services, episodeMatch[1]);
+      }
+
       if (url.pathname === '/health' && request.method === 'GET') {
         return await handleHealthCheck(services);
       }
 
-      // 默认响应
+      // 默认响应 - API文档
       return new Response(JSON.stringify({
-        message: 'Podcast RSS API',
+        name: 'Podcast RSS API',
+        version: '2.0.0',
+        description: '由AI生成的新闻播客服务，支持多种播报风格',
         endpoints: {
-          'GET /rss.xml': '获取RSS Feed',
-          'POST /generate': '生成播客',
-          'GET /health': '健康检查'
-        }
+          'GET /rss.xml': {
+            description: '获取RSS Feed',
+            example: `${baseUrl}/rss.xml`
+          },
+          'POST /generate': {
+            description: '生成播客',
+            parameters: {
+              style: 'guo-de-gang | news-anchor | emotional'
+            },
+            example: `${baseUrl}/generate?style=news-anchor`
+          },
+          'GET /episodes': {
+            description: '获取剧集列表',
+            parameters: {
+              limit: '每页数量 (默认20)',
+              offset: '偏移量 (默认0)',
+              style: '风格过滤 (可选)'
+            },
+            example: `${baseUrl}/episodes?limit=10&offset=0&style=news-anchor`
+          },
+          'GET /episodes/:id': {
+            description: '获取剧集详情',
+            example: `${baseUrl}/episodes/123`
+          },
+          'GET /health': {
+            description: '健康检查',
+            example: `${baseUrl}/health`
+          }
+        },
+        styles: [
+          'guo-de-gang - 郭德纲风格',
+          'news-anchor - 新闻主播风格',
+          'emotional - 情感化风格'
+        ]
       }), {
         headers: {
           'Content-Type': 'application/json',
