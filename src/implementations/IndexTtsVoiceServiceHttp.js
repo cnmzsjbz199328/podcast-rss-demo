@@ -126,21 +126,40 @@ export class IndexTtsVoiceServiceHttp extends IVoiceService {
       this.logger.info('API call result:', result);
 
       // 处理异步响应
-      let audioData;
       if (result.event_id) {
-        // 异步处理，需要等待结果
-        this.logger.info('Async processing started, event_id:', result.event_id);
+        // IndexTTS使用异步处理，返回event_id供后续轮询
+        this.logger.info('IndexTTS returned async processing event_id', { 
+          eventId: result.event_id 
+        });
 
-        // 等待一段时间让处理完成（实际项目中可能需要轮询状态）
-        await new Promise(resolve => setTimeout(resolve, 8000));
+        const voiceResult = {
+          audioData: null, // 音频还未生成
+          format: 'wav',
+          duration: await this._estimateDuration(script), // 估算时长
+          fileSize: 0, // 未知
+          style,
+          eventId: result.event_id, // 保存event_id
+          isAsync: true, // 标记为异步处理
+          metadata: {
+            provider: 'indextts',
+            endpoint: this.baseUrl,
+            styleConfig: styleConfig.name,
+            apiMethod: 'HTTP Direct - Async',
+            eventId: result.event_id,
+            generatedAt: new Date().toISOString()
+          }
+        };
 
-        // 由于无法直接获取异步结果，这里返回模拟数据
-        audioData = this._createDummyAudio();
-        this.logger.warn('Using simulated audio data due to async processing');
-      } else {
-        // 处理同步响应
-        audioData = await this._processAudioResult(result);
+        this.logger.info('Returning async voice result with event_id', {
+          style,
+          eventId: result.event_id
+        });
+
+        return voiceResult;
       }
+
+      // 处理同步响应（如果API直接返回音频）
+      const audioData = await this._processAudioResult(result);
 
       const voiceResult = {
         audioData,
@@ -173,6 +192,123 @@ export class IndexTtsVoiceServiceHttp extends IVoiceService {
         endpoint: this.baseUrl
       });
       throw error;
+    }
+  }
+
+  /**
+   * 根据event_id轮询音频生成结果
+   * @param {string} eventId - IndexTTS返回的event_id
+   * @returns {Promise<Object>} 轮询结果 {status, audioUrl, audioData}
+   */
+  async pollAudioResult(eventId) {
+    this.logger.info('Polling audio result for event_id', { eventId });
+
+    try {
+      // Gradio SSE端点格式: /gradio_api/call/{event_id}
+      // 注意：这个端点返回 Server-Sent Events (SSE)流
+      const statusUrl = `${this.baseUrl}/gradio_api/call/${eventId}`;
+      
+      this.logger.info('Fetching event status', { statusUrl });
+
+      const statusResponse = await fetch(statusUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache'
+        }
+      });
+
+      if (!statusResponse.ok) {
+        throw new Error(`Failed to poll event status: ${statusResponse.status} ${statusResponse.statusText}`);
+      }
+
+      // 读取SSE流
+      const text = await statusResponse.text();
+      this.logger.info('SSE response received', { 
+        length: text.length,
+        preview: text.substring(0, 200)
+      });
+
+      // 解析SSE数据
+      const lines = text.split('\n');
+      let result = null;
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            
+            // 检查是否是完成事件
+            if (data.msg === 'process_completed' && data.output) {
+              result = data.output;
+              this.logger.info('Audio generation completed', { eventId });
+              break;
+            }
+            
+            // 检查是否出错
+            if (data.msg === 'process_generating') {
+              // 仍在处理中
+              this.logger.info('Audio generation in progress', { eventId });
+              return {
+                status: 'processing',
+                message: 'Audio generation still in progress'
+              };
+            }
+            
+            if (data.msg === 'process_error') {
+              throw new Error(`Audio generation failed: ${JSON.stringify(data.output)}`);
+            }
+          } catch (parseError) {
+            this.logger.warn('Failed to parse SSE data', { line, error: parseError.message });
+          }
+        }
+      }
+
+      if (!result) {
+        return {
+          status: 'processing',
+          message: 'Audio generation still in progress'
+        };
+      }
+
+      // 处理完成的结果
+      const audioUrl = result.data?.[0]?.url || result.data?.[0]?.value?.url;
+      
+      if (!audioUrl) {
+        throw new Error('No audio URL in completed result');
+      }
+
+      // 下载音频数据
+      const audioResponse = await fetch(audioUrl);
+      if (!audioResponse.ok) {
+        throw new Error(`Failed to download audio: ${audioResponse.status}`);
+      }
+
+      const audioData = await audioResponse.arrayBuffer();
+
+      this.logger.info('Audio downloaded successfully', { 
+        eventId, 
+        audioUrl,
+        size: audioData.byteLength 
+      });
+
+      return {
+        status: 'completed',
+        audioUrl,
+        audioData,
+        fileSize: audioData.byteLength
+      };
+
+    } catch (error) {
+      this.logger.error('Failed to poll audio result', { 
+        eventId, 
+        error: error.message 
+      });
+      
+      return {
+        status: 'failed',
+        error: error.message
+      };
     }
   }
 
@@ -247,22 +383,62 @@ export class IndexTtsVoiceServiceHttp extends IVoiceService {
   }
 
   /**
-   * 创建虚拟音频数据（用于测试）
-   * @private
-   * @returns {ArrayBuffer} 虚拟音频数据
-   */
+  * 创建虚拟音频数据（用于测试）
+  * @private
+  * @returns {ArrayBuffer} 虚拟音频数据
+  */
   _createDummyAudio() {
-    // 创建一个最小的WAV文件头部
-    const wavHeader = new ArrayBuffer(44);
-    const view = new DataView(wavHeader);
+  // 创建一个最小的WAV文件头部
+  const wavHeader = new ArrayBuffer(44);
+  const view = new DataView(wavHeader);
+
+  // WAV文件头部
+  const header = 'RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x80>\x00\x00\x00}\x00\x00\x02\x00\x10\x00data\x00\x00\x00\x00';
+  for (let i = 0; i < header.length; i++) {
+  view.setUint8(i, header.charCodeAt(i));
+  }
+
+  return wavHeader;
+  }
+
+  /**
+   * 创建包含错误信息的音频数据
+   * @private
+   * @param {string} errorMessage - 错误信息
+   * @returns {ArrayBuffer} 音频数据
+   */
+  _createErrorAudio(errorMessage) {
+    this.logger.info('Creating error audio with message:', errorMessage);
+
+    // 创建一个简单的音频文件，包含错误信息
+    // 由于我们无法生成真实的语音，这里创建一个标记文件
+    const message = `ERROR: ${errorMessage}`;
+    const buffer = new ArrayBuffer(44 + message.length * 2); // WAV头 + UTF-16消息
+    const view = new DataView(buffer);
 
     // WAV文件头部
-    const header = 'RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x80>\x00\x00\x00}\x00\x00\x02\x00\x10\x00data\x00\x00\x00\x00';
+    const header = 'RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x80>\x00\x00\x00}\x00\x00\x02\x00\x10\x00data';
+    let offset = 0;
+
+    // 写入头部
     for (let i = 0; i < header.length; i++) {
-      view.setUint8(i, header.charCodeAt(i));
+      view.setUint8(offset++, header.charCodeAt(i));
     }
 
-    return wavHeader;
+    // 写入数据大小 (消息长度)
+    view.setUint32(offset, message.length * 2, true);
+    offset += 4;
+
+    // 写入消息 (UTF-16)
+    for (let i = 0; i < message.length; i++) {
+      view.setUint16(offset, message.charCodeAt(i), true);
+      offset += 2;
+    }
+
+    // 更新文件大小
+    view.setUint32(4, buffer.byteLength - 8, true);
+
+    return buffer;
   }
 
   /**

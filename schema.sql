@@ -4,15 +4,18 @@ CREATE TABLE IF NOT EXISTS episodes (
   title TEXT NOT NULL,
   description TEXT,
   style TEXT NOT NULL,  -- 风格: guo-de-gang, news-anchor 等
-  audio_url TEXT NOT NULL,  -- R2 中的音频文件 URL
-  audio_key TEXT NOT NULL,  -- R2 中的文件 key
+  audio_url TEXT,  -- R2 中的音频文件 URL（异步生成完成后填充）
+  audio_key TEXT,  -- R2 中的文件 key（异步生成完成后填充）
   duration INTEGER,  -- 时长（秒）
   file_size INTEGER,  -- 文件大小（字节）
   transcript TEXT,  -- 文本脚本
   created_at TEXT NOT NULL,  -- ISO 8601 格式
   published_at TEXT,  -- 发布时间
   status TEXT DEFAULT 'draft',  -- draft, published, archived
-  metadata TEXT  -- JSON 格式的额外元数据
+  metadata TEXT,  -- JSON 格式的额外元数据
+  tts_event_id TEXT,  -- IndexTTS异步处理的event_id
+  tts_status TEXT DEFAULT 'pending',  -- 音频生成状态: pending, processing, completed, failed
+  tts_error TEXT  -- 音频生成失败时的错误信息
 );
 
 -- 创建索引以提高查询性能

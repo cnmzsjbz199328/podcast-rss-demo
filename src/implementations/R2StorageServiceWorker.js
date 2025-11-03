@@ -25,9 +25,8 @@ export class R2StorageServiceWorker {
 
     // 生成文件键
     const scriptKey = generateFileKey('scripts', voiceResult.style, 'txt', timestamp);
-    const audioKey = generateFileKey('audio', voiceResult.style, voiceResult.format, timestamp);
 
-    this.logger.info('Uploading files to R2', { scriptKey, audioKey });
+    this.logger.info('Uploading script to R2', { scriptKey });
 
     try {
       // 上传脚本文件
@@ -43,7 +42,33 @@ export class R2StorageServiceWorker {
         }
       });
 
-      // 上传音频文件
+      const storageResult = {
+        scriptUrl: `${this.baseUrl}/${scriptKey}`,
+        scriptKey,
+        metadata: {
+          uploadedAt: new Date().toISOString(),
+          scriptSize: scriptResult.content.length
+        }
+      };
+
+      // 如果音频是异步生成，不上传音频
+      if (voiceResult.isAsync || !voiceResult.audioData) {
+        this.logger.info('Async audio generation - skipping audio upload', { 
+          isAsync: voiceResult.isAsync,
+          hasAudioData: !!voiceResult.audioData 
+        });
+        
+        return {
+          ...storageResult,
+          audioUrl: null,
+          audioKey: null
+        };
+      }
+
+      // 同步生成，上传音频文件
+      const audioKey = generateFileKey('audio', voiceResult.style, voiceResult.format, timestamp);
+      this.logger.info('Uploading audio to R2', { audioKey });
+
       const audioData = await this._prepareAudioData(voiceResult.audioData);
       await this.bucket.put(audioKey, audioData, {
         httpMetadata: {
@@ -58,17 +83,9 @@ export class R2StorageServiceWorker {
         }
       });
 
-      const storageResult = {
-        scriptUrl: `${this.baseUrl}/${scriptKey}`,
-        audioUrl: `${this.baseUrl}/${audioKey}`,
-        scriptKey,
-        audioKey,
-        metadata: {
-          uploadedAt: new Date().toISOString(),
-          scriptSize: scriptResult.content.length,
-          audioSize: voiceResult.fileSize
-        }
-      };
+      storageResult.audioUrl = `${this.baseUrl}/${audioKey}`;
+      storageResult.audioKey = audioKey;
+      storageResult.metadata.audioSize = voiceResult.fileSize;
 
       this.logger.info('Files uploaded successfully', {
         scriptUrl: storageResult.scriptUrl,
@@ -80,8 +97,7 @@ export class R2StorageServiceWorker {
     } catch (error) {
       this.logger.error('R2 upload failed', {
         error: error.message,
-        scriptKey,
-        audioKey
+        scriptKey
       });
       throw error;
     }

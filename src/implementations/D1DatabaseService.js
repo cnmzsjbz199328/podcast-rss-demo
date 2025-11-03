@@ -21,6 +21,8 @@ export class D1DatabaseService {
       id: episode.id, 
       title: episode.title,
       audioUrl: episode.audioUrl,
+      ttsEventId: episode.ttsEventId,
+      ttsStatus: episode.ttsStatus,
       style: episode.style 
     });
 
@@ -29,34 +31,35 @@ export class D1DatabaseService {
       if (!episode.id) {
         throw new Error('Episode ID is required');
       }
-      if (!episode.audioUrl) {
-        throw new Error('Audio URL is required');
-      }
-      if (!episode.audioKey) {
-        throw new Error('Audio Key is required');
-      }
+
+      // 注意：audioUrl 和 audioKey 现在是可选的，因为异步处理时可能还没有
+      // 但 ttsEventId 应该存在（如果使用异步处理）
 
       this.logger.info('Executing INSERT query', { id: episode.id });
 
       const result = await this.db.prepare(`
         INSERT INTO episodes (
           id, title, description, style, audio_url, audio_key,
-          duration, file_size, transcript, created_at, published_at, status, metadata
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          duration, file_size, transcript, created_at, published_at, status, metadata,
+          tts_event_id, tts_status, tts_error
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         episode.id,
         episode.title,
         episode.description || '',
         episode.style,
-        episode.audioUrl,
-        episode.audioKey,
+        episode.audioUrl || null,
+        episode.audioKey || null,
         episode.duration || 0,
         episode.fileSize || 0,
         episode.transcript || '',
         episode.createdAt || new Date().toISOString(),
         episode.publishedAt || null,
         episode.status || 'published',
-        JSON.stringify(episode.metadata || {})
+        JSON.stringify(episode.metadata || {}),
+        episode.ttsEventId || null,
+        episode.ttsStatus || 'pending',
+        episode.ttsError || null
       ).run();
 
       this.logger.info('✅ INSERT query completed', { 
@@ -92,7 +95,8 @@ export class D1DatabaseService {
       const { results } = await this.db.prepare(`
         SELECT 
           id, title, description, style, audio_url, audio_key,
-          duration, file_size, transcript, created_at, published_at, metadata
+          duration, file_size, transcript, created_at, published_at, metadata,
+          tts_event_id, tts_status, tts_error
         FROM episodes
         WHERE status = 'published'
         ORDER BY published_at DESC, created_at DESC
@@ -111,7 +115,10 @@ export class D1DatabaseService {
         transcript: row.transcript,
         createdAt: row.created_at,
         publishedAt: row.published_at,
-        metadata: row.metadata ? JSON.parse(row.metadata) : {}
+        metadata: row.metadata ? JSON.parse(row.metadata) : {},
+        ttsEventId: row.tts_event_id,
+        ttsStatus: row.tts_status,
+        ttsError: row.tts_error
       }));
     } catch (error) {
       this.logger.error('Failed to get published episodes', error);
@@ -143,7 +150,10 @@ export class D1DatabaseService {
         createdAt: result.created_at,
         publishedAt: result.published_at,
         status: result.status,
-        metadata: result.metadata ? JSON.parse(result.metadata) : {}
+        metadata: result.metadata ? JSON.parse(result.metadata) : {},
+        ttsEventId: result.tts_event_id,
+        ttsStatus: result.tts_status,
+        ttsError: result.tts_error
       };
     } catch (error) {
       this.logger.error('Failed to get episode', { id, error: error.message });
@@ -209,6 +219,75 @@ export class D1DatabaseService {
     } catch (error) {
       this.logger.error('Failed to update episode status', { id, error: error.message });
       return false;
+    }
+  }
+
+  /**
+   * 更新剧集的音频信息（用于异步生成完成后）
+   */
+  async updateEpisodeAudio(id, audioData) {
+    try {
+      await this.db.prepare(`
+        UPDATE episodes 
+        SET audio_url = ?, audio_key = ?, duration = ?, file_size = ?,
+            tts_status = ?, tts_error = ?
+        WHERE id = ?
+      `).bind(
+        audioData.audioUrl,
+        audioData.audioKey,
+        audioData.duration || 0,
+        audioData.fileSize || 0,
+        audioData.ttsStatus || 'completed',
+        audioData.ttsError || null,
+        id
+      ).run();
+
+      this.logger.info('Episode audio updated', { 
+        id, 
+        audioUrl: audioData.audioUrl,
+        ttsStatus: audioData.ttsStatus 
+      });
+      return true;
+    } catch (error) {
+      this.logger.error('Failed to update episode audio', { id, error: error.message });
+      return false;
+    }
+  }
+
+  /**
+   * 更新TTS状态
+   */
+  async updateTtsStatus(id, status, error = null) {
+    try {
+      await this.db.prepare(`
+        UPDATE episodes SET tts_status = ?, tts_error = ? WHERE id = ?
+      `).bind(status, error, id).run();
+
+      this.logger.info('TTS status updated', { id, status, error });
+      return true;
+    } catch (error) {
+      this.logger.error('Failed to update TTS status', { id, error: error.message });
+      return false;
+    }
+  }
+
+  /**
+   * 获取所有待处理的音频任务
+   */
+  async getPendingAudioTasks(limit = 10) {
+    try {
+      const { results } = await this.db.prepare(`
+        SELECT id, tts_event_id, style, created_at
+        FROM episodes
+        WHERE tts_status = 'pending' AND tts_event_id IS NOT NULL
+        ORDER BY created_at ASC
+        LIMIT ?
+      `).bind(limit).all();
+
+      return results;
+    } catch (error) {
+      this.logger.error('Failed to get pending audio tasks', error);
+      return [];
     }
   }
 

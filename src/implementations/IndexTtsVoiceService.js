@@ -144,20 +144,27 @@ export class IndexTtsVoiceService extends IVoiceService {
 
       // 处理异步响应
       let audioData;
+      let apiResult = result;
+
       if (result.event_id) {
-        // 异步处理，需要等待结果
-        this.logger.info('Async processing started, event_id:', result.event_id);
+        // IndexTTS使用异步处理，但Cloudflare Worker有执行时间限制，无法有效轮询
+        // 创建一个说明问题的音频文件作为临时解决方案
+        this.logger.warn('IndexTTS returned async processing result (event_id), creating placeholder audio');
 
-        // 模拟等待处理完成（实际项目中可能需要更复杂的逻辑）
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        // 由于我们无法直接获取异步结果，这里返回模拟数据
-        audioData = this._createDummyAudio();
-        this.logger.warn('Using simulated audio data due to async processing');
+        // 创建一个包含错误信息的音频数据
+        audioData = this._createErrorAudio('语音合成服务暂不可用，请稍后重试');
+        apiResult = result;
       } else {
         // 处理同步响应
-        audioData = await this._processAudioResult(result);
+        const processResult = await this._processAudioResult(result);
+        audioData = processResult.audioData;
+        apiResult = processResult.apiResult;
       }
+
+      this.logger.info('Audio data received', {
+        size: audioData ? audioData.byteLength || audioData.length : 0,
+        type: audioData ? typeof audioData : 'null'
+      });
 
       const voiceResult = {
         audioData,
@@ -166,15 +173,17 @@ export class IndexTtsVoiceService extends IVoiceService {
         fileSize: getFileSize(audioData),
         style,
         metadata: {
-          provider: 'indextts',
-          endpoint: this.config.endpoint,
-          styleConfig: styleConfig.name,
-          parameters: {
-            emo_weight: styleConfig.params?.emo_weight,
-            emotion_vector: [styleConfig.params?.vec1, styleConfig.params?.vec2,
-                           styleConfig.params?.vec3, styleConfig.params?.vec4,
-                           styleConfig.params?.vec5, styleConfig.params?.vec6,
-                           styleConfig.params?.vec7, styleConfig.params?.vec8]
+        provider: 'indextts',
+        endpoint: this.config.endpoint,
+        styleConfig: styleConfig.name,
+        apiMethod: 'Gradio Client',
+        eventId: apiResult?.event_id,
+        parameters: {
+        emo_weight: styleConfig.params?.emo_weight,
+        emotion_vector: [styleConfig.params?.vec1, styleConfig.params?.vec2,
+        styleConfig.params?.vec3, styleConfig.params?.vec4,
+                         styleConfig.params?.vec5, styleConfig.params?.vec6,
+                         styleConfig.params?.vec7, styleConfig.params?.vec8]
           },
           generatedAt: new Date().toISOString()
         }
@@ -312,6 +321,172 @@ export class IndexTtsVoiceService extends IVoiceService {
   }
 
   /**
+  * 直接调用IndexTTS HTTP API
+  * @private
+  * @param {string} script - 脚本文本
+  * @param {Object} styleConfig - 风格配置
+  * @param {Blob} voiceBlob - 语音样本
+   * @param {Blob} emotionBlob - 情感样本
+   * @returns {Promise<ArrayBuffer>} 音频数据
+   */
+  async _callIndexTTSHttpDirect(script, styleConfig, voiceBlob, emotionBlob) {
+    try {
+      const formData = new FormData();
+
+      // 设置基本参数
+      formData.append('emo_control_method', 'Same as the voice reference');
+      formData.append('text', script);
+      formData.append('emo_weight', (styleConfig.params?.emo_weight || 0.8).toString());
+      formData.append('vec1', (styleConfig.params?.vec1 || 0).toString());
+      formData.append('vec2', (styleConfig.params?.vec2 || 0).toString());
+      formData.append('vec3', (styleConfig.params?.vec3 || 0).toString());
+      formData.append('vec4', (styleConfig.params?.vec4 || 0).toString());
+      formData.append('vec5', (styleConfig.params?.vec5 || 0).toString());
+      formData.append('vec6', (styleConfig.params?.vec6 || 0).toString());
+      formData.append('vec7', (styleConfig.params?.vec7 || 0).toString());
+      formData.append('vec8', (styleConfig.params?.vec8 || 0).toString());
+      formData.append('emo_text', '');
+      formData.append('emo_random', 'false');
+      formData.append('max_text_tokens_per_segment', '120');
+      formData.append('param_16', 'true');
+      formData.append('param_17', '0.8');
+      formData.append('param_18', '30');
+      formData.append('param_19', '0.8');
+      formData.append('param_20', '0');
+      formData.append('param_21', '3');
+      formData.append('param_22', '10');
+      formData.append('param_23', '1500');
+
+      // 添加语音样本
+      formData.append('prompt', voiceBlob, 'voice_sample.wav');
+
+      // 添加情感样本（如果有）
+      if (emotionBlob) {
+        formData.append('emo_ref_path', emotionBlob, 'emotion_sample.wav');
+      }
+
+      const endpoint = this.config.endpoint || 'https://indexteam-indextts-2-demo.hf.space';
+      const url = `${endpoint}/api/predict/`;
+
+      this.logger.info('Making HTTP direct call to IndexTTS', {
+        url,
+        scriptLength: script.length,
+        hasEmotionSample: !!emotionBlob
+      });
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; PodcastBot/1.0)'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`IndexTTS API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      this.logger.info('IndexTTS API response received', {
+        hasData: !!result.data,
+        dataType: result.data ? typeof result.data : 'null',
+        eventId: result.event_id
+      });
+
+      // 处理异步响应
+      if (result.event_id) {
+        // 异步处理，需要轮询结果
+        const audioData = await this._pollAsyncResult(endpoint, result.event_id);
+        return { audioData, apiResult: result };
+      } else if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+        // 同步响应
+        const audioUrl = result.data[0];
+        if (typeof audioUrl === 'string' && audioUrl.startsWith('http')) {
+          // 下载音频文件
+          const audioResponse = await fetch(audioUrl);
+          if (!audioResponse.ok) {
+            throw new Error(`Failed to download audio: ${audioResponse.status}`);
+          }
+          return { audioData: await audioResponse.arrayBuffer(), apiResult: result };
+        } else if (audioUrl instanceof Blob) {
+          return { audioData: await audioUrl.arrayBuffer(), apiResult: result };
+        }
+      }
+
+      throw new Error('No audio data received from IndexTTS');
+
+    } catch (error) {
+      this.logger.error('HTTP direct call to IndexTTS failed', {
+        error: error.message,
+        endpoint: this.config.endpoint
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 轮询异步结果
+   * @private
+   * @param {string} endpoint - API端点
+   * @param {string} eventId - 事件ID
+   * @returns {Promise<ArrayBuffer>} 音频数据
+   */
+  async _pollAsyncResult(endpoint, eventId) {
+    const maxAttempts = 60; // 最多等待5分钟
+    const pollInterval = 5000; // 5秒间隔
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const statusUrl = `${endpoint}/api/predict/status/${eventId}`;
+        const response = await fetch(statusUrl);
+
+        if (!response.ok) {
+          this.logger.warn(`Status check failed: ${response.status}`);
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+          continue;
+        }
+
+        const status = await response.json();
+
+        if (status.status === 'complete' && status.data) {
+          // 处理完成的数据
+          if (Array.isArray(status.data) && status.data.length > 0) {
+            const audioUrl = status.data[0];
+            if (typeof audioUrl === 'string' && audioUrl.startsWith('http')) {
+              const audioResponse = await fetch(audioUrl);
+              if (audioResponse.ok) {
+                const audioData = await audioResponse.arrayBuffer();
+                return { audioData, apiResult: status };
+              }
+            } else if (audioUrl instanceof Blob) {
+              const audioData = await audioUrl.arrayBuffer();
+              return { audioData, apiResult: status };
+            }
+          }
+          // 如果是直接的数据
+          else if (status.data instanceof Blob) {
+            const audioData = await status.data.arrayBuffer();
+            return { audioData, apiResult: status };
+          }
+        } else if (status.status === 'error') {
+          throw new Error(`Async processing failed: ${status.error || 'Unknown error'}`);
+        } else if (status.status === 'processing') {
+          this.logger.info(`Async processing in progress... (${attempt + 1}/${maxAttempts})`);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+      } catch (error) {
+        this.logger.warn(`Poll attempt ${attempt + 1} failed:`, error.message);
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+      }
+    }
+
+    throw new Error('Async processing timeout');
+  }
+
+  /**
    * 处理音频结果
    * @private
    * @param {*} audioResult - API返回的音频数据
@@ -319,25 +494,38 @@ export class IndexTtsVoiceService extends IVoiceService {
    */
   async _processAudioResult(audioResult) {
     // 根据IndexTTS API的返回格式处理
+    let audioData;
+
     if (audioResult instanceof Blob) {
-      return audioResult;
-    }
-
-    if (audioResult instanceof ArrayBuffer) {
-      return Buffer.from(audioResult);
-    }
-
-    // 如果是文件路径或其他格式，需要额外处理
-    if (typeof audioResult === 'string') {
+      audioData = audioResult;
+    } else if (audioResult instanceof ArrayBuffer) {
+      audioData = Buffer.from(audioResult);
+    } else if (typeof audioResult === 'string') {
       // 假设是文件URL
       const response = await fetch(audioResult);
       if (!response.ok) {
         throw new Error(`Failed to fetch audio from URL: ${response.status}`);
       }
-      return await response.blob();
+      audioData = await response.blob();
+    } else if (Array.isArray(audioResult) && audioResult.length > 0) {
+      // 处理数组格式的结果
+      const firstResult = audioResult[0];
+      if (typeof firstResult === 'string' && firstResult.startsWith('http')) {
+        const response = await fetch(firstResult);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch audio from URL: ${response.status}`);
+        }
+        audioData = await response.arrayBuffer();
+      } else if (firstResult instanceof Blob) {
+        audioData = await firstResult.arrayBuffer();
+      } else {
+        throw new Error('Unsupported audio result format in array');
+      }
+    } else {
+      throw new Error('Unsupported audio result format');
     }
 
-    throw new Error('Unsupported audio result format');
+    return { audioData, apiResult: audioResult };
   }
 
   /**
@@ -359,22 +547,62 @@ export class IndexTtsVoiceService extends IVoiceService {
   }
 
   /**
-   * 创建虚拟音频数据（用于测试）
-   * @private
-   * @returns {ArrayBuffer} 虚拟音频数据
-   */
+  * 创建虚拟音频数据（用于测试）
+  * @private
+  * @returns {ArrayBuffer} 虚拟音频数据
+  */
   _createDummyAudio() {
-    // 创建一个最小的WAV文件头部
-    const wavHeader = new ArrayBuffer(44);
-    const view = new DataView(wavHeader);
+  // 创建一个最小的WAV文件头部
+  const wavHeader = new ArrayBuffer(44);
+  const view = new DataView(wavHeader);
+
+  // WAV文件头部
+  const header = 'RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x80>\x00\x00\x00}\x00\x00\x02\x00\x10\x00data\x00\x00\x00\x00';
+  for (let i = 0; i < header.length; i++) {
+  view.setUint8(i, header.charCodeAt(i));
+  }
+
+  return wavHeader;
+  }
+
+  /**
+   * 创建包含错误信息的音频数据
+   * @private
+   * @param {string} errorMessage - 错误信息
+   * @returns {ArrayBuffer} 音频数据
+   */
+  _createErrorAudio(errorMessage) {
+    this.logger.info('Creating error audio with message:', errorMessage);
+
+    // 创建一个简单的音频文件，包含错误信息
+    // 由于我们无法生成真实的语音，这里创建一个标记文件
+    const message = `ERROR: ${errorMessage}`;
+    const buffer = new ArrayBuffer(44 + message.length * 2); // WAV头 + UTF-16消息
+    const view = new DataView(buffer);
 
     // WAV文件头部
-    const header = 'RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x80>\x00\x00\x00}\x00\x00\x02\x00\x10\x00data\x00\x00\x00\x00';
+    const header = 'RIFF\x00\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00\x80>\x00\x00\x00}\x00\x00\x02\x00\x10\x00data';
+    let offset = 0;
+
+    // 写入头部
     for (let i = 0; i < header.length; i++) {
-      view.setUint8(i, header.charCodeAt(i));
+      view.setUint8(offset++, header.charCodeAt(i));
     }
 
-    return wavHeader;
+    // 写入数据大小 (消息长度)
+    view.setUint32(offset, message.length * 2, true);
+    offset += 4;
+
+    // 写入消息 (UTF-16)
+    for (let i = 0; i < message.length; i++) {
+      view.setUint16(offset, message.charCodeAt(i), true);
+      offset += 2;
+    }
+
+    // 更新文件大小
+    view.setUint32(4, buffer.byteLength - 8, true);
+
+    return buffer;
   }
 
   /**

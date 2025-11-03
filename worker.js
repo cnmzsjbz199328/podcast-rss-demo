@@ -1,7 +1,3 @@
-/**
- * Cloudflare Worker - RSS生成和播客API
- */
-
 import { PodcastGenerator } from './src/core/PodcastGenerator.js';
 import { BbcRssService } from './src/implementations/BbcRssService.js';
 import { GeminiScriptService } from './src/implementations/GeminiScriptService.js';
@@ -191,25 +187,29 @@ async function handleGenerateRequest(request, services) {
     logger.info('Podcast generation result received', { 
       episodeId: result.episodeId,
       hasAudioUrl: !!result.audioUrl,
+      hasEventId: !!result.eventId,
+      isAsync: result.isAsync,
       hasScriptUrl: !!result.scriptUrl
     });
 
     // 保存到 D1 数据库
-    if (result.episodeId && result.audioUrl) {
+    if (result.episodeId) {
       try {
         logger.info('Preparing to save episode to database', { 
           episodeId: result.episodeId,
-          audioUrl: result.audioUrl 
+          audioUrl: result.audioUrl,
+          eventId: result.eventId,
+          isAsync: result.isAsync
         });
 
         const episodeData = {
           id: result.episodeId,
           title: result.title || `${style} - ${new Date().toLocaleDateString('zh-CN')}`,
           description: result.description || '由AI生成的新闻播客',
-          audioUrl: result.audioUrl,
-          audioKey: result.audioUrl.split('/').pop(), // 从 URL 提取 key
+          audioUrl: result.audioUrl || null, // 异步时可能为空
+          audioKey: result.audioUrl ? result.audioUrl.split('/').pop() : null,
           scriptUrl: result.scriptUrl,
-          scriptKey: result.scriptUrl.split('/').pop(), // 从 URL 提取 key
+          scriptKey: result.scriptUrl ? result.scriptUrl.split('/').pop() : null,
           duration: result.duration || 0,
           fileSize: result.fileSize || 0,
           style: style,
@@ -217,6 +217,8 @@ async function handleGenerateRequest(request, services) {
           status: 'published', // 自动发布
           publishedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
+          ttsEventId: result.eventId || null, // 保存event_id
+          ttsStatus: result.isAsync ? 'pending' : 'completed', // 异步时状态为pending
           metadata: {
             newsCount: result.newsCount || 0,
             wordCount: result.wordCount || 0,
@@ -245,9 +247,8 @@ async function handleGenerateRequest(request, services) {
         // 不中断流程，播客已经生成成功
       }
     } else {
-      logger.warn('Skipping database save - missing required fields', {
-        hasEpisodeId: !!result.episodeId,
-        hasAudioUrl: !!result.audioUrl
+      logger.warn('Skipping database save - missing episode ID', {
+        hasEpisodeId: !!result.episodeId
       });
     }
 
@@ -385,14 +386,17 @@ async function handleEpisodeDetailRequest(request, services, episodeId) {
         title: episode.title,
         description: episode.description,
         audioUrl: episode.audioUrl,
-        scriptUrl: episode.scriptUrl || episode.audioUrl.replace('/audio/', '/scripts/').replace('.wav', '.txt'),
+        scriptUrl: episode.scriptUrl || (episode.audioUrl ? episode.audioUrl.replace('/audio/', '/scripts/').replace('.wav', '.txt') : null),
         style: episode.style,
         duration: episode.duration,
         fileSize: episode.fileSize,
         transcript: episode.transcript,
         metadata: episode.metadata, // 已经是对象，不需要 JSON.parse
         publishedAt: episode.publishedAt,
-        createdAt: episode.createdAt
+        createdAt: episode.createdAt,
+        ttsEventId: episode.ttsEventId, // 添加TTS字段
+        ttsStatus: episode.ttsStatus,
+        ttsError: episode.ttsError
       }
     }), {
       headers: {
@@ -422,7 +426,130 @@ async function handleEpisodeDetailRequest(request, services, episodeId) {
 }
 
 /**
- * 处理健康检查
+ * 处理音频轮询请求
+ * @param {Request} request - 请求对象
+ * @param {Object} services - 服务实例
+ * @param {string} episodeId - 剧集ID
+ * @returns {Promise<Response>} 响应
+ */
+async function handlePollAudioRequest(request, services, episodeId) {
+  try {
+    logger.info('Polling audio for episode', { episodeId });
+
+    // 获取剧集信息
+    const episode = await services.database.getEpisodeById(episodeId);
+    
+    if (!episode) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Episode not found'
+      }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 检查是否有event_id
+    if (!episode.ttsEventId) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'No TTS event ID found for this episode'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 如果已经完成，直接返回
+    if (episode.ttsStatus === 'completed') {
+      return new Response(JSON.stringify({
+        success: true,
+        status: 'completed',
+        audioUrl: episode.audioUrl
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 轮询IndexTTS获取结果
+    logger.info('Polling IndexTTS for event_id', { eventId: episode.ttsEventId });
+    
+    const pollResult = await services.voiceService.pollAudioResult(episode.ttsEventId);
+
+    if (pollResult.status === 'completed') {
+      // 上传音频到R2
+      const audioKey = `audio/${new Date().toISOString().split('T')[0]}-${episode.style}-${Math.random().toString(36).substring(7)}.wav`;
+      const uploadResult = await services.storageService.uploadFile(
+        audioKey,
+        pollResult.audioData,
+        'audio/wav'
+      );
+
+      const audioUrl = `${services.storageService.baseUrl}/${audioKey}`;
+
+      // 更新数据库
+      await services.database.updateEpisodeAudio(episodeId, {
+        audioUrl: audioUrl,
+        audioKey: audioKey,
+        fileSize: pollResult.fileSize,
+        duration: episode.duration, // 保持原估算时长
+        ttsStatus: 'completed'
+      });
+
+      logger.info('Audio polling completed and saved', { 
+        episodeId, 
+        audioUrl,
+        fileSize: pollResult.fileSize 
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        status: 'completed',
+        audioUrl: audioUrl,
+        fileSize: pollResult.fileSize
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+    } else if (pollResult.status === 'failed') {
+      // 更新失败状态
+      await services.database.updateTtsStatus(episodeId, 'failed', pollResult.error);
+
+      return new Response(JSON.stringify({
+        success: false,
+        status: 'failed',
+        error: pollResult.error
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+    } else {
+      // 仍在处理中
+      return new Response(JSON.stringify({
+        success: true,
+        status: 'processing',
+        message: 'Audio generation still in progress'
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+  } catch (error) {
+    logger.error('Failed to poll audio', { episodeId, error: error.message });
+
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * 处理健康检查请求
  * @param {Object} services - 服务实例
  * @returns {Promise<Response>} 健康状态响应
  */
@@ -527,6 +654,12 @@ export default {
       const episodeMatch = url.pathname.match(/^\/episodes\/([a-zA-Z0-9-]+)$/);
       if (episodeMatch && request.method === 'GET') {
         return await handleEpisodeDetailRequest(request, services, episodeMatch[1]);
+      }
+
+      // 匹配 /episodes/:id/poll-audio 路由
+      const pollMatch = url.pathname.match(/^\/episodes\/([a-zA-Z0-9-]+)\/poll-audio$/);
+      if (pollMatch && request.method === 'POST') {
+        return await handlePollAudioRequest(request, services, pollMatch[1]);
       }
 
       if (url.pathname === '/health' && request.method === 'GET') {

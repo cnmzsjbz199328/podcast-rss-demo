@@ -42,6 +42,15 @@ export function validateScriptResult(script) {
 export function validateVoiceResult(voice) {
   if (!voice || typeof voice !== 'object') return false;
 
+  // 异步处理：需要eventId，不需要audioData
+  if (voice.isAsync) {
+    if (!voice.eventId || typeof voice.eventId !== 'string') return false;
+    if (!voice.format || typeof voice.format !== 'string') return false;
+    if (!voice.style || typeof voice.style !== 'string') return false;
+    return true;
+  }
+
+  // 同步处理：需要audioData
   if (!voice.audioData) return false;
   if (!voice.format || typeof voice.format !== 'string') return false;
   if (!voice.style || typeof voice.style !== 'string') return false;
@@ -58,7 +67,9 @@ export function validateStorageResult(storage) {
   if (!storage || typeof storage !== 'object') return false;
 
   if (!storage.scriptUrl || typeof storage.scriptUrl !== 'string') return false;
-  if (!storage.audioUrl || typeof storage.audioUrl !== 'string') return false;
+  
+  // 异步生成时audioUrl可能为null
+  // if (!storage.audioUrl || typeof storage.audioUrl !== 'string') return false;
 
   return true;
 }
