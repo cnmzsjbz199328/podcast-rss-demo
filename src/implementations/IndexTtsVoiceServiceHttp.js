@@ -204,13 +204,48 @@ export class IndexTtsVoiceServiceHttp extends IVoiceService {
     this.logger.info('Polling audio result for event_id', { eventId });
 
     try {
-      // Gradio SSE端点格式: /gradio_api/call/{event_id}
-      // 注意：这个端点返回 Server-Sent Events (SSE)流
-      const statusUrl = `${this.baseUrl}/gradio_api/call/${eventId}`;
+      // Gradio API 使用两个端点:
+      // 1. GET /gradio_api/call/{event_id} - 获取SSE流状态
+      // 2. 从SSE流中提取音频URL
       
-      this.logger.info('Fetching event status', { statusUrl });
+      // 尝试方法1: 使用status端点 (如果存在)
+      try {
+        const statusUrl = `${this.baseUrl}/gradio_api/status/${eventId}`;
+        this.logger.info('Trying status endpoint', { statusUrl });
+        
+        const statusResponse = await fetch(statusUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
 
-      const statusResponse = await fetch(statusUrl, {
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+          this.logger.info('Status endpoint response', { statusData });
+          
+          if (statusData.status === 'COMPLETE' && statusData.data) {
+            return await this._processCompletedResult(statusData.data, eventId);
+          } else if (statusData.status === 'PENDING' || statusData.status === 'PROCESSING') {
+            return {
+              status: 'processing',
+              message: 'Audio generation still in progress'
+            };
+          } else if (statusData.status === 'FAILED') {
+            throw new Error(`Audio generation failed: ${statusData.error || 'Unknown error'}`);
+          }
+        }
+      } catch (statusError) {
+        this.logger.warn('Status endpoint failed, trying SSE endpoint', { 
+          error: statusError.message 
+        });
+      }
+
+      // 方法2: 使用SSE流端点
+      const sseUrl = `${this.baseUrl}/gradio_api/call/${eventId}`;
+      this.logger.info('Trying SSE endpoint', { sseUrl });
+
+      const sseResponse = await fetch(sseUrl, {
         method: 'GET',
         headers: {
           'Accept': 'text/event-stream',
@@ -218,91 +253,50 @@ export class IndexTtsVoiceServiceHttp extends IVoiceService {
         }
       });
 
-      if (!statusResponse.ok) {
-        throw new Error(`Failed to poll event status: ${statusResponse.status} ${statusResponse.statusText}`);
+      if (!sseResponse.ok) {
+        // 如果SSE端点也失败，可能任务还在队列中
+        if (sseResponse.status === 404 || sseResponse.status === 503) {
+          this.logger.info('Event not found or service busy, likely still queued');
+          return {
+            status: 'processing',
+            message: 'Audio generation task queued or in progress'
+          };
+        }
+        throw new Error(`Failed to poll event: ${sseResponse.status} ${sseResponse.statusText}`);
       }
 
       // 读取SSE流
-      const text = await statusResponse.text();
+      const text = await sseResponse.text();
       this.logger.info('SSE response received', { 
         length: text.length,
-        preview: text.substring(0, 200)
+        preview: text.substring(0, 300)
       });
 
       // 解析SSE数据
-      const lines = text.split('\n');
-      let result = null;
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          try {
-            const data = JSON.parse(line.slice(6));
-            
-            // 检查是否是完成事件
-            if (data.msg === 'process_completed' && data.output) {
-              result = data.output;
-              this.logger.info('Audio generation completed', { eventId });
-              break;
-            }
-            
-            // 检查是否出错
-            if (data.msg === 'process_generating') {
-              // 仍在处理中
-              this.logger.info('Audio generation in progress', { eventId });
-              return {
-                status: 'processing',
-                message: 'Audio generation still in progress'
-              };
-            }
-            
-            if (data.msg === 'process_error') {
-              throw new Error(`Audio generation failed: ${JSON.stringify(data.output)}`);
-            }
-          } catch (parseError) {
-            this.logger.warn('Failed to parse SSE data', { line, error: parseError.message });
-          }
-        }
-      }
-
-      if (!result) {
+      const result = this._parseSSEResponse(text);
+      
+      if (result.status === 'completed') {
+        return await this._processCompletedResult(result.data, eventId);
+      } else if (result.status === 'processing') {
         return {
           status: 'processing',
           message: 'Audio generation still in progress'
         };
+      } else if (result.status === 'failed') {
+        throw new Error(`Audio generation failed: ${result.error}`);
       }
 
-      // 处理完成的结果
-      const audioUrl = result.data?.[0]?.url || result.data?.[0]?.value?.url;
-      
-      if (!audioUrl) {
-        throw new Error('No audio URL in completed result');
-      }
-
-      // 下载音频数据
-      const audioResponse = await fetch(audioUrl);
-      if (!audioResponse.ok) {
-        throw new Error(`Failed to download audio: ${audioResponse.status}`);
-      }
-
-      const audioData = await audioResponse.arrayBuffer();
-
-      this.logger.info('Audio downloaded successfully', { 
-        eventId, 
-        audioUrl,
-        size: audioData.byteLength 
-      });
-
+      // 如果无法确定状态，默认为处理中
       return {
-        status: 'completed',
-        audioUrl,
-        audioData,
-        fileSize: audioData.byteLength
+        status: 'processing',
+        message: 'Audio generation status unclear, assuming in progress'
       };
 
     } catch (error) {
       this.logger.error('Failed to poll audio result', { 
         eventId, 
-        error: error.message 
+        error: error.message,
+        stack: error.stack
       });
       
       return {
@@ -310,6 +304,113 @@ export class IndexTtsVoiceServiceHttp extends IVoiceService {
         error: error.message
       };
     }
+  }
+
+  /**
+   * 解析SSE响应
+   * @private
+   * @param {string} text - SSE响应文本
+   * @returns {Object} 解析结果
+   */
+  _parseSSEResponse(text) {
+    const lines = text.split('\n');
+    let lastData = null;
+    let completed = false;
+    let error = null;
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const data = JSON.parse(line.slice(6));
+          lastData = data;
+          
+          // 检查完成事件
+          if (data.msg === 'process_completed') {
+            completed = true;
+            this.logger.info('Found process_completed event', { 
+              hasOutput: !!data.output 
+            });
+          }
+          
+          // 检查错误事件
+          if (data.msg === 'error' || data.msg === 'process_error') {
+            error = JSON.stringify(data.output || data);
+            this.logger.error('Found error event', { error });
+          }
+          
+          // 检查处理中事件
+          if (data.msg === 'process_generating' || data.msg === 'process_starts') {
+            this.logger.info('Found processing event', { msg: data.msg });
+          }
+        } catch (parseError) {
+          this.logger.warn('Failed to parse SSE line', { 
+            line: line.substring(0, 100), 
+            error: parseError.message 
+          });
+        }
+      }
+    }
+
+    if (error) {
+      return { status: 'failed', error };
+    }
+
+    if (completed && lastData?.output) {
+      return { status: 'completed', data: lastData.output };
+    }
+
+    return { status: 'processing' };
+  }
+
+  /**
+   * 处理完成的结果
+   * @private
+   * @param {Object} output - API输出数据
+   * @param {string} eventId - Event ID
+   * @returns {Promise<Object>} 处理结果
+   */
+  async _processCompletedResult(output, eventId) {
+    // 尝试多种可能的音频URL路径
+    const audioUrl = 
+      output?.data?.[0]?.url || 
+      output?.data?.[0]?.value?.url ||
+      output?.[0]?.url ||
+      output?.[0]?.value?.url ||
+      (typeof output?.data?.[0] === 'string' ? output.data[0] : null);
+    
+    this.logger.info('Extracted audio URL', { audioUrl, outputStructure: JSON.stringify(output).substring(0, 200) });
+
+    if (!audioUrl) {
+      throw new Error('No audio URL found in completed result');
+    }
+
+    // 构建完整URL（如果是相对路径）
+    const fullAudioUrl = audioUrl.startsWith('http') ? 
+      audioUrl : 
+      `${this.baseUrl}${audioUrl.startsWith('/') ? '' : '/'}${audioUrl}`;
+
+    this.logger.info('Downloading audio from URL', { fullAudioUrl });
+
+    // 下载音频数据
+    const audioResponse = await fetch(fullAudioUrl);
+    if (!audioResponse.ok) {
+      throw new Error(`Failed to download audio: ${audioResponse.status} ${audioResponse.statusText}`);
+    }
+
+    const audioData = await audioResponse.arrayBuffer();
+
+    this.logger.info('Audio downloaded successfully', { 
+      eventId, 
+      audioUrl: fullAudioUrl,
+      size: audioData.byteLength 
+    });
+
+    return {
+      status: 'completed',
+      audioUrl: fullAudioUrl,
+      audioData,
+      fileSize: audioData.byteLength
+    };
   }
 
   /**

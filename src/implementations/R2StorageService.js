@@ -1,103 +1,91 @@
 /**
- * R2存储服务实现
+ * R2 存储服务 - Worker 绑定版本
+ * 使用 Cloudflare Worker 的 R2 绑定而不是 S3 SDK
  */
 
-import { IStorageService } from '../services/IStorageService.js';
 import { Logger } from '../utils/logger.js';
-import { withRetry } from '../utils/retryUtils.js';
 import { generateFileKey, getMimeType } from '../utils/fileUtils.js';
-import { validateFileSize } from '../utils/validator.js';
 
-export class R2StorageService extends IStorageService {
+export class R2StorageService {
   /**
-   * 创建R2存储服务实例
-   * @param {Object} config - 服务配置
+   * @param {R2Bucket} bucket - Cloudflare R2 bucket 绑定
+   * @param {string} baseUrl - R2 公开访问的基础 URL
    */
-  constructor(config) {
-    super();
-    this.config = config;
-    this.logger = new Logger('R2StorageService');
-    this.client = null;
+  constructor(bucket, baseUrl) {
+    this.bucket = bucket;
+    this.baseUrl = baseUrl;
+    this.logger = new Logger('R2StorageServiceWorker');
   }
 
   /**
    * 存储脚本和音频文件
-   * @param {ScriptResult} scriptResult - 脚本结果
-   * @param {VoiceResult} voiceResult - 语音结果
-   * @returns {Promise<StorageResult>} 存储结果
    */
   async storeFiles(scriptResult, voiceResult) {
-    return withRetry(
-      () => this._storeToR2(scriptResult, voiceResult),
-      {
-        maxAttempts: 3,
-        initialDelay: 1000,
-        shouldRetry: (error) => {
-          return error.message.includes('network') ||
-                 error.message.includes('timeout') ||
-                 error.status >= 500;
-        }
-      },
-      this.logger
-    );
-  }
-
-  /**
-   * 存储到R2
-   * @private
-   * @param {ScriptResult} scriptResult - 脚本结果
-   * @param {VoiceResult} voiceResult - 语音结果
-   * @returns {Promise<StorageResult>} 存储结果
-   */
-  async _storeToR2(scriptResult, voiceResult) {
-    // 动态导入AWS SDK
-    const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-
-    if (!this.client) {
-      this.client = new S3Client({
-        region: this.config.region || 'auto',
-        endpoint: `https://${this.config.accountId}.r2.cloudflarestorage.com`,
-        credentials: {
-          accessKeyId: this.config.accessKeyId,
-          secretAccessKey: this.config.secretAccessKey,
-        },
-      });
-    }
-
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
 
     // 生成文件键
-    const scriptKey = generateFileKey('scripts', scriptResult.style, 'txt');
-    const audioKey = generateFileKey('audio', voiceResult.style, voiceResult.format);
+    const scriptKey = generateFileKey('scripts', voiceResult.style, 'txt', timestamp);
 
-    this.logger.info('Uploading files to R2', {
-      scriptKey,
-      audioKey,
-      bucket: this.config.bucket
-    });
+    this.logger.info('Uploading script to R2', { scriptKey });
 
     try {
-      // 并行上传文件
-      const [scriptUpload, audioUpload] = await Promise.all([
-        this._uploadFile(scriptKey, scriptResult.content, 'text/plain'),
-        this._uploadFile(audioKey, voiceResult.audioData, getMimeType(audioKey))
-      ]);
+      // 上传脚本文件
+      await this.bucket.put(scriptKey, scriptResult.content, {
+        httpMetadata: {
+          contentType: 'text/plain; charset=utf-8',
+          cacheControl: 'public, max-age=31536000',  // 1年缓存
+        },
+        customMetadata: {
+          type: 'script',
+          style: scriptResult.style,
+          uploadedAt: new Date().toISOString()
+        }
+      });
 
       const storageResult = {
-        scriptUrl: `${this.config.baseUrl}/${scriptKey}`,
-        audioUrl: `${this.config.baseUrl}/${audioKey}`,
+        scriptUrl: `${this.baseUrl}/${scriptKey}`,
         scriptKey,
-        audioKey,
         metadata: {
-          bucket: this.config.bucket,
-          region: this.config.region,
           uploadedAt: new Date().toISOString(),
-          scriptSize: scriptResult.content.length,
-          audioSize: voiceResult.fileSize,
-          scriptUploadResult: scriptUpload,
-          audioUploadResult: audioUpload
+          scriptSize: scriptResult.content.length
         }
       };
+
+      // 如果音频是异步生成，不上传音频
+      if (voiceResult.isAsync || !voiceResult.audioData) {
+        this.logger.info('Async audio generation - skipping audio upload', { 
+          isAsync: voiceResult.isAsync,
+          hasAudioData: !!voiceResult.audioData 
+        });
+        
+        return {
+          ...storageResult,
+          audioUrl: null,
+          audioKey: null
+        };
+      }
+
+      // 同步生成，上传音频文件
+      const audioKey = generateFileKey('audio', voiceResult.style, voiceResult.format, timestamp);
+      this.logger.info('Uploading audio to R2', { audioKey });
+
+      const audioData = await this._prepareAudioData(voiceResult.audioData);
+      await this.bucket.put(audioKey, audioData, {
+        httpMetadata: {
+          contentType: getMimeType(audioKey),
+          cacheControl: 'public, max-age=31536000',
+        },
+        customMetadata: {
+          type: 'audio',
+          style: voiceResult.style,
+          duration: voiceResult.duration?.toString() || '0',
+          uploadedAt: new Date().toISOString()
+        }
+      });
+
+      storageResult.audioUrl = `${this.baseUrl}/${audioKey}`;
+      storageResult.audioKey = audioKey;
+      storageResult.metadata.audioSize = voiceResult.fileSize;
 
       this.logger.info('Files uploaded successfully', {
         scriptUrl: storageResult.scriptUrl,
@@ -109,238 +97,206 @@ export class R2StorageService extends IStorageService {
     } catch (error) {
       this.logger.error('R2 upload failed', {
         error: error.message,
-        scriptKey,
-        audioKey
+        scriptKey
       });
       throw error;
     }
   }
 
   /**
-   * 上传单个文件
-   * @private
-   * @param {string} key - 文件键
-   * @param {string|Buffer|Blob} data - 文件数据
-   * @param {string} contentType - 内容类型
-   * @returns {Promise<Object>} 上传结果
+   * 准备音频数据用于上传
    */
-  async _uploadFile(key, data, contentType) {
-    // 验证文件大小
-    const fileSize = this._getDataSize(data);
-    if (!validateFileSize(fileSize, this.config.maxFileSize)) {
-      throw new Error(`File too large: ${fileSize} bytes`);
+  async _prepareAudioData(audioData) {
+    // 如果是 Blob
+    if (audioData instanceof Blob) {
+      return await audioData.arrayBuffer();
     }
 
-    // 转换数据格式
-    const body = await this._convertToBuffer(data);
+    // 如果是 ArrayBuffer
+    if (audioData instanceof ArrayBuffer) {
+      return audioData;
+    }
 
-    const command = new PutObjectCommand({
-      Bucket: this.config.bucket,
-      Key: key,
-      Body: body,
-      ContentType: contentType,
-      // 添加缓存控制
-      CacheControl: 'max-age=31536000', // 1年
-      // 添加元数据
-      Metadata: {
-        uploadedAt: new Date().toISOString(),
-        originalSize: fileSize.toString()
+    // 如果是 Buffer (Node.js)
+    if (audioData && audioData.buffer) {
+      return audioData.buffer;
+    }
+
+    // 如果是 ReadableStream
+    if (audioData && audioData.getReader) {
+      const reader = audioData.getReader();
+      const chunks = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
       }
-    });
 
-    const result = await this.client.send(command);
+      const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+      const result = new Uint8Array(totalLength);
+      let offset = 0;
 
-    return {
-      etag: result.ETag,
-      versionId: result.VersionId,
-      size: fileSize
-    };
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+
+      return result.buffer;
+    }
+
+    throw new Error('Unsupported audio data type');
   }
 
   /**
-   * 获取数据大小
-   * @private
-   * @param {string|Buffer|Blob} data - 数据
-   * @returns {number} 大小
+   * 获取文件
    */
-  _getDataSize(data) {
-    if (typeof data === 'string') {
-      return Buffer.byteLength(data, 'utf8');
-    }
-    if (data instanceof Buffer) {
-      return data.length;
-    }
-    if (data instanceof Blob) {
-      return data.size;
-    }
-    if (data instanceof ArrayBuffer) {
-      return data.byteLength;
-    }
-    return 0;
-  }
-
-  /**
-   * 转换数据为Buffer
-   * @private
-   * @param {string|Buffer|Blob} data - 数据
-   * @returns {Promise<Buffer>} Buffer数据
-   */
-  async _convertToBuffer(data) {
-    if (typeof data === 'string') {
-      return Buffer.from(data, 'utf8');
-    }
-    if (data instanceof Buffer) {
-      return data;
-    }
-    if (data instanceof Blob) {
-      return Buffer.from(await data.arrayBuffer());
-    }
-    if (data instanceof ArrayBuffer) {
-      return Buffer.from(data);
-    }
-    throw new Error('Unsupported data type for upload');
-  }
-
-  /**
-   * 获取文件URL
-   * @param {string} fileKey - 文件键名
-   * @returns {Promise<string>} 文件URL
-   */
-  async getFileUrl(fileKey) {
-    if (!fileKey) {
-      throw new Error('File key is required');
-    }
-
-    const url = `${this.config.baseUrl}/${fileKey}`;
-
-    // 可选：检查文件是否存在
+  async getFile(fileKey) {
     try {
-      const { HeadObjectCommand } = await import('@aws-sdk/client-s3');
-      const command = new HeadObjectCommand({
-        Bucket: this.config.bucket,
-        Key: fileKey,
-      });
+      const object = await this.bucket.get(fileKey);
 
-      await this.client.send(command);
-      return url;
+      if (!object) {
+        return null;
+      }
+
+      return {
+        key: object.key,
+        body: object.body,
+        size: object.size,
+        uploaded: object.uploaded,
+        httpMetadata: object.httpMetadata,
+        customMetadata: object.customMetadata
+      };
+
     } catch (error) {
-      this.logger.warn('File not found in R2', { fileKey, error: error.message });
-      throw new Error(`File not found: ${fileKey}`);
+      this.logger.error('Failed to get file from R2', { fileKey, error: error.message });
+      return null;
+    }
+  }
+
+  /**
+   * 获取文件元数据（不下载文件体）
+   */
+  async getFileMetadata(fileKey) {
+    try {
+      const object = await this.bucket.head(fileKey);
+
+      if (!object) {
+        return null;
+      }
+
+      return {
+        key: object.key,
+        size: object.size,
+        uploaded: object.uploaded,
+        httpMetadata: object.httpMetadata,
+        customMetadata: object.customMetadata
+      };
+
+    } catch (error) {
+      this.logger.error('Failed to get file metadata', { fileKey, error: error.message });
+      return null;
     }
   }
 
   /**
    * 删除文件
-   * @param {string} fileKey - 文件键名
-   * @returns {Promise<boolean>} 删除是否成功
    */
   async deleteFile(fileKey) {
     try {
-      const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
-      const command = new DeleteObjectCommand({
-        Bucket: this.config.bucket,
-        Key: fileKey,
-      });
-
-      await this.client.send(command);
-
+      await this.bucket.delete(fileKey);
       this.logger.info('File deleted from R2', { fileKey });
       return true;
 
     } catch (error) {
-      this.logger.error('Failed to delete file from R2', {
-        fileKey,
-        error: error.message
-      });
+      this.logger.error('Failed to delete file', { fileKey, error: error.message });
       return false;
     }
   }
 
   /**
-   * 验证服务配置
-   * @returns {Promise<boolean>} 配置是否有效
+   * 批量删除文件
    */
-  async validateConfig() {
+  async deleteFiles(fileKeys) {
     try {
-      if (!this.config.accessKeyId) {
-        throw new Error('R2 access key ID is required');
-      }
-      if (!this.config.secretAccessKey) {
-        throw new Error('R2 secret access key is required');
-      }
-      if (!this.config.bucket) {
-        throw new Error('R2 bucket name is required');
-      }
-      if (!this.config.accountId) {
-        throw new Error('R2 account ID is required');
-      }
-
-      // 简化验证：只检查配置完整性，不进行实际API调用
-      // 实际的连接测试会在使用时进行
-      this.logger.info('R2 storage configuration validated successfully (basic check)');
+      await this.bucket.delete(fileKeys);
+      this.logger.info('Files deleted from R2', { count: fileKeys.length });
       return true;
 
     } catch (error) {
-      this.logger.error('R2 storage configuration validation failed', error);
+      this.logger.error('Failed to delete files', { count: fileKeys.length, error: error.message });
       return false;
     }
   }
 
   /**
-   * 获取存储统计信息
-   * @returns {Promise<Object>} 统计信息
+   * 列出文件
    */
-  async getStorageStats() {
+  async listFiles(options = {}) {
     try {
-      const { ListObjectsV2Command } = await import('@aws-sdk/client-s3');
-      const command = new ListObjectsV2Command({
-        Bucket: this.config.bucket
+      const result = await this.bucket.list({
+        limit: options.limit || 1000,
+        prefix: options.prefix,
+        cursor: options.cursor,
+        delimiter: options.delimiter
       });
 
-      const result = await this.client.send(command);
-
       return {
-        totalObjects: result.KeyCount || 0,
-        contents: result.Contents || [],
-        bucket: this.config.bucket
+        objects: result.objects.map(obj => ({
+          key: obj.key,
+          size: obj.size,
+          uploaded: obj.uploaded,
+          httpMetadata: obj.httpMetadata,
+          customMetadata: obj.customMetadata
+        })),
+        truncated: result.truncated,
+        cursor: result.cursor,
+        delimitedPrefixes: result.delimitedPrefixes || []
       };
 
     } catch (error) {
-      this.logger.error('Failed to get storage stats', error);
+      this.logger.error('Failed to list files', error);
       throw error;
     }
   }
 
   /**
-   * 清理过期文件
-   * @param {number} daysOld - 删除多少天前的文件
-   * @returns {Promise<number>} 删除的文件数量
+   * 获取文件 URL
    */
-  async cleanupOldFiles(daysOld = 30) {
+  getFileUrl(fileKey) {
+    return `${this.baseUrl}/${fileKey}`;
+  }
+
+  /**
+   * 获取存储统计
+   */
+  async getStatistics() {
     try {
-      const stats = await this.getStorageStats();
-      let deletedCount = 0;
+      const audioList = await this.listFiles({ prefix: 'audio/', limit: 1000 });
+      const scriptList = await this.listFiles({ prefix: 'scripts/', limit: 1000 });
 
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+      const totalAudioSize = audioList.objects.reduce((sum, obj) => sum + obj.size, 0);
+      const totalScriptSize = scriptList.objects.reduce((sum, obj) => sum + obj.size, 0);
 
-      for (const object of stats.contents) {
-        if (object.LastModified < cutoffDate) {
-          await this.deleteFile(object.Key);
-          deletedCount++;
-        }
-      }
-
-      this.logger.info('Old files cleanup completed', {
-        deletedCount,
-        daysOld
-      });
-
-      return deletedCount;
+      return {
+        audioFiles: audioList.objects.length,
+        scriptFiles: scriptList.objects.length,
+        totalFiles: audioList.objects.length + scriptList.objects.length,
+        audioSize: totalAudioSize,
+        scriptSize: totalScriptSize,
+        totalSize: totalAudioSize + totalScriptSize
+      };
 
     } catch (error) {
-      this.logger.error('Failed to cleanup old files', error);
-      throw error;
+      this.logger.error('Failed to get statistics', error);
+      return {
+        audioFiles: 0,
+        scriptFiles: 0,
+        totalFiles: 0,
+        audioSize: 0,
+        scriptSize: 0,
+        totalSize: 0
+      };
     }
   }
 }

@@ -202,7 +202,9 @@ export class PodcastGenerator {
       duration: voiceResult.duration,
       fileSize: voiceResult.fileSize,
       scriptUrl: storageResult.scriptUrl,
-      audioUrl: storageResult.audioUrl,
+      audioUrl: storageResult.audioUrl || null, // 异步时可能为null
+      eventId: voiceResult.eventId || null, // 传递eventId
+      isAsync: voiceResult.isAsync || false, // 传递异步标记
       generatedAt: new Date().toISOString(),
       metadata: {
         scriptMetadata: scriptResult.metadata,
