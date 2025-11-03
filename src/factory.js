@@ -5,7 +5,7 @@
 
 import { BbcRssService } from './implementations/BbcRssService.js';
 import { GeminiScriptService } from './implementations/GeminiScriptService.js';
-import { IndexTtsVoiceServiceHttp } from './implementations/IndexTtsVoiceServiceHttp.js';
+import { IndexTtsVoiceService } from './implementations/IndexTtsVoiceService.js';
 import { R2StorageService } from './implementations/R2StorageService.js';
 import { loadConfig } from './config/index.js';
 import { Logger } from './utils/logger.js';
@@ -100,7 +100,7 @@ function createVoiceService(config) {
 
   switch (provider) {
     case 'indextts':
-      return new IndexTtsVoiceServiceHttp(config);
+      return new IndexTtsVoiceService(config);
     default:
       throw new Error(`Unsupported voice provider: ${provider}`);
   }
