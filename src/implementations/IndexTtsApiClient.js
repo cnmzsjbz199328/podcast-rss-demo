@@ -16,14 +16,16 @@ export class IndexTtsApiClient {
    * @returns {Promise<Object>} API响应
    */
   async sendGenerationRequest(params) {
-    const formData = this._buildFormData(params);
+    // 使用 Gradio API 调用方式
+    const data = this._buildGradioData(params);
 
-    const response = await fetch(`${this.baseUrl}/api/predict/`, {
+    const response = await fetch(`${this.baseUrl}/gradio_api/call/gen_single`, {
       method: 'POST',
-      body: formData,
       headers: {
+        'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0 (compatible; PodcastBot/1.0)'
-      }
+      },
+      body: JSON.stringify({ data })
     });
 
     if (!response.ok) {
@@ -33,11 +35,10 @@ export class IndexTtsApiClient {
 
     const result = await response.json();
     this.logger.info('IndexTTS API response received', {
-      hasData: !!result.data,
-      dataType: result.data ? typeof result.data : 'null',
       eventId: result.event_id
     });
 
+    // 返回 event_id 用于异步轮询
     return result;
   }
 
@@ -50,7 +51,7 @@ export class IndexTtsApiClient {
     this.logger.info('Polling async result for event_id', { eventId });
 
     try {
-      const statusUrl = `${this.baseUrl}/gradio_api/call/${eventId}`;
+      const statusUrl = `${this.baseUrl}/gradio_api/call/gen_single/${eventId}`;
 
       const statusResponse = await fetch(statusUrl, {
         method: 'GET',
@@ -76,14 +77,18 @@ export class IndexTtsApiClient {
         return { status: 'processing', message: 'Audio generation still in progress' };
       }
 
-      // 处理完成的结果
-      const audioUrl = result.data?.[0]?.url || result.data?.[0]?.value?.url;
+      // 处理完成的结果 - 按照 test-simple-tts.js 的方式提取
+      const audioUrl = result.data?.[0]?.value?.url || result.data?.[0]?.url;
 
       if (!audioUrl) {
+        this.logger.error('No audio URL found in result', { result });
         throw new Error('No audio URL in completed result');
       }
 
-      const audioResponse = await fetch(audioUrl);
+      // 如果 URL 是相对路径，补全为完整 URL
+      const fullAudioUrl = audioUrl.startsWith('http') ? audioUrl : `${this.baseUrl}${audioUrl}`;
+
+      const audioResponse = await fetch(fullAudioUrl);
       if (!audioResponse.ok) {
         throw new Error(`Failed to download audio: ${audioResponse.status}`);
       }
@@ -92,13 +97,13 @@ export class IndexTtsApiClient {
 
       this.logger.info('Audio downloaded successfully', {
         eventId,
-        audioUrl,
+        audioUrl: fullAudioUrl,
         size: audioData.byteLength
       });
 
       return {
         status: 'completed',
-        audioUrl,
+        audioUrl: fullAudioUrl,
         audioData,
         fileSize: audioData.byteLength
       };
@@ -113,49 +118,61 @@ export class IndexTtsApiClient {
   }
 
   /**
-   * 构建表单数据
+   * 构建 Gradio API 数据格式
    * @private
    * @param {Object} params - 参数
-   * @returns {FormData} 表单数据
+   * @returns {Array} Gradio API 数据数组
    */
-  _buildFormData(params) {
-    const formData = new FormData();
+  _buildGradioData(params) {
+    // 构建语音文件数据对象
+    const voiceFileData = params.voiceBlob ? {
+      path: params.voiceBlob.url || 'https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/news-anchor.mp3',
+      url: params.voiceBlob.url || 'https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/news-anchor.mp3',
+      size: null,
+      orig_name: 'voice_sample.mp3',
+      mime_type: 'audio/mpeg',
+      is_stream: false,
+      meta: { _type: 'gradio.FileData' }
+    } : null;
 
-    // 设置基本参数
-    formData.append('emo_control_method', params.emoControlMethod || 'Same as the voice reference');
-    formData.append('text', params.text);
-    formData.append('emo_weight', params.emoWeight?.toString() || '0.8');
-    formData.append('vec1', params.emotionVector?.[0]?.toString() || '0');
-    formData.append('vec2', params.emotionVector?.[1]?.toString() || '0');
-    formData.append('vec3', params.emotionVector?.[2]?.toString() || '0');
-    formData.append('vec4', params.emotionVector?.[3]?.toString() || '0');
-    formData.append('vec5', params.emotionVector?.[4]?.toString() || '0');
-    formData.append('vec6', params.emotionVector?.[5]?.toString() || '0');
-    formData.append('vec7', params.emotionVector?.[6]?.toString() || '0');
-    formData.append('vec8', params.emotionVector?.[7]?.toString() || '0');
-    formData.append('emo_text', params.emoText || '');
-    formData.append('emo_random', params.emoRandom?.toString() || 'false');
-    formData.append('max_text_tokens_per_segment', params.maxTokens?.toString() || '120');
-    formData.append('param_16', params.doSample?.toString() || 'true');
-    formData.append('param_17', params.topP?.toString() || '0.8');
-    formData.append('param_18', params.topK?.toString() || '30');
-    formData.append('param_19', params.temperature?.toString() || '0.8');
-    formData.append('param_20', params.lengthPenalty?.toString() || '0');
-    formData.append('param_21', params.numBeams?.toString() || '3');
-    formData.append('param_22', params.repetitionPenalty?.toString() || '10');
-    formData.append('param_23', params.maxMelTokens?.toString() || '1500');
+    // 构建情感文件数据对象（可选）
+    const emotionFileData = params.emotionBlob ? {
+      path: params.emotionBlob.url,
+      url: params.emotionBlob.url,
+      size: null,
+      orig_name: 'emotion_sample.mp3',
+      mime_type: 'audio/mpeg',
+      is_stream: false,
+      meta: { _type: 'gradio.FileData' }
+    } : null;
 
-    // 添加语音样本
-    if (params.voiceBlob) {
-      formData.append('prompt', params.voiceBlob, 'voice_sample.wav');
-    }
-
-    // 添加情感样本
-    if (params.emotionBlob) {
-      formData.append('emo_ref_path', params.emotionBlob, 'emotion_sample.wav');
-    }
-
-    return formData;
+    // 按照 gen_single 端点的参数顺序构建数据数组
+    return [
+      params.emoControlMethod || 'Same as the voice reference',  // emo_control_method
+      voiceFileData,                                              // prompt (voice reference)
+      params.text,                                                // text
+      emotionFileData,                                            // emo_ref_path
+      params.emoWeight !== undefined ? params.emoWeight : 0.9,    // emo_weight
+      params.emotionVector?.[0] || 0.8,                           // vec1 (Happy)
+      params.emotionVector?.[1] || 0,                             // vec2 (Angry)
+      params.emotionVector?.[2] || 0,                             // vec3 (Sad)
+      params.emotionVector?.[3] || 0,                             // vec4 (Afraid)
+      params.emotionVector?.[4] || 0,                             // vec5 (Disgusted)
+      params.emotionVector?.[5] || 0,                             // vec6 (Melancholic)
+      params.emotionVector?.[6] || 0.6,                           // vec7 (Surprised)
+      params.emotionVector?.[7] || 0,                             // vec8 (Calm)
+      params.emoText || '',                                       // emo_text
+      params.emoRandom || false,                                  // emo_random
+      params.maxTokens || 120,                                    // max_text_tokens_per_segment
+      params.doSample !== undefined ? params.doSample : true,     // param_16 (do_sample)
+      params.topP !== undefined ? params.topP : 0.8,              // param_17 (top_p)
+      params.topK || 30,                                          // param_18 (top_k)
+      params.temperature !== undefined ? params.temperature : 0.8,// param_19 (temperature)
+      params.lengthPenalty || 0,                                  // param_20 (length_penalty)
+      params.numBeams || 3,                                       // param_21 (num_beams)
+      params.repetitionPenalty || 10,                             // param_22 (repetition_penalty)
+      params.maxMelTokens || 1500                                 // param_23 (max_mel_tokens)
+    ];
   }
 
   /**
@@ -166,28 +183,37 @@ export class IndexTtsApiClient {
    */
   _parseSSEResponse(text) {
     const lines = text.split('\n');
-    let result = null;
+    let eventType = null;
+    let eventData = null;
 
     for (const line of lines) {
-      if (line.startsWith('data: ')) {
+      // 解析事件类型
+      if (line.startsWith('event: ')) {
+        eventType = line.substring(7).trim();
+      } 
+      // 解析事件数据
+      else if (line.startsWith('data: ')) {
         try {
-          const data = JSON.parse(line.slice(6));
-
-          if (data.msg === 'process_completed' && data.output) {
-            result = data.output;
-            this.logger.info('Audio generation completed');
-            break;
-          }
-
-          if (data.msg === 'process_error') {
-            throw new Error(`Audio generation failed: ${JSON.stringify(data.output)}`);
-          }
+          eventData = JSON.parse(line.substring(6));
         } catch (parseError) {
           this.logger.warn('Failed to parse SSE data', { line, error: parseError.message });
         }
       }
     }
 
-    return result;
+    // 检查是否完成
+    if (eventType === 'complete' && eventData) {
+      this.logger.info('Audio generation completed', { eventType });
+      return { data: eventData };
+    }
+
+    // 检查是否出错
+    if (eventType === 'error' && eventData) {
+      this.logger.error('Audio generation failed', { eventData });
+      throw new Error(`Audio generation failed: ${JSON.stringify(eventData)}`);
+    }
+
+    // 仍在处理中
+    return null;
   }
 }

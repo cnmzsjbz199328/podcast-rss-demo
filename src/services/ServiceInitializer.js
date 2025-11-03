@@ -71,7 +71,7 @@ export class ServiceInitializer {
    */
   _createVoiceService(env) {
     return new IndexTtsVoiceService({
-      endpoint: 'Tom1986/indextts2'
+      endpoint: 'https://indexteam-indextts-2-demo.hf.space'
     });
   }
 

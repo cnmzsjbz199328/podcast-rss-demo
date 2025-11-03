@@ -2,8 +2,7 @@
  * IndexTTS Gradio Service 单元测试
  */
 
-import { IndexTtsVoiceServiceGradio } from './src/implementations/IndexTtsVoiceServiceGradio.js';
-import { Logger } from './src/utils/logger.js';
+import { Logger } from '../../src/utils/logger.js';
 
 const logger = new Logger('IndexTTS-Test');
 

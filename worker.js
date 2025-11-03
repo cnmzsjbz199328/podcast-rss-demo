@@ -20,6 +20,9 @@ router.register('GET', '/episodes/*', (req, services, params) => apiHandler.hand
 router.register('POST', '/episodes/*/poll-audio', (req, services, params) => apiHandler.handlePollAudio(req, services, params));
 router.register('GET', '/rss.xml', (req, services) => apiHandler.handleRssFeed(req, services));
 router.register('GET', '/health', (req, services) => apiHandler.handleHealth(req, services));
+router.register('GET', '/stats', (req, services) => apiHandler.handleSystemStats(req, services));
+router.register('GET', '/info', (req, services) => apiHandler.handleApiInfo(req, services));
+router.register('GET', '/opml.xml', (req, services) => apiHandler.handleOpmlExport(req, services));
 
 // 默认API文档路由
 router.register('GET', '/', (req, services) => {

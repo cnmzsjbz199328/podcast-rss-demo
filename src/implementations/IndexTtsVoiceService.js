@@ -56,14 +56,14 @@ export class IndexTtsVoiceService extends IVoiceService {
     });
 
     try {
-      // 获取语音样本
-      const voiceBlob = await this._getVoiceSample(styleConfig.voiceSample);
+      // 获取语音样本URL
+      const voiceUrlObj = await this._getVoiceSample(styleConfig.voiceSample);
 
-      // 尝试获取情感样本
-      let emotionBlob = null;
+      // 尝试获取情感样本URL
+      let emotionUrlObj = null;
       if (styleConfig.emotionSample) {
         try {
-          emotionBlob = await this._getEmotionSample(styleConfig.emotionSample);
+          emotionUrlObj = await this._getEmotionSample(styleConfig.emotionSample);
         } catch (error) {
           this.logger.warn('Failed to load emotion sample, continuing without it', error);
         }
@@ -72,8 +72,8 @@ export class IndexTtsVoiceService extends IVoiceService {
       // 构建API参数
       const apiParams = {
         text: script,
-        voiceBlob,
-        emotionBlob,
+        voiceBlob: voiceUrlObj,       // 传递URL对象
+        emotionBlob: emotionUrlObj,   // 传递URL对象
         emoControlMethod: 'Same as the voice reference',
         emoWeight: styleConfig.params.emo_weight,
         emotionVector: [
@@ -164,29 +164,44 @@ export class IndexTtsVoiceService extends IVoiceService {
   }
 
   /**
-   * 获取语音样本
+   * 获取语音样本 - 返回URL对象供Gradio API使用
    */
   async _getVoiceSample(samplePath) {
     try {
       if (samplePath.startsWith('http')) {
-        const response = await fetch(samplePath);
+        // 验证URL可访问性
+        const response = await fetch(samplePath, { method: 'HEAD' });
         if (!response.ok) {
           throw new Error(`Failed to fetch voice sample: ${response.status}`);
         }
-        return await response.blob();
+        // 返回URL对象，供Gradio API使用
+        return { url: samplePath };
       }
       throw new Error('Voice sample not configured');
     } catch (error) {
-      this.logger.warn('Using default voice sample due to error', error);
-      return this.audioProcessor.createErrorAudio('Voice sample unavailable');
+      this.logger.warn('Voice sample error, using default', error);
+      // 返回默认URL
+      return { url: 'https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/news-anchor.mp3' };
     }
   }
 
   /**
-   * 获取情感样本
+   * 获取情感样本 - 返回URL对象供Gradio API使用
    */
   async _getEmotionSample(samplePath) {
-    return await this._getVoiceSample(samplePath);
+    try {
+      if (samplePath && samplePath.startsWith('http')) {
+        const response = await fetch(samplePath, { method: 'HEAD' });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch emotion sample: ${response.status}`);
+        }
+        return { url: samplePath };
+      }
+      return null;
+    } catch (error) {
+      this.logger.warn('Emotion sample error, skipping', error);
+      return null;
+    }
   }
 
   /**

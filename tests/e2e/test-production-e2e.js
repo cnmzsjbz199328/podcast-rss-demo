@@ -11,7 +11,7 @@
  * 7. RSS Feed 生成
  */
 
-import { Logger } from './src/utils/logger.js';
+import { Logger } from '../../src/utils/logger.js';
 
 const logger = new Logger('E2E-Test');
 
