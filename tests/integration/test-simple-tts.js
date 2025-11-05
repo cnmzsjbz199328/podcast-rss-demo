@@ -4,7 +4,7 @@
  * 简单的 TTS 测试 - 直接测试 IndexTTS API
  */
 
-const BASE_URL = 'https://indexteam-indextts-2-demo.hf.space';
+const BASE_URL = 'https://tom1986-indextts2.hf.space';
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -13,7 +13,7 @@ async function sleep(ms) {
 async function testSimpleTTS() {
   console.log('🎤 测试郭德纲风格语音生成\n');
   
-  const testText = '狗改不了吃屎';
+  const testText = '剑桥郡火车刺伤案中，一名列车工作人员生命垂危。然而，警方赞扬司机、乘务员及乘客英勇施救，避免了更严重后果。与此同时，一名因贩毒被捕的英国19岁怀孕少女，在格鲁吉亚监狱获释，她已怀孕八个月。这两起事件都提醒我们，在挑战面前，总有生命韧性与人道光辉闪耀。';
   console.log(`测试文本: "${testText}"\n`);
   
   // 步骤 1: 调用 IndexTTS API

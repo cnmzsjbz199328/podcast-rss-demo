@@ -16,10 +16,10 @@ export class ServiceInitializer {
   }
 
   /**
-   * 获取或创建服务实例
-   * @param {Object} env - 环境变量
-   * @returns {Object} 服务实例
-   */
+  * 获取或创建服务实例
+  * @param {Object} env - 环境变量和bindings
+  * @returns {Object} 服务实例
+  */
   getServices(env) {
     if (!this.services) {
       this.logger.info('Initializing services with R2 and D1 bindings');
@@ -52,12 +52,17 @@ export class ServiceInitializer {
   }
 
   /**
-   * 创建脚本服务
-   * @private
-   * @param {Object} env - 环境变量
-   * @returns {GeminiScriptService} 脚本服务实例
-   */
+  * 创建脚本服务
+  * @private
+  * @param {Object} env - 环境变量和bindings
+  * @returns {GeminiScriptService} 脚本服务实例
+  */
   _createScriptService(env) {
+  this.logger.info('Creating script service', {
+  hasGeminiKey: !!env.GEMINI_API_KEY,
+    geminiKeyLength: env.GEMINI_API_KEY ? env.GEMINI_API_KEY.length : 0
+    });
+
     return new GeminiScriptService({
       apiKey: env.GEMINI_API_KEY
     });

@@ -5,7 +5,7 @@
 import { Logger } from '../utils/logger.js';
 
 export class IndexTtsApiClient {
-  constructor(baseUrl = 'https://indexteam-indextts-2-demo.hf.space') {
+  constructor(baseUrl = 'https://tom1986-indextts2.hf.space') {
     this.baseUrl = baseUrl;
     this.logger = new Logger('IndexTtsApiClient');
   }
@@ -44,11 +44,21 @@ export class IndexTtsApiClient {
 
   /**
    * 轮询异步结果
-   * @param {string} eventId - 事件ID
+   * 
+   * 重要：Gradio SSE 是一次性的流，必须立即连接并持续读取
+   * 
+   * @param {string} eventId - 事件ID  
+   * @param {number} waitBeforePoll - 轮询前等待时间（毫秒），默认0立即连接
    * @returns {Promise<Object>} 轮询结果
    */
-  async pollAsyncResult(eventId) {
-    this.logger.info('Polling async result for event_id', { eventId });
+  async pollAsyncResult(eventId, waitBeforePoll = 0) {
+    // 如果需要等待，短暂延迟
+    if (waitBeforePoll > 0) {
+      this.logger.info('Waiting before connecting to SSE', { eventId, waitMs: waitBeforePoll });
+      await new Promise(resolve => setTimeout(resolve, waitBeforePoll));
+    }
+
+    this.logger.info('Connecting to SSE stream immediately', { eventId });
 
     try {
       const statusUrl = `${this.baseUrl}/gradio_api/call/gen_single/${eventId}`;
@@ -62,32 +72,63 @@ export class IndexTtsApiClient {
       });
 
       if (!statusResponse.ok) {
-        throw new Error(`Failed to poll event status: ${statusResponse.status} ${statusResponse.statusText}`);
+        const errorText = await statusResponse.text();
+        // 404 表示 session 不存在或已过期
+        if (statusResponse.status === 404) {
+          this.logger.warn('Session not found - may have expired', { eventId });
+          return { 
+            status: 'failed', 
+            error: 'Session expired or not found. IndexTTS sessions are short-lived.'
+          };
+        }
+        throw new Error(`Failed to poll event status: ${statusResponse.status} - ${errorText}`);
       }
 
       const text = await statusResponse.text();
-      this.logger.info('SSE response received', {
+      this.logger.info('SSE stream received', {
+        eventId,
         length: text.length,
-        preview: text.substring(0, 200)
+        preview: text.substring(0, 500)
       });
 
       const result = this._parseSSEResponse(text);
 
       if (!result) {
-        return { status: 'processing', message: 'Audio generation still in progress' };
+        // 如果解析不到complete事件，可能仍在处理中
+        // 但由于SSE是一次性的，我们无法再次轮询
+        this.logger.warn('SSE stream ended without complete event', { 
+          eventId,
+          fullText: text 
+        });
+        return { 
+          status: 'processing', 
+          message: 'Audio generation in progress (SSE stream ended, create new request to check)' 
+        };
       }
 
-      // 处理完成的结果 - 按照 test-simple-tts.js 的方式提取
+      // 如果解析结果表示错误，返回失败
+      if (result.status === 'error') {
+        this.logger.error('SSE indicated error', { eventId, error: result.error, fullText: text });
+        return { status: 'failed', error: result.error };
+      }
+
+      // 处理完成的结果
       const audioUrl = result.data?.[0]?.value?.url || result.data?.[0]?.url;
 
       if (!audioUrl) {
-        this.logger.error('No audio URL found in result', { result });
+        this.logger.error('No audio URL found in completed result', { 
+          eventId, 
+          resultKeys: Object.keys(result),
+          dataType: typeof result.data
+        });
         throw new Error('No audio URL in completed result');
       }
 
       // 如果 URL 是相对路径，补全为完整 URL
       const fullAudioUrl = audioUrl.startsWith('http') ? audioUrl : `${this.baseUrl}${audioUrl}`;
 
+      this.logger.info('Downloading audio file', { fullAudioUrl });
+      
       const audioResponse = await fetch(fullAudioUrl);
       if (!audioResponse.ok) {
         throw new Error(`Failed to download audio: ${audioResponse.status}`);
@@ -95,7 +136,7 @@ export class IndexTtsApiClient {
 
       const audioData = await audioResponse.arrayBuffer();
 
-      this.logger.info('Audio downloaded successfully', {
+      this.logger.info('Audio download completed', {
         eventId,
         audioUrl: fullAudioUrl,
         size: audioData.byteLength
@@ -111,8 +152,15 @@ export class IndexTtsApiClient {
     } catch (error) {
       this.logger.error('Async polling failed', {
         eventId,
-        error: error.message
+        error: error.message,
+        stack: error.stack
       });
+      
+      // 提供更友好的错误信息
+      if (error.message.includes('Session not found') || error.message.includes('404')) {
+        throw new Error('Audio generation failed: IndexTTS session expired. Please generate a new podcast.');
+      }
+      
       throw error;
     }
   }
@@ -204,13 +252,13 @@ export class IndexTtsApiClient {
     // 检查是否完成
     if (eventType === 'complete' && eventData) {
       this.logger.info('Audio generation completed', { eventType });
-      return { data: eventData };
+      return { status: 'completed', data: eventData };
     }
 
-    // 检查是否出错
-    if (eventType === 'error' && eventData) {
-      this.logger.error('Audio generation failed', { eventData });
-      throw new Error(`Audio generation failed: ${JSON.stringify(eventData)}`);
+    // 检查是否出错（更宽松地处理没有data的情况）
+    if (eventType === 'error') {
+      this.logger.error('Audio generation failed (SSE error event)', { eventType, eventData });
+      return { status: 'error', error: eventData || 'Unknown error (SSE stream error)' };
     }
 
     // 仍在处理中

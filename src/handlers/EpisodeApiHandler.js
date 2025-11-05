@@ -195,8 +195,35 @@ export class EpisodeApiHandler {
         });
       }
 
-      // 轮询IndexTTS获取结果
-      this.logger.info('Polling IndexTTS for event_id', { eventId: episode.tts_event_id });
+      // 检查创建时间 - 建议至少等待 60 秒后再轮询
+      const createdAt = new Date(episode.created_at);
+      const now = new Date();
+      const elapsedSeconds = Math.floor((now - createdAt) / 1000);
+      
+      this.logger.info('Checking elapsed time before polling', { 
+        episodeId,
+        createdAt: episode.created_at,
+        elapsedSeconds 
+      });
+      
+      // 如果创建时间不足 30 秒，建议等待
+      if (elapsedSeconds < 30) {
+        return new Response(JSON.stringify({
+          success: true,
+          status: 'processing',
+          message: `Audio generation in progress. Please wait at least 60-90 seconds after generation before polling. Elapsed: ${elapsedSeconds}s`,
+          estimatedWaitTime: Math.max(60 - elapsedSeconds, 0),
+          createdAt: episode.created_at
+        }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 轮询IndexTTS获取结果（一次性读取 SSE 流）
+      this.logger.info('Polling IndexTTS for event_id', { 
+        eventId: episode.tts_event_id,
+        elapsedSeconds 
+      });
 
       const pollResult = await services.voiceService.pollAudioResult(episode.tts_event_id);
 

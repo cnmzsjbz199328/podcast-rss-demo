@@ -46,13 +46,53 @@ export class IndexTtsVoiceService extends IVoiceService {
    * 使用IndexTTS生成音频
    */
   async _generateWithIndexTTS(script, style) {
-    // 获取风格配置
-    const styleConfig = this.styleManager.getStyleConfig(style);
+    this.logger.info('Starting IndexTTS audio generation', {
+      style,
+      scriptLength: script ? script.length : 0,
+      endpoint: this.config.endpoint
+    });
 
-    this.logger.info('Generating audio with IndexTTS', {
+    // 验证脚本内容
+    if (!script) {
+      this.logger.error('Script is null or undefined', { style });
+      throw new Error('Script is null or undefined - cannot generate audio');
+    }
+
+    if (typeof script !== 'string') {
+      this.logger.error('Script is not a string', {
+        style,
+        scriptType: typeof script,
+        scriptValue: script
+      });
+      throw new Error(`Script must be a string, got ${typeof script}`);
+    }
+
+    if (script.length === 0) {
+      this.logger.error('Script is empty string', { style });
+      throw new Error('Empty script provided to IndexTTS');
+    }
+
+    if (script.trim().length === 0) {
+      this.logger.error('Script contains only whitespace', { style, script });
+      throw new Error('Script contains only whitespace - cannot generate audio');
+    }
+
+    this.logger.info('Script validation passed', {
       style,
       scriptLength: script.length,
-      endpoint: this.config.endpoint
+      trimmedLength: script.trim().length,
+      scriptPreview: script.substring(0, 100) + '...'
+    });
+
+    if (script.length > 10000) {
+      this.logger.warn('Script is very long, may cause issues', { length: script.length });
+    }
+
+    // 获取风格配置
+    const styleConfig = this.styleManager.getStyleConfig(style);
+    this.logger.debug('Style configuration loaded', {
+      styleName: styleConfig.name,
+      hasVoiceSample: !!styleConfig.voiceSample
     });
 
     try {
@@ -102,37 +142,52 @@ export class IndexTtsVoiceService extends IVoiceService {
       // 发送生成请求
       const result = await this.apiClient.sendGenerationRequest(apiParams);
 
-      // 处理异步响应
-      let audioData;
-      let apiResult = result;
-      let isAsync = false;
-
-      if (result.event_id) {
-        // 异步处理：创建错误音频作为占位符
-        this.logger.warn('IndexTTS returned async processing result, creating placeholder audio');
-        audioData = this.audioProcessor.createErrorAudio('语音合成服务使用异步处理，暂无法在Cloudflare Workers中完成');
-        isAsync = true;
-      } else {
-        // 处理同步响应
+      // IndexTTS 返回 event_id 表示异步处理
+      if (!result.event_id) {
+        // 同步响应（罕见情况）
         const processResult = await this.audioProcessor.processAudioResult(result);
-        audioData = processResult.audioData;
-        apiResult = processResult.apiResult;
+        return {
+          audioData: processResult.audioData,
+          format: 'wav',
+          duration: this.audioProcessor.estimateDuration(script),
+          fileSize: getFileSize(processResult.audioData),
+          style,
+          metadata: {
+            provider: 'indextts',
+            endpoint: this.config.endpoint,
+            styleConfig: styleConfig.name,
+            apiMethod: 'HTTP Direct - Sync',
+            generatedAt: new Date().toISOString()
+          }
+        };
       }
 
-      // 构建返回结果
+      // 异步处理：立即轮询等待结果（SSE 是一次性的，必须立即读取）
+      this.logger.info('IndexTTS returned event_id, polling for result immediately', {
+        eventId: result.event_id
+      });
+
+      // 立即连接 SSE（不等待，因为 Gradio SSE 需要持续连接）
+      const pollResult = await this.apiClient.pollAsyncResult(result.event_id, 0);
+      
+      if (pollResult.status !== 'completed') {
+        const errMsg = pollResult.error || pollResult.message || 'Unknown error';
+        this.logger.error('Poll result not completed', { pollResult });
+        throw new Error(`Audio generation failed: ${errMsg} | pollResult=${JSON.stringify(pollResult)}`);
+      }
+
+      // pollResult 已经包含 audioData
       const voiceResult = {
-        audioData,
+        audioData: pollResult.audioData,
         format: 'wav',
         duration: this.audioProcessor.estimateDuration(script),
-        fileSize: getFileSize(audioData),
+        fileSize: pollResult.fileSize,
         style,
-        isAsync,
-        eventId: result.event_id,
         metadata: {
           provider: 'indextts',
           endpoint: this.config.endpoint,
           styleConfig: styleConfig.name,
-          apiMethod: isAsync ? 'HTTP Direct - Async' : 'HTTP Direct',
+          apiMethod: 'HTTP Direct with SSE',
           eventId: result.event_id,
           generatedAt: new Date().toISOString()
         }
@@ -140,7 +195,6 @@ export class IndexTtsVoiceService extends IVoiceService {
 
       this.logger.info('Audio generation completed', {
         style,
-        isAsync,
         duration: voiceResult.duration,
         fileSize: voiceResult.fileSize
       });
@@ -154,13 +208,6 @@ export class IndexTtsVoiceService extends IVoiceService {
       });
       throw error;
     }
-  }
-
-  /**
-   * 轮询异步结果
-   */
-  async pollAudioResult(eventId) {
-    return await this.apiClient.pollAsyncResult(eventId);
   }
 
   /**
