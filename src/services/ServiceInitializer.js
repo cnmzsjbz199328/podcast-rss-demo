@@ -5,6 +5,7 @@
 import { BbcRssService } from '../implementations/BbcRssService.js';
 import { GeminiScriptService } from '../implementations/GeminiScriptService.js';
 import { IndexTtsVoiceService } from '../implementations/IndexTtsVoiceService.js';
+import { KokoroTtsVoiceService } from '../implementations/tts/KokoroTtsVoiceService.js';
 import { R2StorageService } from '../implementations/R2StorageService.js';
 import { D1DatabaseService } from '../implementations/D1DatabaseService.js';
 import { Logger } from '../utils/logger.js';
@@ -69,15 +70,30 @@ export class ServiceInitializer {
   }
 
   /**
-   * 创建语音服务
-   * @private
-   * @param {Object} env - 环境变量
-   * @returns {IndexTtsVoiceService} 语音服务实例
-   */
+  * 创建语音服务
+  * @private
+  * @param {Object} env - 环境变量
+  * @returns {IVoiceService} 语音服务实例
+  */
   _createVoiceService(env) {
-    return new IndexTtsVoiceService({
-      endpoint: 'https://indexteam-indextts-2-demo.hf.space'
-    });
+  const ttsProvider = env.TTS_PROVIDER || 'kokoro'; // 默认使用 Kokoro-TTS
+
+  this.logger.info('Creating voice service', { provider: ttsProvider });
+
+    switch (ttsProvider.toLowerCase()) {
+      case 'indextts':
+      case 'tts2':
+        return new IndexTtsVoiceService({
+          endpoint: env.INDEXTTS_ENDPOINT || 'https://indexteam-indextts-2-demo.hf.space'
+        });
+
+      case 'kokoro':
+      default:
+        return new KokoroTtsVoiceService({
+          speed: env.KOKORO_SPEED ? parseFloat(env.KOKORO_SPEED) : 1,
+          maxRetries: env.TTS_MAX_RETRIES ? parseInt(env.TTS_MAX_RETRIES) : 3
+        });
+    }
   }
 
   /**

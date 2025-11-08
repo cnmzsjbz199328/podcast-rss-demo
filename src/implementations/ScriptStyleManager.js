@@ -11,47 +11,61 @@ export class ScriptStyleManager {
   }
 
   /**
-   * 获取风格配置
-   */
+  * 获取风格配置
+  */
   getStyleConfig(style) {
-    const styleConfigs = {
-      'guo-de-gang': {
-        name: '郭德纲相声风格',
-        scriptPrompt: `请用郭德纲的相声风格，将以下新闻生动有趣地讲述出来。
-要求：
-1. 使用相声的语言特色，包括包袱、抖机灵
-2. 加入适当的点评和调侃
-3. 保持轻松幽默的基调
-4. 适当控制长度，适合播客收听
+  const styleConfigs = {
+  'guo-de-gang': {
+  name: 'Guo Degang Crosstalk Style',
+  scriptPrompt: `Please narrate the following news in Guo Degang's crosstalk style. Create pure spoken text as one continuous paragraph without any formatting marks or stage directions.
 
-新闻内容：
+Requirements:
+1. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
+2. Use crosstalk language features, including punchlines and witty remarks
+3. Add appropriate comments and banter
+4. Maintain a light-hearted and humorous tone
+5. Control the length appropriately for podcast listening
+6. Write only the words that will be spoken aloud
+7. Do NOT include any text in parentheses, brackets, or special formatting
+
+News content:
 {news}`
       },
-      'news-anchor': {
-        name: '专业新闻播报',
-        scriptPrompt: `请以专业新闻播报员的风格，将以下新闻整理成播客脚本。
-要求：
-1. 使用正式、客观的语言
-2. 结构清晰，有逻辑顺序
-3. 适当添加过渡语和总结
-4. 保持新闻的专业性和准确性
+  'news-anchor': {
+  name: 'Professional News Broadcasting',
+  scriptPrompt: `Please create a clean, continuous podcast script in the style of a professional news anchor. The script should be pure spoken text as one continuous paragraph without any line breaks, formatting marks, or special characters.
 
-新闻内容：
+Requirements:
+1. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
+2. Use formal, objective language suitable for broadcast
+3. Include smooth transitions between different news items
+4. Start with a natural introduction and end with a conclusion
+5. Maintain professional news anchor tone throughout
+6. Do NOT include any line breaks, empty lines, or paragraph breaks
+7. Do NOT include any text in parentheses, brackets, or special formatting
+8. Do NOT include music cues or stage directions
+9. Write only the words that will be spoken aloud as one flowing narrative
+
+News content:
 {news}`
       },
-      'emotional': {
-        name: '情感化风格',
-        scriptPrompt: `请以温暖感性的风格，将以下新闻用故事化的方式讲述。
-要求：
-1. 融入情感元素，展现人文关怀
-2. 使用温暖、共情的语言
-3. 适当加入个人感悟和反思
-4. 传递积极向上的价值观
+  'emotional': {
+  name: 'Emotional Storytelling Style',
+  scriptPrompt: `Please narrate the following news in a warm and emotional storytelling style. Create pure spoken text as one continuous paragraph without any formatting marks or stage directions.
 
-新闻内容：
+Requirements:
+1. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
+2. Incorporate emotional elements, showing human care
+3. Use warm, empathetic language
+4. Include personal reflections and insights
+5. Convey positive and uplifting values
+6. Write only the words that will be spoken aloud
+7. Do NOT include any text in parentheses, brackets, or special formatting
+
+News content:
 {news}`
       }
-    };
+  };
 
     const config = styleConfigs[style];
     if (!config) {
@@ -85,8 +99,8 @@ export class ScriptStyleManager {
 
 ${item.description}
 
-来源: ${item.link}
-时间: ${new Date(item.pubDate).toLocaleString('zh-CN')}
+Source: ${item.link}
+Published: ${new Date(item.pubDate).toLocaleString('en-US')}
 
 `;
     }).join('---\n\n');

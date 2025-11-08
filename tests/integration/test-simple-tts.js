@@ -4,7 +4,9 @@
  * 简单的 TTS 测试 - 直接测试 IndexTTS API
  */
 
-const BASE_URL = 'https://tom1986-indextts2.hf.space';
+import fs from 'fs';
+
+const BASE_URL = 'https://indexteam-indextts-2-demo.hf.space';
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -66,8 +68,11 @@ async function testSimpleTTS() {
   
   const maxAttempts = 20;
   const intervalMs = 3000;
+  let testCompleted = false;
   
   for (let i = 1; i <= maxAttempts; i++) {
+    if (testCompleted) break;
+    
     await sleep(i === 1 ? 2000 : intervalMs); // 首次等待2秒
     
     console.log(`[${i}/${maxAttempts}] 轮询中...`);
@@ -148,13 +153,14 @@ async function testSimpleTTS() {
         }
         
         // 保存到本地
-        const fs = require('fs');
         const outputPath = '/tmp/test-guodegang.wav';
         fs.writeFileSync(outputPath, Buffer.from(audioData));
         console.log(`\n💾 音频已保存到: ${outputPath}`);
         console.log(`   可以使用以下命令播放: afplay ${outputPath}`);
         
-        process.exit(0);
+        console.log('\n✅ 测试完成！');
+        testCompleted = true;
+        break; // 退出循环
         
       } else if (eventType === 'generating' || eventType === 'pending') {
         console.log(`  ⏳ 正在生成中...`);
@@ -173,11 +179,14 @@ async function testSimpleTTS() {
       
     } catch (error) {
       console.error(`  ❌ 轮询出错: ${error.message}`);
+      // 不要 continue，让错误打印后继续尝试
     }
   }
 
-  console.log('\n⏱️  轮询超时（60秒）');
-  process.exit(1);
+  if (!testCompleted) {
+    console.log('\n⏱️  轮询超时');
+    process.exit(1);
+  }
 }
 
 testSimpleTTS().catch(error => {

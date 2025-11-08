@@ -46,10 +46,10 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.400.0",
     "@google/genai": "^0.2.0",
-    "@gradio/client": "^0.7.0",
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
+    "@gradio/client": "^2.0.0-dev.1",
     "@types/node": "^20.0.0",
     "dotenv": "^17.2.3"
   },
