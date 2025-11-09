@@ -45,34 +45,119 @@ export class R2FileUploader {
   }
 
   /**
-   * 上传音频文件
-   */
+  * 上传音频文件
+  */
   async uploadAudio(audioData, voiceResult, episodeId) {
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+  const audioKey = generateFileKey('audio', voiceResult.style, 'mp3', timestamp);
+
+  this.logger.info('Uploading audio to R2', { audioKey });
+
+  await this.bucket.put(audioKey, audioData, {
+  httpMetadata: {
+  contentType: getMimeType(audioKey),
+  cacheControl: 'public, max-age=31536000', // 1年缓存
+  },
+  customMetadata: {
+  type: 'audio',
+  style: voiceResult.style,
+  duration: voiceResult.duration || 0,
+  uploadedAt: new Date().toISOString(),
+  episodeId
+  }
+  });
+
+  const audioUrl = `${this.baseUrl}/${audioKey}`;
+
+  return {
+  audioUrl,
+  audioKey,
+  fileSize: audioData.byteLength
+  };
+  }
+
+  /**
+   * 上传字幕文件
+   */
+  async uploadSubtitles(subtitleResult, episodeId, style) {
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-    const audioKey = generateFileKey('audio', voiceResult.style, 'mp3', timestamp);
 
-    this.logger.info('Uploading audio to R2', { audioKey });
+    // 上传 SRT 格式
+    const srtKey = generateFileKey('subtitles', style, 'srt', timestamp);
+    this.logger.info('Uploading SRT subtitle to R2', { srtKey });
 
-    await this.bucket.put(audioKey, audioData, {
+    await this.bucket.put(srtKey, subtitleResult.srt, {
       httpMetadata: {
-        contentType: getMimeType(audioKey),
+        contentType: 'text/plain; charset=utf-8',
         cacheControl: 'public, max-age=31536000', // 1年缓存
       },
       customMetadata: {
-        type: 'audio',
-        style: voiceResult.style,
-        duration: voiceResult.duration || 0,
+        type: 'subtitle',
+        format: 'srt',
+        style: style,
+        totalBlocks: subtitleResult.metadata.totalBlocks,
+        totalDuration: subtitleResult.metadata.totalDuration,
         uploadedAt: new Date().toISOString(),
         episodeId
       }
     });
 
-    const audioUrl = `${this.baseUrl}/${audioKey}`;
+    // 上传 VTT 格式
+    const vttKey = generateFileKey('subtitles', style, 'vtt', timestamp);
+    this.logger.info('Uploading VTT subtitle to R2', { vttKey });
+
+    await this.bucket.put(vttKey, subtitleResult.vtt, {
+    httpMetadata: {
+    contentType: 'text/vtt; charset=utf-8',
+    cacheControl: 'public, max-age=31536000', // 1年缓存
+    },
+    customMetadata: {
+    type: 'subtitle',
+    format: 'vtt',
+    style: style,
+    totalBlocks: subtitleResult.metadata.totalBlocks,
+    totalDuration: subtitleResult.metadata.totalDuration,
+    uploadedAt: new Date().toISOString(),
+    episodeId
+    }
+    });
+
+    // 上传 JSON 格式（逐字同步转录）
+    const jsonKey = generateFileKey('transcripts', style, 'json', timestamp);
+    this.logger.info('Uploading JSON transcript to R2', { jsonKey });
+
+    await this.bucket.put(jsonKey, subtitleResult.json, {
+    httpMetadata: {
+      contentType: 'application/json; charset=utf-8',
+      cacheControl: 'public, max-age=31536000', // 1年缓存
+    },
+    customMetadata: {
+      type: 'transcript',
+        format: 'json',
+        style: style,
+        totalWords: subtitleResult.metadata.totalWords,
+        totalDuration: subtitleResult.metadata.totalDuration,
+        uploadedAt: new Date().toISOString(),
+        episodeId
+      }
+    });
+
+    const srtUrl = `${this.baseUrl}/${srtKey}`;
+    const vttUrl = `${this.baseUrl}/${vttKey}`;
+    const jsonUrl = `${this.baseUrl}/${jsonKey}`;
 
     return {
-      audioUrl,
-      audioKey,
-      fileSize: audioData.byteLength
+      srtUrl,
+      vttUrl,
+      jsonUrl,
+      srtKey,
+      vttKey,
+      jsonKey,
+      srtSize: subtitleResult.srt.length,
+      vttSize: subtitleResult.vtt.length,
+      jsonSize: subtitleResult.json.length,
+      blockCount: subtitleResult.metadata.totalBlocks,
+      wordCount: subtitleResult.metadata.totalWords
     };
   }
 }

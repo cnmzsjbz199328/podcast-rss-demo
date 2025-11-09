@@ -1,11 +1,11 @@
 /**
- * 播客生成器 - 主控制器
+ * 播客生成器 - 主控制器 (重构版)
+ * 遵循单一职责原则，专注于协调各个服务
  */
 
 import { Logger } from '../utils/logger.js';
-import { NewsProcessor } from './NewsProcessor.js';
-import { withRetry } from '../utils/retryUtils.js';
-import { validateScriptResult, validateVoiceResult, validateStorageResult } from '../utils/validator.js';
+import { PodcastWorkflow } from './PodcastWorkflow.js';
+import { safeExecute, validateServiceInterface } from '../utils/errorHandling.js';
 
 export class PodcastGenerator {
   /**
@@ -14,15 +14,18 @@ export class PodcastGenerator {
    * @param {Object} config - 配置对象
    */
   constructor(services, config = {}) {
-    this.rssService = services.rssService;
-    this.scriptService = services.scriptService;
-    this.voiceService = services.voiceService;
-    this.storageService = services.storageService;
+    // 验证服务接口
+    this._validateServices(services);
 
+    this.services = services;
     this.config = config;
     this.logger = new Logger('PodcastGenerator');
 
-    this.newsProcessor = new NewsProcessor(config);
+    // 使用工作流协调器
+    this.workflow = new PodcastWorkflow({
+      maxRetries: config.maxRetries || 3,
+      retryDelay: config.retryDelay || 1000
+    });
   }
 
   /**
@@ -32,148 +35,51 @@ export class PodcastGenerator {
    * @returns {Promise<PodcastResult>} 生成结果
    */
   async generatePodcast(style = 'news-anchor', options = {}) {
-    const startTime = Date.now();
-    const episodeId = this._generateEpisodeId(style);
+    return safeExecute(async () => {
+      this.logger.info('Starting podcast generation', { style, options });
 
-    this.logger.info('Starting podcast generation', {
-      style,
-      episodeId,
-      options
-    });
+      const episodeId = this._generateEpisodeId(style);
+      const context = {
+        services: this.services,
+        style,
+        episodeId,
+        options: { ...this.config, ...options }
+      };
 
-    try {
-      // 1. 获取和处理新闻
-      const news = await this._fetchAndProcessNews();
-      if (news.length === 0) {
-        throw new Error('No news available for podcast generation');
-      }
+      // 执行完整工作流
+      const results = await this.workflow.executeWorkflow(context);
 
-      // 2. 生成脚本
-      const scriptResult = await this._generateScript(news, style);
-      if (!validateScriptResult(scriptResult)) {
-        throw new Error('Invalid script result generated');
-      }
-
-      // 3. 生成音频
-      const voiceResult = await this._generateVoice(scriptResult, style);
-      if (!validateVoiceResult(voiceResult)) {
-        throw new Error('Invalid voice result generated');
-      }
-
-      // 4. 存储文件
-      const storageResult = await this._storeFiles(scriptResult, voiceResult, episodeId);
-      if (!validateStorageResult(storageResult)) {
-        throw new Error('Invalid storage result');
-      }
-
-      const duration = Date.now() - startTime;
-      const result = this._buildResult(episodeId, news, scriptResult, voiceResult, storageResult);
-
+      const result = this._buildFinalResult(episodeId, results);
       this.logger.info('Podcast generation completed successfully', {
         episodeId,
-        duration,
-        scriptUrl: storageResult.scriptUrl,
-        audioUrl: storageResult.audioUrl
+        title: result.title,
+        duration: result.duration
       });
 
       return result;
+    }, null, 'PodcastGenerator.generatePodcast');
+  }
 
-    } catch (error) {
-      this.logger.error('Podcast generation failed', {
-        episodeId,
-        error: error.message,
-        duration: Date.now() - startTime
-      });
-      throw error;
+  /**
+   * 验证服务接口
+   */
+  _validateServices(services) {
+    const requiredServices = ['rssService', 'scriptService', 'voiceService', 'storageService', 'database'];
+
+    for (const serviceName of requiredServices) {
+      if (!services[serviceName]) {
+        throw new Error(`Missing required service: ${serviceName}`);
+      }
     }
-  }
 
-  /**
-   * 获取和处理新闻
-   * @private
-   * @returns {Promise<NewsItem[]>} 处理后的新闻
-   */
-  async _fetchAndProcessNews() {
-    return withRetry(
-      async () => {
-        const rawNews = await this.rssService.fetchNews();
-        return this.newsProcessor.processNews(rawNews);
-      },
-      {
-        maxAttempts: this.config.generation?.maxRetries || 3,
-        shouldRetry: (error) => {
-          return error.message.includes('network') ||
-                 error.message.includes('timeout') ||
-                 error.status >= 500;
-        }
-      },
-      this.logger
-    );
-  }
-
-  /**
-   * 生成脚本
-   * @private
-   * @param {NewsItem[]} news - 新闻数据
-   * @param {string} style - 风格
-   * @returns {Promise<ScriptResult>} 脚本结果
-   */
-  async _generateScript(news, style) {
-    const formattedNews = this.newsProcessor.formatNewsForScript(news);
-
-    return withRetry(
-      () => this.scriptService.generateScript(news, style),
-      {
-        maxAttempts: this.config.generation?.maxRetries || 3,
-        initialDelay: 2000 // API调用稍长的延迟
-      },
-      this.logger
-    );
-  }
-
-  /**
-   * 生成语音
-   * @private
-   * @param {ScriptResult} scriptResult - 脚本结果
-   * @param {string} style - 风格
-   * @returns {Promise<VoiceResult>} 语音结果
-   */
-  async _generateVoice(scriptResult, style) {
-    return withRetry(
-      () => this.voiceService.generateAudio(scriptResult.content, style),
-      {
-        maxAttempts: this.config.generation?.maxRetries || 3,
-        initialDelay: 5000, // 语音生成需要更长延迟
-        maxDelay: 30000
-      },
-      this.logger
-    );
-  }
-
-  /**
-   * 存储文件
-   * @private
-   * @param {ScriptResult} scriptResult - 脚本结果
-   * @param {VoiceResult} voiceResult - 语音结果
-   * @param {string} episodeId - 剧集ID
-   * @returns {Promise<StorageResult>} 存储结果
-   */
-  async _storeFiles(scriptResult, voiceResult, episodeId) {
-    return withRetry(
-      () => this.storageService.storeFiles(scriptResult, voiceResult),
-      {
-        maxAttempts: 3,
-        initialDelay: 1000
-      },
-      this.logger
-    );
+    // 验证关键服务接口
+    validateServiceInterface(services.scriptService, ['generateScript']);
+    validateServiceInterface(services.voiceService, ['generateAudio']);
+    validateServiceInterface(services.storageService, ['storeFiles']);
   }
 
   /**
    * 生成剧集ID
-   * @private
-   * @param {string} style - 风格
-   * @returns {string} 剧集ID
    */
   _generateEpisodeId(style) {
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
@@ -182,101 +88,31 @@ export class PodcastGenerator {
   }
 
   /**
-   * 构建结果对象
-   * @private
-   * @param {string} episodeId - 剧集ID
-   * @param {NewsItem[]} news - 新闻数据
-   * @param {ScriptResult} scriptResult - 脚本结果
-   * @param {VoiceResult} voiceResult - 语音结果
-   * @param {StorageResult} storageResult - 存储结果
-   * @returns {PodcastResult} 播客结果
+   * 构建最终结果
    */
-  _buildResult(episodeId, news, scriptResult, voiceResult, storageResult) {
+  _buildFinalResult(episodeId, results) {
+    const storage = results.storeFiles;
     return {
       episodeId,
-      title: this._generateEpisodeTitle(news, scriptResult.style),
-      description: this._generateEpisodeDescription(news),
-      style: scriptResult.style,
-      newsCount: news.length,
-      wordCount: scriptResult.wordCount,
-      duration: voiceResult.duration,
-      fileSize: voiceResult.fileSize,
-      scriptUrl: storageResult.scriptUrl,
-      audioUrl: storageResult.audioUrl || null, // 异步时可能为null
-      eventId: voiceResult.eventId || null, // 传递eventId
-      isAsync: voiceResult.isAsync || false, // 传递异步标记
+      title: results.generateScript?.title || `播客 - ${episodeId}`,
+      description: results.generateScript?.description || 'AI生成的播客内容',
+      style: results.generateScript?.style || 'news-anchor',
+      newsCount: results.fetchNews?.length || 0,
+      wordCount: results.generateScript?.wordCount || 0,
+      duration: results.generateAudio?.duration || 0,
+      fileSize: results.generateAudio?.fileSize || 0,
+      scriptUrl: storage?.scriptUrl,
+      audioUrl: storage?.audioUrl,
+      srtUrl: storage?.srtUrl,
+      vttUrl: storage?.vttUrl,
+      jsonUrl: storage?.jsonUrl,
       generatedAt: new Date().toISOString(),
       metadata: {
-        scriptMetadata: scriptResult.metadata,
-        voiceMetadata: voiceResult.metadata,
-        storageMetadata: storageResult.metadata
+        scriptMetadata: results.generateScript?.metadata,
+        voiceMetadata: results.generateAudio?.metadata,
+        subtitleMetadata: results.generateSubtitles?.metadata,
+        storageMetadata: storage?.metadata
       }
     };
   }
-
-  /**
-   * 生成剧集标题
-   * @private
-   * @param {NewsItem[]} news - 新闻数据
-   * @param {string} style - 风格
-   * @returns {string} 剧集标题
-   */
-  _generateEpisodeTitle(news, style) {
-    const styleNames = {
-      'guo-de-gang': '郭德纲说新闻',
-      'news-anchor': '今日热点播报'
-    };
-
-    const dateStr = new Date().toLocaleDateString('zh-CN', {
-      month: 'long',
-      day: 'numeric'
-    });
-
-    return `${styleNames[style] || '新闻播报'} - ${dateStr}`;
-  }
-
-  /**
-   * 生成剧集描述
-   * @private
-   * @param {NewsItem[]} news - 新闻数据
-   * @returns {string} 剧集描述
-   */
-  _generateEpisodeDescription(news) {
-    if (news.length === 0) return '今日热点新闻播报';
-
-    const topNews = news.slice(0, 3);
-    const headlines = topNews.map(item => item.title).join('；');
-
-    return `今日热点新闻：${headlines}${news.length > 3 ? '...' : ''}`;
-  }
-
-  /**
-   * 获取生成统计信息
-   * @returns {Object} 统计信息
-   */
-  getStats() {
-    return {
-      lastGenerated: null, // TODO: 从存储中获取
-      totalEpisodes: 0,    // TODO: 从存储中获取
-      totalDuration: 0,    // TODO: 从存储中获取
-      stylesUsed: Object.keys(this.config.styles || {})
-    };
-  }
 }
-
-/**
- * 播客结果类型
- * @typedef {Object} PodcastResult
- * @property {string} episodeId - 剧集ID
- * @property {string} title - 剧集标题
- * @property {string} description - 剧集描述
- * @property {string} style - 播客风格
- * @property {number} newsCount - 新闻数量
- * @property {number} wordCount - 字数统计
- * @property {number} duration - 时长(秒)
- * @property {number} fileSize - 文件大小
- * @property {string} scriptUrl - 脚本URL
- * @property {string} audioUrl - 音频URL
- * @property {string} generatedAt - 生成时间
- * @property {Object} metadata - 元数据
- */

@@ -21,7 +21,7 @@ export class PodcastHandler {
       const url = new URL(request.url);
       const style = url.searchParams.get('style') || 'news-anchor';
 
-      this.logger.info('Starting podcast generation', { style });
+      this.logger.info('Starting podcast generation', { style, url: request.url });
 
       // 创建生成器实例
       const config = {
@@ -57,10 +57,14 @@ export class PodcastHandler {
       });
 
     } catch (error) {
-      this.logger.error('Podcast generation failed', error);
+      this.logger.error('Podcast generation failed', {
+        error: error.message,
+        stack: error.stack,
+        type: error.constructor.name
+      });
       return new Response(JSON.stringify({
         success: false,
-        error: error.message
+        error: `${error.message} (${error.constructor.name})`
       }), {
         status: 500,
         headers: {
@@ -82,10 +86,13 @@ export class PodcastHandler {
     try {
       const episodeData = {
         id: result.episodeId,
-        title: result.title || `${style} - ${new Date().toLocaleDateString('zh-CN')}`,
-        description: result.description || '由AI生成的新闻播客',
+        title: result.title || `${style} - ${new Date().toLocaleDateString('en-US')}`,
+        description: result.description || 'AI-generated news podcast',
         audioUrl: result.audioUrl || null,
         audioKey: result.audioUrl ? result.audioUrl.split('/').pop() : null,
+        srtUrl: result.srtUrl || null,
+        vttUrl: result.vttUrl || null,
+        jsonUrl: result.jsonUrl || null,
         scriptUrl: result.scriptUrl,
         scriptKey: result.scriptUrl ? result.scriptUrl.split('/').pop() : null,
         duration: result.duration || 0,

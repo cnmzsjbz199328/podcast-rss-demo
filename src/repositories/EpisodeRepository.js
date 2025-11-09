@@ -25,9 +25,9 @@ export class EpisodeRepository {
       const result = await this.db.prepare(`
         INSERT INTO episodes (
           id, title, description, style, audio_url, audio_key,
-          duration, file_size, transcript, created_at, published_at,
+          srt_url, vtt_url, json_url, duration, file_size, transcript, created_at, published_at,
           status, metadata, tts_event_id, tts_status, tts_error
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         episode.id,
         episode.title,
@@ -35,6 +35,9 @@ export class EpisodeRepository {
         episode.style,
         episode.audioUrl || null,
         episode.audioKey || null,
+        episode.srtUrl || null,
+        episode.vttUrl || null,
+        episode.jsonUrl || null,
         episode.duration || 0,
         episode.fileSize || 0,
         episode.transcript || '',
@@ -117,6 +120,23 @@ export class EpisodeRepository {
           }
         }
 
+        // 字段名映射：snake_case -> camelCase
+        result.srtUrl = result.srt_url;
+        result.vttUrl = result.vtt_url;
+        result.jsonUrl = result.json_url;
+        result.audioUrl = result.audio_url;
+        result.audioKey = result.audio_key;
+        result.scriptUrl = result.script_url;
+        result.scriptKey = result.script_key;
+        result.fileSize = result.file_size;
+        result.createdAt = result.created_at;
+        result.publishedAt = result.published_at;
+        result.ttsEventId = result.tts_event_id;
+        result.ttsStatus = result.tts_status;
+        result.ttsError = result.tts_error;
+
+        
+
         this.logger.debug('Episode found', { episodeId, title: result.title });
         return result;
       }
@@ -146,7 +166,7 @@ export class EpisodeRepository {
 
       const episodes = result.results || [];
 
-      // 解析每个剧集的metadata
+      // 解析每个剧集的metadata并进行字段名映射
       episodes.forEach(episode => {
         if (episode.metadata) {
           try {
@@ -156,6 +176,21 @@ export class EpisodeRepository {
             episode.metadata = {};
           }
         }
+
+        // 字段名映射：snake_case -> camelCase
+        episode.srtUrl = episode.srt_url;
+        episode.vttUrl = episode.vtt_url;
+        episode.jsonUrl = episode.json_url;
+        episode.audioUrl = episode.audio_url;
+        episode.audioKey = episode.audio_key;
+        episode.scriptUrl = episode.script_url;
+        episode.scriptKey = episode.script_key;
+        episode.fileSize = episode.file_size;
+        episode.createdAt = episode.created_at;
+        episode.publishedAt = episode.published_at;
+        episode.ttsEventId = episode.tts_event_id;
+        episode.ttsStatus = episode.tts_status;
+        episode.ttsError = episode.tts_error;
       });
 
       this.logger.debug('Published episodes fetched', { count: episodes.length, limit, offset });

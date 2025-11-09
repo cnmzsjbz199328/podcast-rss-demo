@@ -17,6 +17,7 @@ export class KokoroTtsVoiceService extends IVoiceService {
 
     // 初始化组件
     this.apiClient = new KokoroTtsApiClient();
+    // 分块功能暂时禁用，用于性能测试
   }
 
   /**
@@ -43,7 +44,7 @@ export class KokoroTtsVoiceService extends IVoiceService {
   }
 
   /**
-   * 使用 Kokoro-TTS 生成音频
+   * 使用 Kokoro-TTS 生成音频（支持文本分块）
    */
   async _generateWithKokoroTTS(script, style) {
     this.logger.info('Starting Kokoro-TTS audio generation', {
@@ -61,37 +62,13 @@ export class KokoroTtsVoiceService extends IVoiceService {
     const voice = this._mapStyleToVoice(style);
 
     try {
-      // 调用API生成音频
-      const result = await this.apiClient.generateAudio(
-        script,
-        voice,
-        this.config.speed || 1
-      );
-
-      // 构建返回结果
-      const voiceResult = {
-        audioData: result.audioData,
-        format: result.format,
-        duration: this._estimateDuration(script), // 估算时长
-        fileSize: getFileSize(result.audioData),
-        style,
-        metadata: {
-          provider: 'kokoro-tts',
-          voice: voice,
-          speed: this.config.speed || 1,
-          apiMethod: 'HuggingFace Space',
-          generatedAt: new Date().toISOString()
-        }
-      };
-
-      this.logger.info('Kokoro-TTS audio generation completed', {
-        style,
-        voice,
-        duration: voiceResult.duration,
-        fileSize: voiceResult.fileSize
+      // 暂时回退到一次性生成，测试性能极限
+      this.logger.info('Processing text as single chunk (testing performance limits)', {
+        wordCount: script.split(/\s+/).filter(word => word.length > 0).length,
+        charCount: script.length
       });
 
-      return voiceResult;
+      return await this._generateSingleChunk(script, voice, style);
 
     } catch (error) {
       this.logger.error('Kokoro-TTS generation failed', {
@@ -102,6 +79,44 @@ export class KokoroTtsVoiceService extends IVoiceService {
       throw error;
     }
   }
+
+  /**
+   * 生成单个音频块（短文本）
+   */
+  async _generateSingleChunk(script, voice, style) {
+    const result = await this.apiClient.generateAudio(
+      script,
+      voice,
+      this.config.speed || 1
+    );
+
+    const voiceResult = {
+      audioData: result.audioData,
+      format: result.format,
+      duration: this._estimateDuration(script),
+      fileSize: getFileSize(result.audioData),
+      style,
+      metadata: {
+        provider: 'kokoro-tts',
+        voice: voice,
+        speed: this.config.speed || 1,
+        apiMethod: 'HuggingFace Space',
+        generatedAt: new Date().toISOString()
+      }
+    };
+
+    this.logger.info('Single chunk audio generation completed', {
+      style,
+      voice,
+      duration: voiceResult.duration,
+      fileSize: voiceResult.fileSize
+    });
+
+    return voiceResult;
+  }
+
+  // 分块功能暂时禁用，用于性能测试
+  // 如需启用，请取消注释相关代码
 
   /**
    * 将风格映射到语音类型

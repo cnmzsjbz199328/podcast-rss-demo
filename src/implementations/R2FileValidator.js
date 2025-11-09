@@ -88,13 +88,18 @@ export class R2FileValidator {
   /**
    * 获取存储统计信息
    */
-  getStorageStats(scriptResult, audioResult) {
-    return {
-      totalSize: (scriptResult?.scriptSize || 0) + (audioResult?.fileSize || 0),
-      scriptSize: scriptResult?.scriptSize || 0,
-      audioSize: audioResult?.fileSize || 0,
+  getStorageStats(scriptResult, audioResult, subtitleResult) {
+  const subtitleSize = (subtitleResult?.srtSize || 0) + (subtitleResult?.vttSize || 0);
+  return {
+  totalSize: (scriptResult?.scriptSize || 0) + (audioResult?.fileSize || 0) + subtitleSize,
+  scriptSize: scriptResult?.scriptSize || 0,
+  audioSize: audioResult?.fileSize || 0,
+  subtitleSize: subtitleSize,
+    srtSize: subtitleResult?.srtSize || 0,
+      vttSize: subtitleResult?.vttSize || 0,
       hasAudio: !!audioResult?.audioUrl,
-      hasScript: !!scriptResult?.scriptUrl
+      hasScript: !!scriptResult?.scriptUrl,
+      hasSubtitles: !!subtitleResult?.srtUrl
     };
   }
 }

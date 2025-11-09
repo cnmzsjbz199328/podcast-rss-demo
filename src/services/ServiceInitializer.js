@@ -6,6 +6,7 @@ import { BbcRssService } from '../implementations/BbcRssService.js';
 import { GeminiScriptService } from '../implementations/GeminiScriptService.js';
 import { IndexTtsVoiceService } from '../implementations/IndexTtsVoiceService.js';
 import { KokoroTtsVoiceService } from '../implementations/tts/KokoroTtsVoiceService.js';
+import { SubtitleGenerator } from '../implementations/SubtitleGenerator.js';
 import { R2StorageService } from '../implementations/R2StorageService.js';
 import { D1DatabaseService } from '../implementations/D1DatabaseService.js';
 import { Logger } from '../utils/logger.js';
@@ -27,10 +28,11 @@ export class ServiceInitializer {
 
       // 创建各个服务实例
       this.services = {
-        rssService: this._createRssService(env),
-        scriptService: this._createScriptService(env),
-        voiceService: this._createVoiceService(env),
-        storageService: this._createStorageService(env),
+      rssService: this._createRssService(env),
+      scriptService: this._createScriptService(env),
+      voiceService: this._createVoiceService(env),
+      subtitleService: this._createSubtitleService(),
+      storageService: this._createStorageService(env),
         database: this._createDatabaseService(env)
       };
 
@@ -104,6 +106,15 @@ export class ServiceInitializer {
    */
   _createStorageService(env) {
     return new R2StorageService(env.PODCAST_BUCKET, env.R2_BASE_URL);
+  }
+
+  /**
+  * 创建字幕服务
+  * @private
+  * @returns {SubtitleGenerator} 字幕服务实例
+  */
+  _createSubtitleService() {
+    return new SubtitleGenerator();
   }
 
   /**

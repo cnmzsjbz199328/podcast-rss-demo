@@ -24,24 +24,34 @@ export class R2StorageService {
   }
 
   /**
-   * 存储脚本和音频文件
-   */
-  async storeFiles(scriptResult, voiceResult, episodeId) {
-    const uploadPromises = [];
+  * 存储脚本、音频和字幕文件
+  */
+  async storeFiles(scriptResult, voiceResult, subtitleResult, episodeId) {
+  const uploadPromises = [];
 
-    // 上传脚本文件
-    const scriptUpload = this.uploader.uploadScript(scriptResult, episodeId);
-    uploadPromises.push(scriptUpload);
+  // 上传脚本文件
+  const scriptUpload = this.uploader.uploadScript(scriptResult, episodeId);
+  uploadPromises.push(scriptUpload);
 
-    // 上传音频文件（如果有）
-    let audioUpload = null;
-    if (voiceResult?.audioData) {
-      audioUpload = this.uploader.uploadAudio(voiceResult.audioData, voiceResult, episodeId);
-      uploadPromises.push(audioUpload);
+  // 上传音频文件（如果有）
+  let audioUpload = null;
+  if (voiceResult?.audioData) {
+  audioUpload = this.uploader.uploadAudio(voiceResult.audioData, voiceResult, episodeId);
+  uploadPromises.push(audioUpload);
+  }
+
+  // 上传字幕文件（如果有）
+  let subtitleUpload = null;
+    if (subtitleResult) {
+      subtitleUpload = this.uploader.uploadSubtitles(subtitleResult, episodeId, scriptResult.style);
+      uploadPromises.push(subtitleUpload);
     }
 
     // 并行上传
-    const [scriptResult_uploaded, audioResult_uploaded] = await Promise.all(uploadPromises);
+    const results = await Promise.all(uploadPromises);
+    const scriptResult_uploaded = results[0];
+    const audioResult_uploaded = results[1];
+    const subtitleResult_uploaded = results[2];
 
     // 验证上传结果
     this.validator.validateScript(scriptResult_uploaded);
@@ -56,19 +66,37 @@ export class R2StorageService {
 
     // 如果有音频，添加到结果中
     if (audioResult_uploaded) {
-      this.validator.validateAudio(audioResult_uploaded);
-      storageResult.audioUrl = audioResult_uploaded.audioUrl;
-      storageResult.audioKey = audioResult_uploaded.audioKey;
-      storageResult.fileSize = audioResult_uploaded.fileSize;
+    this.validator.validateAudio(audioResult_uploaded);
+    storageResult.audioUrl = audioResult_uploaded.audioUrl;
+    storageResult.audioKey = audioResult_uploaded.audioKey;
+    storageResult.fileSize = audioResult_uploaded.fileSize;
+    }
+
+    // 如果有字幕，添加到结果中
+    if (subtitleResult_uploaded) {
+    storageResult.srtUrl = subtitleResult_uploaded.srtUrl;
+    storageResult.vttUrl = subtitleResult_uploaded.vttUrl;
+    storageResult.jsonUrl = subtitleResult_uploaded.jsonUrl;
+    storageResult.srtKey = subtitleResult_uploaded.srtKey;
+    storageResult.vttKey = subtitleResult_uploaded.vttKey;
+    storageResult.jsonKey = subtitleResult_uploaded.jsonKey;
+    storageResult.srtSize = subtitleResult_uploaded.srtSize;
+      storageResult.vttSize = subtitleResult_uploaded.vttSize;
+      storageResult.jsonSize = subtitleResult_uploaded.jsonSize;
+      storageResult.subtitleBlockCount = subtitleResult_uploaded.blockCount;
+      storageResult.subtitleWordCount = subtitleResult_uploaded.wordCount;
     }
 
     // 获取统计信息
-    const stats = this.validator.getStorageStats(scriptResult_uploaded, audioResult_uploaded);
+    const stats = this.validator.getStorageStats(scriptResult_uploaded, audioResult_uploaded, subtitleResult_uploaded);
 
     this.logger.info('Files stored successfully', {
-      episodeId,
-      scriptUrl: storageResult.scriptUrl,
-      audioUrl: storageResult.audioUrl,
+    episodeId,
+    scriptUrl: storageResult.scriptUrl,
+    audioUrl: storageResult.audioUrl,
+    srtUrl: storageResult.srtUrl,
+      vttUrl: storageResult.vttUrl,
+      jsonUrl: storageResult.jsonUrl,
       totalSize: stats.totalSize
     });
 

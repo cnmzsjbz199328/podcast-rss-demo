@@ -106,21 +106,24 @@ export class EpisodeApiHandler {
       return new Response(JSON.stringify({
         success: true,
         data: {
-          id: episode.id,
-          title: episode.title,
-          description: episode.description,
-          audioUrl: episode.audio_url,
-          scriptUrl: episode.script_url,
-          style: episode.style,
-          duration: episode.duration,
-          fileSize: episode.file_size,
-          transcript: episode.transcript,
-          metadata: episode.metadata,
-          publishedAt: episode.published_at,
-          createdAt: episode.created_at,
-          ttsEventId: episode.tts_event_id,
-          ttsStatus: episode.tts_status,
-          ttsError: episode.tts_error
+        id: episode.id,
+        title: episode.title,
+        description: episode.description,
+        audioUrl: episode.audioUrl || episode.audio_url,
+        srtUrl: episode.srtUrl || episode.srt_url,
+        vttUrl: episode.vttUrl || episode.vtt_url,
+        jsonUrl: episode.jsonUrl || episode.json_url,
+        scriptUrl: episode.scriptUrl || episode.script_url,
+        style: episode.style,
+        duration: episode.duration,
+        fileSize: episode.fileSize || episode.file_size,
+        transcript: episode.transcript,
+        metadata: episode.metadata,
+        publishedAt: episode.publishedAt || episode.published_at,
+        createdAt: episode.createdAt || episode.created_at,
+        ttsEventId: episode.ttsEventId || episode.tts_event_id,
+          ttsStatus: episode.ttsStatus || episode.tts_status,
+          ttsError: episode.ttsError || episode.tts_error
         }
       }), {
         headers: {
