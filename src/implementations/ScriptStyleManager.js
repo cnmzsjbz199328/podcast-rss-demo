@@ -33,7 +33,7 @@ News content:
       },
   'news-anchor': {
   name: 'Professional News Broadcasting',
-  scriptPrompt: `Please create a concise, continuous podcast script of about 5 minutes, in a style similar to a professional news anchor. The script should be pure spoken text as one continuous paragraph without any line breaks, formatting marks, or special characters.
+  scriptPrompt: `Please create a concise, continuous chinese podcast script of about 5 minutes, in a style similar to a professional news anchor. The script should be pure spoken text as one continuous paragraph without any line breaks, formatting marks, or special characters.
 
 Requirements:
 1. Write as ONE CONTINUOUS PARAGRAPH with no line breaks

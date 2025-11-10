@@ -30,8 +30,8 @@ R2_BASE_URL = "https://pub-d5b744245f574abcac229cefccabaa2f.r2.dev"
 # TTS Provider: 'kokoro' (default), 'indextts', 'e2f5'
 TTS_PROVIDER = "e2f5"
 # E2-F5 TTS Configuration
-E2F5_REF_AUDIO_URL = "https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/gdg.mp3"
-E2F5_REF_TEXT = "找一个回酒店开房！"
+E2F5_REF_AUDIO_URL = "https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/audio.wav"
+E2F5_REF_TEXT = "Her wistful face haunts my dreams like the rain at night."
 E2F5_REMOVE_SILENCE = "true"
 # 可选：自定义域名 (初始化完成后取消注释)
 # R2_BASE_URL = "https://podcast.badtom.dpdns.org"

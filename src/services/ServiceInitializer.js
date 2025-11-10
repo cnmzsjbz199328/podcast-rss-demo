@@ -6,6 +6,7 @@ import { BbcRssService } from '../implementations/BbcRssService.js';
 import { GeminiScriptService } from '../implementations/GeminiScriptService.js';
 import { IndexTtsVoiceService } from '../implementations/IndexTtsVoiceService.js';
 import { KokoroTtsVoiceService } from '../implementations/tts/KokoroTtsVoiceService.js';
+import { E2F5TtsVoiceService } from '../implementations/tts/E2F5TtsVoiceService.js';
 import { SubtitleGenerator } from '../implementations/SubtitleGenerator.js';
 import { R2StorageService } from '../implementations/R2StorageService.js';
 import { D1DatabaseService } from '../implementations/D1DatabaseService.js';
@@ -87,6 +88,14 @@ export class ServiceInitializer {
       case 'tts2':
         return new IndexTtsVoiceService({
           endpoint: env.INDEXTTS_ENDPOINT || 'https://indexteam-indextts-2-demo.hf.space'
+        });
+
+      case 'e2f5':
+        return new E2F5TtsVoiceService({
+          refAudioUrl: env.E2F5_REF_AUDIO_URL || 'https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/gdg.mp3',
+          refText: env.E2F5_REF_TEXT || '找一个回酒店开房！',
+          removeSilence: env.E2F5_REMOVE_SILENCE !== 'false',
+          maxRetries: env.TTS_MAX_RETRIES ? parseInt(env.TTS_MAX_RETRIES) : 3
         });
 
       case 'kokoro':
