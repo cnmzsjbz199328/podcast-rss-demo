@@ -27,5 +27,11 @@ NODE_ENV = "production"
 CLOUDFLARE_ACCOUNT_ID = "e5bb181bf10eddf30de93f35885a5479"
 # R2 公网访问 URL (用于生成音频文件的公网链接)
 R2_BASE_URL = "https://pub-d5b744245f574abcac229cefccabaa2f.r2.dev"
+# TTS Provider: 'kokoro' (default), 'indextts', 'e2f5'
+TTS_PROVIDER = "e2f5"
+# E2-F5 TTS Configuration
+E2F5_REF_AUDIO_URL = "https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/gdg.mp3"
+E2F5_REF_TEXT = "找一个回酒店开房！"
+E2F5_REMOVE_SILENCE = "true"
 # 可选：自定义域名 (初始化完成后取消注释)
 # R2_BASE_URL = "https://podcast.badtom.dpdns.org"
