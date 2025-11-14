@@ -2,7 +2,7 @@
  * IndexTTS风格管理器 - 负责语音风格配置管理
  */
 
-import { Logger } from '../utils/logger.js';
+import { Logger } from '../../../utils/logger.js';
 
 export class IndexTtsStyleManager {
   constructor() {

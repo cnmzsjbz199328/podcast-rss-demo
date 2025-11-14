@@ -2,7 +2,7 @@
  * IndexTTS API客户端 - 负责HTTP API调用和异步轮询
  */
 
-import { Logger } from '../utils/logger.js';
+import { Logger } from '../../../utils/logger.js';
 
 export class IndexTtsApiClient {
   constructor(baseUrl = 'https://tom1986-indextts2.hf.space') {

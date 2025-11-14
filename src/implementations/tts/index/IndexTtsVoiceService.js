@@ -2,10 +2,10 @@
  * IndexTTS语音生成服务 - 重构后的简洁版本
  */
 
-import { IVoiceService } from '../services/IVoiceService.js';
-import { Logger } from '../utils/logger.js';
-import { withRetry } from '../utils/retryUtils.js';
-import { getFileSize } from '../utils/fileUtils.js';
+import { IVoiceService } from '../../../services/IVoiceService.js';
+import { Logger } from '../../../utils/logger.js';
+import { withRetry } from '../../../utils/retryUtils.js';
+import { getFileSize } from '../../../utils/fileUtils.js';
 import { IndexTtsApiClient } from './IndexTtsApiClient.js';
 import { IndexTtsAudioProcessor } from './IndexTtsAudioProcessor.js';
 import { IndexTtsStyleManager } from './IndexTtsStyleManager.js';

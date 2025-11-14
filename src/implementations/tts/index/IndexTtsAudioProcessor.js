@@ -2,7 +2,7 @@
  * IndexTTS音频处理器 - 负责音频结果处理和格式转换
  */
 
-import { Logger } from '../utils/logger.js';
+import { Logger } from '../../../utils/logger.js';
 
 export class IndexTtsAudioProcessor {
   constructor() {

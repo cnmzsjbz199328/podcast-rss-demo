@@ -3,10 +3,10 @@
  * 使用 Hugging Face Space 的 Kokoro-TTS 模型
  */
 
-import { IVoiceService } from '../../services/IVoiceService.js';
-import { Logger } from '../../utils/logger.js';
-import { withRetry } from '../../utils/retryUtils.js';
-import { getFileSize } from '../../utils/fileUtils.js';
+import { IVoiceService } from '../../../services/IVoiceService.js';
+import { Logger } from '../../../utils/logger.js';
+import { withRetry } from '../../../utils/retryUtils.js';
+import { getFileSize } from '../../../utils/fileUtils.js';
 import { KokoroTtsApiClient } from './KokoroTtsApiClient.js';
 
 export class KokoroTtsVoiceService extends IVoiceService {

@@ -4,9 +4,9 @@
 
 import { BbcRssService } from '../implementations/BbcRssService.js';
 import { GeminiScriptService } from '../implementations/GeminiScriptService.js';
-import { IndexTtsVoiceService } from '../implementations/IndexTtsVoiceService.js';
-import { KokoroTtsVoiceService } from '../implementations/tts/KokoroTtsVoiceService.js';
-import { E2F5TtsVoiceService } from '../implementations/tts/E2F5TtsVoiceService.js';
+import { IndexTtsVoiceService } from '../implementations/tts/index/IndexTtsVoiceService.js';
+import { KokoroTtsVoiceService } from '../implementations/tts/kokoro/KokoroTtsVoiceService.js';
+import { E2F5TtsVoiceService } from '../implementations/tts/e2f5/E2F5TtsVoiceService.js';
 import { SubtitleGenerator } from '../implementations/SubtitleGenerator.js';
 import { R2StorageService } from '../implementations/R2StorageService.js';
 import { D1DatabaseService } from '../implementations/D1DatabaseService.js';

@@ -3,10 +3,10 @@
  * 使用 Hugging Face Space 的 E2-F5-TTS 模型
  */
 
-import { IVoiceService } from '../../services/IVoiceService.js';
-import { Logger } from '../../utils/logger.js';
-import { withRetry } from '../../utils/retryUtils.js';
-import { getFileSize } from '../../utils/fileUtils.js';
+import { IVoiceService } from '../../../services/IVoiceService.js';
+import { Logger } from '../../../utils/logger.js';
+import { withRetry } from '../../../utils/retryUtils.js';
+import { getFileSize } from '../../../utils/fileUtils.js';
 import { E2F5TtsApiClient } from './E2F5TtsApiClient.js';
 
 export class E2F5TtsVoiceService extends IVoiceService {
