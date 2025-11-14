@@ -3,7 +3,7 @@
  * Gemini API 客户端 - 专门负责 Gemini API 调用
  */
 
-import { Logger } from '../utils/logger.js';
+import { Logger } from '../../../utils/logger.js';
 
 export class GeminiApiClient {
   constructor(apiKey, model = 'gemini-2.5-flash') {

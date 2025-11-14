@@ -2,7 +2,7 @@
 
 /** 调试脚本生成 */
 
-import { GeminiScriptService } from './src/implementations/GeminiScriptService.js';
+import { GeminiScriptService } from './src/implementations/ai/gemini/GeminiScriptService.js';
 import { BbcRssService } from './src/implementations/BbcRssService.js';
 import { NewsProcessor } from './src/core/NewsProcessor.js';
 

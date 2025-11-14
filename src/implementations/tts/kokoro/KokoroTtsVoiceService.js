@@ -17,7 +17,6 @@ export class KokoroTtsVoiceService extends IVoiceService {
 
     // 初始化组件
     this.apiClient = new KokoroTtsApiClient();
-    // 分块功能暂时禁用，用于性能测试
   }
 
   /**
@@ -62,13 +61,13 @@ export class KokoroTtsVoiceService extends IVoiceService {
     const voice = this._mapStyleToVoice(style);
 
     try {
-      // 暂时回退到一次性生成，测试性能极限
-      this.logger.info('Processing text as single chunk (testing performance limits)', {
-        wordCount: script.split(/\s+/).filter(word => word.length > 0).length,
-        charCount: script.length
+      // Kokoro-TTS 支持流式处理长文本，无需手动分块
+      this.logger.info('Processing text with Kokoro-TTS streaming', {
+        wordCount: (script || '').split(/\s+/).filter(word => word && word.length > 0).length,
+        charCount: (script || '').length
       });
 
-      return await this._generateSingleChunk(script, voice, style);
+    return await this._generateSingleChunk(script, voice, style);
 
     } catch (error) {
       this.logger.error('Kokoro-TTS generation failed', {
@@ -90,25 +89,31 @@ export class KokoroTtsVoiceService extends IVoiceService {
       this.config.speed || 1
     );
 
+    // 计算实际音频时长而不是估算
+    const actualDuration = this._calculateActualDuration(result.audioData);
+
     const voiceResult = {
       audioData: result.audioData,
       format: result.format,
-      duration: this._estimateDuration(script),
+      duration: actualDuration,
       fileSize: getFileSize(result.audioData),
       style,
       metadata: {
         provider: 'kokoro-tts',
-        voice: voice,
+        voice,
         speed: this.config.speed || 1,
         apiMethod: 'HuggingFace Space',
-        generatedAt: new Date().toISOString()
+        generatedAt: new Date().toISOString(),
+        scriptLength: script.length,
+        estimatedDuration: this._estimateDuration(script)
       }
     };
 
     this.logger.info('Single chunk audio generation completed', {
       style,
       voice,
-      duration: voiceResult.duration,
+      actualDuration,
+      estimatedDuration: voiceResult.metadata.estimatedDuration,
       fileSize: voiceResult.fileSize
     });
 
@@ -139,16 +144,56 @@ export class KokoroTtsVoiceService extends IVoiceService {
     return voiceMap[style] || 'af_heart'; // 默认语音
   }
 
+  
+
+  /**
+  * 计算实际音频时长 (基于WAV文件数据)
+  * @param {ArrayBuffer} audioData - WAV音频数据
+  * @returns {number} 实际时长(秒)
+  */
+  _calculateActualDuration(audioData) {
+  try {
+    // 解析WAV头部获取采样率和数据大小
+    const view = new DataView(audioData);
+    const sampleRate = view.getUint32(24, true); // 采样率在偏移24处
+      const dataSize = view.getUint32(40, true);   // 数据大小在偏移40处
+      const bitsPerSample = view.getUint16(34, true); // 位深度在偏移34处
+      const channels = view.getUint16(22, true); // 通道数在偏移22处
+
+      // 计算字节率和时长
+      const bytesPerSecond = sampleRate * channels * (bitsPerSample / 8);
+      const duration = dataSize / bytesPerSecond;
+
+      this.logger.debug('Calculated actual audio duration', {
+        sampleRate,
+        channels,
+        bitsPerSample,
+        dataSize,
+        bytesPerSecond,
+        duration: Math.round(duration * 100) / 100
+      });
+
+      return Math.ceil(duration);
+    } catch (error) {
+      this.logger.warn('Failed to calculate actual duration, using fallback', {
+        error: error.message,
+        dataSize: audioData.byteLength
+      });
+      // 回退到基于文件大小的粗略估算
+      return Math.max(1, Math.ceil(audioData.byteLength / 16000)); // 假设16kHz单声道
+    }
+  }
+
   /**
    * 估算音频时长 (基于字符数估算)
    * @param {string} script - 脚本文本
    * @returns {number} 估算时长(秒)
    */
   _estimateDuration(script) {
-    // 简单估算：每分钟约150-200字，中等语速
-    const wordsPerMinute = 180;
-    const wordCount = script.split(/\s+/).length;
-    return Math.ceil((wordCount / wordsPerMinute) * 60);
+  // 简单估算：每分钟约150-200字，中等语速
+  const wordsPerMinute = 180;
+  const wordCount = (script || '').split(/\s+/).filter(word => word && word.length > 0).length;
+  return Math.ceil((wordCount / wordsPerMinute) * 60);
   }
 
   /**

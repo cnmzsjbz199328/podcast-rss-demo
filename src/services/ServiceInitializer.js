@@ -3,10 +3,11 @@
  */
 
 import { BbcRssService } from '../implementations/BbcRssService.js';
-import { GeminiScriptService } from '../implementations/GeminiScriptService.js';
+import { FallbackScriptService } from '../implementations/ai/FallbackScriptService.js';
 import { IndexTtsVoiceService } from '../implementations/tts/index/IndexTtsVoiceService.js';
 import { KokoroTtsVoiceService } from '../implementations/tts/kokoro/KokoroTtsVoiceService.js';
 import { E2F5TtsVoiceService } from '../implementations/tts/e2f5/E2F5TtsVoiceService.js';
+import { AsyncStreamingTtsService } from '../implementations/tts/AsyncStreamingTtsService.js';
 import { SubtitleGenerator } from '../implementations/SubtitleGenerator.js';
 import { R2StorageService } from '../implementations/R2StorageService.js';
 import { D1DatabaseService } from '../implementations/D1DatabaseService.js';
@@ -32,6 +33,7 @@ export class ServiceInitializer {
       rssService: this._createRssService(env),
       scriptService: this._createScriptService(env),
       voiceService: this._createVoiceService(env),
+      asyncVoiceService: this._createAsyncVoiceService(env),
       subtitleService: this._createSubtitleService(),
       storageService: this._createStorageService(env),
         database: this._createDatabaseService(env)
@@ -56,20 +58,28 @@ export class ServiceInitializer {
   }
 
   /**
-  * 创建脚本服务
+  * 创建脚本服务 - 支持Gemini和Cohere回退
   * @private
   * @param {Object} env - 环境变量和bindings
-  * @returns {GeminiScriptService} 脚本服务实例
+  * @returns {FallbackScriptService} 脚本服务实例
   */
   _createScriptService(env) {
-  this.logger.info('Creating script service', {
+  this.logger.info('Creating script service with fallback support', {
   hasGeminiKey: !!env.GEMINI_API_KEY,
-    geminiKeyLength: env.GEMINI_API_KEY ? env.GEMINI_API_KEY.length : 0
-    });
+  geminiKeyLength: env.GEMINI_API_KEY ? env.GEMINI_API_KEY.length : 0,
+  hasCohereKey: !!env.COHERE_API_KEY,
+    cohereKeyLength: env.COHERE_API_KEY ? env.COHERE_API_KEY.length : 0
+  });
 
-    return new GeminiScriptService({
+  const geminiConfig = {
       apiKey: env.GEMINI_API_KEY
-    });
+    };
+
+    const cohereConfig = env.COHERE_API_KEY ? {
+      apiKey: env.COHERE_API_KEY
+    } : null;
+
+    return new FallbackScriptService(geminiConfig, cohereConfig);
   }
 
   /**
@@ -83,28 +93,42 @@ export class ServiceInitializer {
 
   this.logger.info('Creating voice service', { provider: ttsProvider });
 
-    switch (ttsProvider.toLowerCase()) {
-      case 'indextts':
-      case 'tts2':
-        return new IndexTtsVoiceService({
-          endpoint: env.INDEXTTS_ENDPOINT || 'https://indexteam-indextts-2-demo.hf.space'
-        });
+  switch (ttsProvider.toLowerCase()) {
+  case 'indextts':
+  case 'tts2':
+  return new IndexTtsVoiceService({
+  endpoint: env.INDEXTTS_ENDPOINT || 'https://indexteam-indextts-2-demo.hf.space'
+  });
 
-      case 'e2f5':
-        return new E2F5TtsVoiceService({
-          refAudioUrl: env.E2F5_REF_AUDIO_URL,
-          refText: env.E2F5_REF_TEXT,
-          removeSilence: env.E2F5_REMOVE_SILENCE !== 'false',
-          maxRetries: env.TTS_MAX_RETRIES ? parseInt(env.TTS_MAX_RETRIES) : 3
-        });
+  case 'e2f5':
+  return new E2F5TtsVoiceService({
+  refAudioUrl: env.E2F5_REF_AUDIO_URL,
+  refText: env.E2F5_REF_TEXT,
+  removeSilence: env.E2F5_REMOVE_SILENCE !== 'false',
+  maxRetries: env.TTS_MAX_RETRIES ? parseInt(env.TTS_MAX_RETRIES) : 3
+  });
 
-      case 'kokoro':
-      default:
-        return new KokoroTtsVoiceService({
-          speed: env.KOKORO_SPEED ? parseFloat(env.KOKORO_SPEED) : 1,
-          maxRetries: env.TTS_MAX_RETRIES ? parseInt(env.TTS_MAX_RETRIES) : 3
-        });
-    }
+  case 'kokoro':
+  default:
+  return new KokoroTtsVoiceService({
+  speed: env.KOKORO_SPEED ? parseFloat(env.KOKORO_SPEED) : 1,
+  maxRetries: env.TTS_MAX_RETRIES ? parseInt(env.TTS_MAX_RETRIES) : 3
+  });
+  }
+  }
+
+  /**
+   * 创建异步语音服务
+   * @private
+   * @param {Object} env - 环境变量
+   * @returns {AsyncStreamingTtsService} 异步语音服务实例
+   */
+  _createAsyncVoiceService(env) {
+    this.logger.info('Creating async voice service');
+
+    return new AsyncStreamingTtsService({
+      speed: env.KOKORO_SPEED ? parseFloat(env.KOKORO_SPEED) : 1
+    }, env);
   }
 
   /**

@@ -31,13 +31,27 @@
 ### AI代理服务
 
 #### 1. **Gemini 脚本生成代理**
-- **位置**: `src/implementations/GeminiScriptService.js`
-- **职责**: 基于新闻内容生成播客脚本
+- **位置**: `src/implementations/ai/gemini/GeminiScriptService.js`
+- **职责**: 基于新闻内容生成播客脚本（主要服务）
 - **接口**: `IScriptService.generateScript()`
 - **依赖**: Google Gemini API
 - **代码行数**: 89行
 
-#### 2. **E2-F5-TTS 语音合成代理**
+#### 2. **Cohere 脚本生成代理**
+- **位置**: `src/implementations/ai/cohere/CohereScriptService.js`
+- **职责**: 基于新闻内容生成播客脚本（备用服务）
+- **接口**: `IScriptService.generateScript()`
+- **依赖**: Cohere API
+- **代码行数**: 89行
+
+#### 3. **回退脚本服务代理**
+- **位置**: `src/implementations/ai/FallbackScriptService.js`
+- **职责**: 协调Gemini和Cohere服务，实现故障转移
+- **接口**: `IScriptService.generateScript()`
+- **特性**: 优先使用Gemini，失败时自动切换到Cohere
+- **代码行数**: 85行
+
+#### 4. **E2-F5-TTS 语音合成代理**
 - **位置**: `src/implementations/tts/E2F5TtsVoiceService.js`
 - **职责**: 将文本转换为语音音频
 - **接口**: `IVoiceService.generateAudio()`
@@ -45,14 +59,14 @@
 - **特性**: 支持参考音频克隆
 - **代码行数**: 186行
 
-#### 3. **Kokoro-TTS 语音合成代理**
+#### 5. **Kokoro-TTS 语音合成代理**
 - **位置**: `src/implementations/tts/KokoroTtsVoiceService.js`
 - **职责**: 备选TTS服务
 - **接口**: `IVoiceService.generateAudio()`
 - **依赖**: Hugging Face Kokoro-TTS模型
 - **代码行数**: 172行
 
-#### 4. **字幕生成代理**
+#### 6. **字幕生成代理**
 - **位置**: `src/implementations/SubtitleGenerator.js`
 - **职责**: 生成VTT、SRT和JSON字幕文件
 - **接口**: `ISubtitleService.generateSubtitles()`
@@ -61,21 +75,21 @@
 
 ### 数据处理代理
 
-#### 5. **RSS新闻获取代理**
+#### 7. **RSS新闻获取代理**
 - **位置**: `src/implementations/BbcRssService.js`
 - **职责**: 从BBC RSS源获取新闻数据
 - **接口**: `IRssService.fetchNews()`
 - **特性**: 新闻内容过滤和预处理
 - **代码行数**: 65行
 
-#### 6. **数据库代理**
+#### 8. **数据库代理**
 - **位置**: `src/implementations/D1DatabaseService.js`
 - **职责**: 播客元数据存储和管理
 - **接口**: `IDatabaseService`
 - **依赖**: Cloudflare D1数据库
 - **代码行数**: 148行
 
-#### 7. **存储代理**
+#### 9. **存储代理**
 - **位置**: `src/implementations/R2StorageService.js`
 - **职责**: 文件上传和管理
 - **接口**: `IStorageService`
@@ -88,7 +102,7 @@
 |------|--------|----------|----------|----------|
 | 处理器 (Handlers) | 5 | 85行 | 148行 | ✅ |
 | 核心逻辑 (Core) | 3 | 92行 | 130行 | ✅ |
-| 实现类 (Implementations) | 12 | 89行 | 186行 | ✅ |
+| 实现类 (Implementations) | 15 | 89行 | 186行 | ✅ |
 | 服务类 (Services) | 4 | 78行 | 148行 | ✅ |
 | 工具类 (Utils) | 6 | 45行 | 89行 | ✅ |
 
@@ -141,8 +155,15 @@ graph TD
 4. 添加环境变量配置
 5. 更新路由和处理器
 
+### 添加新的脚本生成服务
+1. 创建新的ScriptService实现类
+2. 在FallbackScriptService中添加回退逻辑
+3. 添加相应的环境变量配置
+4. 更新ServiceInitializer
+
 ### 代理替换
 - 通过环境变量 `TTS_PROVIDER` 等切换不同实现
+- 脚本服务通过FallbackScriptService实现自动回退
 - 保持接口一致性，确保平滑替换
 
 ## 📈 性能监控
@@ -161,7 +182,7 @@ graph TD
 
 ---
 
-*最后更新: 2025-11-10*
+*最后更新: 2025-11-15*
 *代码行数统计基于当前实现*</content>
 </xai:function_call/>
 <xai:function_call name="read_web_page">

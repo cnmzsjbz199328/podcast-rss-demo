@@ -104,6 +104,7 @@ export class PodcastHandler {
         createdAt: new Date().toISOString(),
         ttsEventId: result.eventId || null, // 修复：使用result.eventId
         ttsStatus: result.isAsync ? 'pending' : 'completed', // 修复：根据isAsync判断状态
+        ttsProvider: result.isAsync ? 'kokoro-streaming' : 'kokoro', // 设置TTS提供商
         metadata: {
           newsCount: result.newsCount || 0,
           wordCount: result.wordCount || 0,

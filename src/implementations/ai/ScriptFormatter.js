@@ -3,7 +3,7 @@
  * 脚本格式化器 - 负责脚本的清理、格式化和统计
  */
 
-import { Logger } from '../utils/logger.js';
+import { Logger } from '../../utils/logger.js';
 
 export class ScriptFormatter {
   constructor() {

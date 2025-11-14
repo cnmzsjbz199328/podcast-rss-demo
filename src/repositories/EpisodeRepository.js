@@ -23,31 +23,32 @@ export class EpisodeRepository {
 
     try {
       const result = await this.db.prepare(`
-        INSERT INTO episodes (
-          id, title, description, style, audio_url, audio_key,
-          srt_url, vtt_url, json_url, duration, file_size, transcript, created_at, published_at,
-          status, metadata, tts_event_id, tts_status, tts_error
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO episodes (
+      id, title, description, style, audio_url, audio_key,
+      srt_url, vtt_url, json_url, duration, file_size, transcript, created_at, published_at,
+      status, metadata, tts_event_id, tts_status, tts_error, tts_provider
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        episode.id,
-        episode.title,
-        episode.description || '',
-        episode.style,
-        episode.audioUrl || null,
-        episode.audioKey || null,
-        episode.srtUrl || null,
-        episode.vttUrl || null,
-        episode.jsonUrl || null,
-        episode.duration || 0,
-        episode.fileSize || 0,
-        episode.transcript || '',
-        episode.createdAt || new Date().toISOString(),
-        episode.publishedAt || new Date().toISOString(),
-        episode.status || 'published',
-        JSON.stringify(episode.metadata || {}),
-        episode.ttsEventId || null,
-        episode.ttsStatus || 'completed',
-        episode.ttsError || null
+      episode.id,
+      episode.title,
+      episode.description || '',
+      episode.style,
+      episode.audioUrl || null,
+      episode.audioKey || null,
+      episode.srtUrl || null,
+      episode.vttUrl || null,
+      episode.jsonUrl || null,
+      episode.duration || 0,
+      episode.fileSize || 0,
+      episode.transcript || '',
+      episode.createdAt || new Date().toISOString(),
+      episode.publishedAt || new Date().toISOString(),
+      episode.status || 'published',
+      JSON.stringify(episode.metadata || {}),
+      episode.ttsEventId || null,
+      episode.ttsStatus || 'completed',
+      episode.ttsError || null,
+        episode.ttsProvider || null
       ).run();
 
       this.logger.info('✅ Episode saved successfully', { id: episode.id });
@@ -71,17 +72,16 @@ export class EpisodeRepository {
 
     try {
       const result = await this.db.prepare(`
-        UPDATE episodes
-        SET audio_url = ?, audio_key = ?, file_size = ?, duration = ?,
-            tts_status = 'completed', updated_at = ?
-        WHERE id = ?
+      UPDATE episodes
+      SET audio_url = ?, audio_key = ?, file_size = ?, duration = ?,
+      tts_status = 'completed'
+      WHERE id = ?
       `).bind(
-        audioData.audioUrl,
-        audioData.audioKey,
-        audioData.fileSize || 0,
-        audioData.duration || 0,
-        new Date().toISOString(),
-        episodeId
+      audioData.audioUrl,
+      audioData.audioKey,
+      audioData.fileSize || 0,
+      audioData.duration || 0,
+      episodeId
       ).run();
 
       if (result.success) {

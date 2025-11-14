@@ -29,21 +29,22 @@ export class PodcastGenerator {
   }
 
   /**
-   * 生成播客
-   * @param {string} style - 播客风格
-   * @param {Object} options - 生成选项
-   * @returns {Promise<PodcastResult>} 生成结果
-   */
+  * 生成播客
+  * @param {string} style - 播客风格
+  * @param {Object} options - 生成选项
+  * @returns {Promise<PodcastResult>} 生成结果
+  */
   async generatePodcast(style = 'news-anchor', options = {}) {
+    const useAsyncTts = options.useAsyncTts || false;
     return safeExecute(async () => {
       this.logger.info('Starting podcast generation', { style, options });
 
       const episodeId = this._generateEpisodeId(style);
       const context = {
-        services: this.services,
-        style,
-        episodeId,
-        options: { ...this.config, ...options }
+      services: this.services,
+      style,
+      episodeId,
+      options: { ...this.config, ...options, useAsyncTts }
       };
 
       // 执行完整工作流
@@ -64,18 +65,24 @@ export class PodcastGenerator {
    * 验证服务接口
    */
   _validateServices(services) {
-    const requiredServices = ['rssService', 'scriptService', 'voiceService', 'storageService', 'database'];
+  const requiredServices = ['rssService', 'scriptService', 'voiceService', 'storageService', 'database'];
+    const optionalServices = ['asyncVoiceService'];
 
-    for (const serviceName of requiredServices) {
-      if (!services[serviceName]) {
-        throw new Error(`Missing required service: ${serviceName}`);
-      }
+  for (const serviceName of requiredServices) {
+  if (!services[serviceName]) {
+    throw new Error(`Missing required service: ${serviceName}`);
+    }
     }
 
-    // 验证关键服务接口
-    validateServiceInterface(services.scriptService, ['generateScript']);
-    validateServiceInterface(services.voiceService, ['generateAudio']);
+  // 验证关键服务接口
+  validateServiceInterface(services.scriptService, ['generateScript']);
+  validateServiceInterface(services.voiceService, ['generateAudio']);
     validateServiceInterface(services.storageService, ['storeFiles']);
+
+    // 验证可选服务接口
+    if (services.asyncVoiceService) {
+      validateServiceInterface(services.asyncVoiceService, ['initiateGeneration']);
+    }
   }
 
   /**
@@ -91,25 +98,31 @@ export class PodcastGenerator {
    * 构建最终结果
    */
   _buildFinalResult(episodeId, results) {
-    const storage = results.storeFiles;
-    return {
-      episodeId,
-      title: results.generateScript?.title || `播客 - ${episodeId}`,
-      description: results.generateScript?.description || 'AI生成的播客内容',
-      style: results.generateScript?.style || 'news-anchor',
-      newsCount: results.fetchNews?.length || 0,
-      wordCount: results.generateScript?.wordCount || 0,
-      duration: results.generateAudio?.duration || 0,
-      fileSize: results.generateAudio?.fileSize || 0,
-      scriptUrl: storage?.scriptUrl,
-      audioUrl: storage?.audioUrl,
-      srtUrl: storage?.srtUrl,
-      vttUrl: storage?.vttUrl,
-      jsonUrl: storage?.jsonUrl,
-      generatedAt: new Date().toISOString(),
-      metadata: {
+  const storage = results.storeFiles;
+  const voice = results.generateAudio || results.initiateAudio;
+  const isAsync = results.initiateAudio ? true : false;
+
+  return {
+  episodeId,
+  title: results.generateScript?.title || `播客 - ${episodeId}`,
+  description: results.generateScript?.description || 'AI生成的播客内容',
+  style: results.generateScript?.style || 'news-anchor',
+  newsCount: results.fetchNews?.length || 0,
+  wordCount: results.generateScript?.wordCount || 0,
+  duration: voice?.duration || 0,
+  fileSize: voice?.fileSize || 0,
+  scriptUrl: storage?.scriptUrl,
+  audioUrl: storage?.audioUrl,
+  srtUrl: storage?.srtUrl,
+  vttUrl: storage?.vttUrl,
+  jsonUrl: storage?.jsonUrl,
+  isAsync,
+  eventId: voice?.eventId,
+  status: voice?.status || 'completed',
+  generatedAt: new Date().toISOString(),
+    metadata: {
         scriptMetadata: results.generateScript?.metadata,
-        voiceMetadata: results.generateAudio?.metadata,
+        voiceMetadata: voice?.metadata,
         subtitleMetadata: results.generateSubtitles?.metadata,
         storageMetadata: storage?.metadata
       }

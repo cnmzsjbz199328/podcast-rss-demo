@@ -719,7 +719,7 @@ npm run dev
 
 ### 添加新的播报风格
 
-1. 在 `src/implementations/GeminiScriptService.js` 添加风格配置
+1. 在 `src/implementations/ai/gemini/GeminiScriptService.js` 添加风格配置
 2. 在 `src/implementations/IndexTtsVoiceServiceHttp.js` 添加语音配置
 3. 更新 API 文档
 

@@ -18,7 +18,7 @@
 │  ┌─────────────────────────────────────────────────────────────┐ │
 │  │                    组件层 (Component Layer)                   │ │
 │  │                                                             │ │
-│  │ • GeminiApiClient • ScriptStyleManager • ScriptFormatter    │ │
+│  │ • ai/gemini/ • ai/cohere/ • ScriptStyleManager • ScriptFormatter │ │
 │  │ • IndexTtsApiClient • AudioProcessor • StyleManager         │ │
 │  │ • R2FileUploader • R2FileValidator                          │ │
 │  └─────────────────────────────────────────────────────────────┘ │

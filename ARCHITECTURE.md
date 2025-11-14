@@ -45,10 +45,15 @@ graph TD
     E --> F[NewsProcessor]
 
     C --> G[生成脚本]
-    G --> H[GeminiScriptService]
-    H --> I[GeminiApiClient]
-    H --> J[ScriptStyleManager]
-    H --> K[ScriptFormatter]
+    G --> H[FallbackScriptService]
+    H --> I[GeminiScriptService]
+    H --> O[CohereScriptService]
+    I --> P[GeminiApiClient]
+    O --> Q[CohereApiClient]
+    I --> J[ScriptStyleManager]
+    I --> K[ScriptFormatter]
+    O --> J
+    O --> K
 
     C --> L[生成语音]
     L --> M[IndexTtsVoiceService]
@@ -95,14 +100,16 @@ graph TD
     end
 
     subgraph "Component Layer"
-        C1[GeminiApiClient]
-        C2[ScriptStyleManager]
-        C3[ScriptFormatter]
-        C4[IndexTtsApiClient]
-        C5[IndexTtsAudioProcessor]
-        C6[IndexTtsStyleManager]
-        C7[R2FileUploader]
-        C8[R2FileValidator]
+    C1[FallbackScriptService]
+    C2[ScriptStyleManager]
+    C3[ScriptFormatter]
+    C4[GeminiScriptService]
+    C5[CohereScriptService]
+    C6[IndexTtsApiClient]
+    C7[IndexTtsAudioProcessor]
+    C8[IndexTtsStyleManager]
+    C9[R2FileUploader]
+    C10[R2FileValidator]
     end
 
     subgraph "Data Layer"
@@ -152,11 +159,17 @@ src/
 │   └── NewsProcessor.js           # 新闻处理和过滤逻辑
 │
 ├── implementations/               # 服务具体实现
+│   ├── ai/                        # AI脚本生成服务
+│   │   ├── gemini/                 # Gemini AI服务
+│   │   │   ├── GeminiScriptService.js # Gemini脚本生成
+│   │   │   └── GeminiApiClient.js     # Gemini API客户端
+│   │   ├── cohere/                 # Cohere AI服务
+│   │   │   ├── CohereScriptService.js # Cohere脚本生成
+│   │   │   └── CohereApiClient.js     # Cohere API客户端
+│   │   ├── FallbackScriptService.js # AI服务回退
+│   │   ├── ScriptStyleManager.js    # 脚本风格配置
+│   │   └── ScriptFormatter.js       # 脚本格式化和清理
 │   ├── BbcRssService.js           # BBC RSS新闻获取
-│   ├── GeminiScriptService.js     # Gemini AI脚本生成
-│   ├── GeminiApiClient.js         # Gemini API客户端
-│   ├── ScriptStyleManager.js      # 脚本风格配置
-│   ├── ScriptFormatter.js         # 脚本格式化和清理
 │   ├── IndexTtsVoiceService.js    # IndexTTS语音合成
 │   ├── IndexTtsApiClient.js       # IndexTTS API客户端
 │   ├── IndexTtsAudioProcessor.js  # 音频处理

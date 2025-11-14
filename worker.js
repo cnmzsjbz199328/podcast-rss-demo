@@ -18,6 +18,7 @@ const testHandler = new TestHandler();
 // 注册路由
 router.register('POST', '/generate', (req, services) => podcastHandler.handleGenerate(req, services));
 router.register('GET', '/episodes', (req, services) => apiHandler.handleEpisodes(req, services));
+router.register('GET', '/episodes/*/poll-audio', (req, services, params) => apiHandler.handlePollAudio(req, services, params));
 router.register('GET', '/episodes/*', (req, services, params) => apiHandler.handleEpisodeDetail(req, services, params));
 router.register('GET', '/rss.xml', (req, services) => apiHandler.handleRssFeed(req, services));
 router.register('GET', '/health', (req, services) => apiHandler.handleHealth(req, services));

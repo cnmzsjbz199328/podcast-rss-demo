@@ -222,16 +222,53 @@ export class EpisodeApiHandler {
         });
       }
 
-      // 轮询IndexTTS获取结果（一次性读取 SSE 流）
-      this.logger.info('Polling IndexTTS for event_id', { 
-        eventId: episode.tts_event_id,
-        elapsedSeconds 
-      });
+      // 对于流式TTS，生成是同步的，不需要轮询
+      if (episode.tts_provider === 'kokoro-streaming') {
+        this.logger.info('Streaming TTS is synchronous, checking completion status', {
+          episodeId,
+          ttsStatus: episode.tts_status
+        });
 
-      const pollResult = await services.voiceService.pollAudioResult(episode.tts_event_id);
+        if (episode.tts_status === 'completed' && episode.audio_url) {
+          return new Response(JSON.stringify({
+            success: true,
+            status: 'completed',
+            audioUrl: episode.audio_url,
+            duration: episode.duration,
+            fileSize: episode.file_size
+          }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else if (episode.tts_status === 'failed') {
+          return new Response(JSON.stringify({
+            success: false,
+            status: 'failed',
+            error: episode.tts_error || 'Generation failed'
+          }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else {
+          return new Response(JSON.stringify({
+            success: true,
+            status: 'processing',
+            message: 'Audio generation in progress'
+          }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      }
+
+      // 对于传统TTS服务，使用原有轮询逻辑
+      let pollResult;
+      this.logger.info('Polling traditional TTS for event_id', {
+        eventId: episode.tts_event_id,
+        elapsedSeconds
+      });
+      pollResult = await services.voiceService.pollAudioResult(episode.tts_event_id);
 
       if (pollResult.status === 'completed') {
-        // 上传音频到R2
+        // 传统TTS服务需要手动上传
         const audioKey = `audio/${new Date().toISOString().split('T')[0]}-${episode.style}-${Math.random().toString(36).substring(7)}.wav`;
         const uploadResult = await services.storageService.uploadFile(
           audioKey,
