@@ -9,8 +9,8 @@ export class E2F5TtsApiClient {
   constructor(options = {}) {
     this.client = null;
     this.spaceUrl = "Tom1986/E2-F5-TTS";
-    this.refAudioUrl = options.refAudioUrl || "https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/gdg.mp3";
-    this.refText = options.refText || "找一个回酒店开房！";
+    this.refAudioUrl = options.refAudioUrl;
+    this.refText = options.refText;
     this.removeSilence = options.removeSilence !== false; // 默认true
   }
 

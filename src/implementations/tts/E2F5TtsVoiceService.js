@@ -17,8 +17,8 @@ export class E2F5TtsVoiceService extends IVoiceService {
 
     // 初始化组件
     this.apiClient = new E2F5TtsApiClient({
-      refAudioUrl: this.config.refAudioUrl || "https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/gdg.mp3",
-      refText: this.config.refText || "找一个回酒店开房！",
+      refAudioUrl: this.config.refAudioUrl,
+      refText: this.config.refText,
       removeSilence: this.config.removeSilence !== false
     });
   }
@@ -92,8 +92,8 @@ export class E2F5TtsVoiceService extends IVoiceService {
       style,
       metadata: {
         provider: 'e2-f5-tts',
-        refAudioUrl: this.config.refAudioUrl || "https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/gdg.mp3",
-        refText: this.config.refText || "找一个回酒店开房！",
+        refAudioUrl: this.config.refAudioUrl,
+        refText: this.config.refText,
         removeSilence: this.config.removeSilence !== false,
         apiMethod: 'HuggingFace Space',
         generatedAt: new Date().toISOString()

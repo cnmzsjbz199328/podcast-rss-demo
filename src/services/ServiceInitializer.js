@@ -92,8 +92,8 @@ export class ServiceInitializer {
 
       case 'e2f5':
         return new E2F5TtsVoiceService({
-          refAudioUrl: env.E2F5_REF_AUDIO_URL || 'https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/gdg.mp3',
-          refText: env.E2F5_REF_TEXT || '找一个回酒店开房！',
+          refAudioUrl: env.E2F5_REF_AUDIO_URL,
+          refText: env.E2F5_REF_TEXT,
           removeSilence: env.E2F5_REMOVE_SILENCE !== 'false',
           maxRetries: env.TTS_MAX_RETRIES ? parseInt(env.TTS_MAX_RETRIES) : 3
         });
