@@ -81,7 +81,7 @@ export class PodcastGenerator {
 
     // 验证可选服务接口
     if (services.asyncVoiceService) {
-      validateServiceInterface(services.asyncVoiceService, ['initiateGeneration']);
+      validateServiceInterface(services.asyncVoiceService, ['initiateGeneration', 'pollAndProcess']);
     }
   }
 
@@ -117,7 +117,7 @@ export class PodcastGenerator {
   vttUrl: storage?.vttUrl,
   jsonUrl: storage?.jsonUrl,
   isAsync,
-  eventId: voice?.eventId,
+  ttsEventId: voice?.eventId,
   status: voice?.status || 'completed',
   generatedAt: new Date().toISOString(),
     metadata: {

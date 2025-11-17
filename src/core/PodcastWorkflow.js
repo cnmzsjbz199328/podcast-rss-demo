@@ -65,7 +65,7 @@ export class PodcastWorkflow {
       { name: 'generateScript', fn: this._generateScript.bind(this) },
       { name: 'initiateAudio', fn: this._initiateAudio.bind(this) },
       { name: 'generateSubtitles', fn: this._generateSubtitles.bind(this) },
-      { name: 'storeFiles', fn: this._storeFiles.bind(this) },
+      { name: 'storeFiles', fn: this._storeScriptAndSubtitles.bind(this) },
       { name: 'saveMetadata', fn: this._saveMetadata.bind(this) }
     ];
 
@@ -134,11 +134,20 @@ export class PodcastWorkflow {
   }
 
   async _storeFiles(context, previousResults) {
-  const script = previousResults.generateScript;
-  const voice = previousResults.generateAudio || previousResults.initiateAudio;
-  const subtitles = previousResults.generateSubtitles;
+    const script = previousResults.generateScript;
+    const voice = previousResults.generateAudio || previousResults.initiateAudio;
+    const subtitles = previousResults.generateSubtitles;
 
     // 在异步模式下，voice 可能没有音频数据
+    return await context.services.storageService.storeFiles(script, voice, subtitles, context.episodeId);
+  }
+
+  async _storeScriptAndSubtitles(context, previousResults) {
+    const script = previousResults.generateScript;
+    const voice = previousResults.initiateAudio; // 异步模式下只有initiateAudio，没有实际音频
+    const subtitles = previousResults.generateSubtitles;
+
+    // 使用现有的storeFiles方法，但传递空的音频数据
     return await context.services.storageService.storeFiles(script, voice, subtitles, context.episodeId);
   }
 
@@ -167,7 +176,7 @@ export class PodcastWorkflow {
   vttUrl: results.storeFiles.vttUrl,
   jsonUrl: results.storeFiles.jsonUrl,
   isAsync,
-  eventId: voice.eventId,
+  ttsEventId: voice.eventId,
   ttsStatus: voice.status || 'processing',
     metadata: {
         scriptMetadata: results.generateScript.metadata,

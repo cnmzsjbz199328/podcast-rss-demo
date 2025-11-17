@@ -134,6 +134,7 @@ export class EpisodeRepository {
         result.ttsEventId = result.tts_event_id;
         result.ttsStatus = result.tts_status;
         result.ttsError = result.tts_error;
+        result.ttsProvider = result.tts_provider;
 
         
 

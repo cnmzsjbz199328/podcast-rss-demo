@@ -36,8 +36,11 @@ export class R2StorageService {
   // 上传音频文件（如果有）
   let audioUpload = null;
   if (voiceResult?.audioData) {
-  audioUpload = this.uploader.uploadAudio(voiceResult.audioData, voiceResult, episodeId);
-  uploadPromises.push(audioUpload);
+    audioUpload = this.uploader.uploadAudio(voiceResult.audioData, voiceResult, episodeId);
+    uploadPromises.push(audioUpload);
+  } else {
+    // 在异步模式下，没有音频数据，添加null占位符
+    uploadPromises.push(null);
   }
 
   // 上传字幕文件（如果有）
@@ -50,8 +53,8 @@ export class R2StorageService {
     // 并行上传
     const results = await Promise.all(uploadPromises);
     const scriptResult_uploaded = results[0];
-    const audioResult_uploaded = results[1];
-    const subtitleResult_uploaded = results[2];
+    const audioResult_uploaded = results[1] || null; // 音频可能为null
+    const subtitleResult_uploaded = results[2] || null; // 字幕可能为null
 
     // 验证上传结果
     this.validator.validateScript(scriptResult_uploaded);

@@ -222,41 +222,18 @@ export class EpisodeApiHandler {
         });
       }
 
-      // 对于流式TTS，生成是同步的，不需要轮询
-      if (episode.tts_provider === 'kokoro-streaming') {
-        this.logger.info('Streaming TTS is synchronous, checking completion status', {
-          episodeId,
-          ttsStatus: episode.tts_status
+      // 对于流式TTS，使用真正的异步轮询
+      if (episode.tts_provider === 'kokoro-streaming' || (episode.tts_event_id && !episode.audio_url)) {
+      this.logger.info('Polling Kokoro streaming TTS for event_id', {
+      eventId: episode.tts_event_id,
+      elapsedSeconds,
+        ttsProvider: episode.tts_provider
         });
 
-        if (episode.tts_status === 'completed' && episode.audio_url) {
-          return new Response(JSON.stringify({
-            success: true,
-            status: 'completed',
-            audioUrl: episode.audio_url,
-            duration: episode.duration,
-            fileSize: episode.file_size
-          }), {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        } else if (episode.tts_status === 'failed') {
-          return new Response(JSON.stringify({
-            success: false,
-            status: 'failed',
-            error: episode.tts_error || 'Generation failed'
-          }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        } else {
-          return new Response(JSON.stringify({
-            success: true,
-            status: 'processing',
-            message: 'Audio generation in progress'
-          }), {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
+      const pollResult = await services.asyncVoiceService.pollAndProcess(episodeId, episode.tts_event_id);
+      return new Response(JSON.stringify(pollResult), {
+        headers: { 'Content-Type': 'application/json' }
+        });
       }
 
       // 对于传统TTS服务，使用原有轮询逻辑

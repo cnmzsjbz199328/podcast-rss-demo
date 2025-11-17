@@ -20,8 +20,9 @@ export class PodcastHandler {
     try {
       const url = new URL(request.url);
       const style = url.searchParams.get('style') || 'news-anchor';
+      const useAsyncTts = url.searchParams.get('useAsyncTts') === 'true';
 
-      this.logger.info('Starting podcast generation', { style, url: request.url });
+      this.logger.info('Starting podcast generation', { style, useAsyncTts, url: request.url });
 
       // 创建生成器实例
       const config = {
@@ -34,7 +35,7 @@ export class PodcastHandler {
       };
 
       const generator = new PodcastGenerator(services, config);
-      const result = await generator.generatePodcast(style);
+      const result = await generator.generatePodcast(style, { useAsyncTts });
 
       this.logger.info('Podcast generated successfully', {
         episodeId: result.episodeId,
