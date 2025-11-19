@@ -39,6 +39,7 @@ E2F5_REMOVE_SILENCE = "true"
 # R2_BASE_URL = "https://podcast.badtom.dpdns.org"
 
 # Cron Triggers - 定时任务
-# 每天中午12点和午夜00点自动生成NewsPodcast
+# 阿德莱德时区：每天早上0点和下午0点自动生成NewsPodcast
+# 阿德莱德时区 = UTC+9:30
 [triggers]
-crons = ["0 12 * * *", "0 0 * * *"]
+crons = ["30 14 * * *", "30 0 * * *"]
