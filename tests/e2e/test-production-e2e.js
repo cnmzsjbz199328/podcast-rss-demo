@@ -2,7 +2,7 @@
  * 生产环境端到端测试
  * 
  * 测试已部署的 Cloudflare Worker 完整功能：
- * 1. 新闻获取
+ * 1. News获取
  * 2. 脚本生成 (Gemini AI)
  * 3. 语音生成 (IndexTTS)
  * 4. R2 存储
@@ -124,15 +124,15 @@ async function testGetEpisodes() {
 }
 
 /**
- * 测试 3: 生成新播客 (完整流程)
+ * 测试 3: 生成新Podcast (完整流程)
  */
 async function testGeneratePodcast(style = 'news-anchor') {
-  console.log(`\n=== 测试 3: 生成播客 (${style}) ===`);
-  console.log('⚠️  这将执行完整的播客生成流程，可能需要 2-3 分钟...');
-  console.log('流程: 获取新闻 → Gemini生成脚本 → IndexTTS生成语音 → 上传R2 → 保存D1');
+  console.log(`\n=== 测试 3: 生成Podcast (${style}) ===`);
+  console.log('⚠️  这将执行完整的Podcast生成流程，可能需要 2-3 分钟...');
+  console.log('流程: 获取News → Gemini生成脚本 → IndexTTS生成语音 → 上传R2 → 保存D1');
   
   const result = await testEndpoint(
-    `生成 ${style} 风格播客`,
+    `生成 ${style} 风格Podcast`,
     `${WORKER_URL}/generate?style=${style}`,
     {
       method: 'POST',
@@ -143,7 +143,7 @@ async function testGeneratePodcast(style = 'news-anchor') {
   );
   
   if (result.success) {
-    console.log('\n✅ 播客生成成功！');
+    console.log('\n✅ Podcast生成成功！');
     
     const data = result.data.data;
     
@@ -154,7 +154,7 @@ async function testGeneratePodcast(style = 'news-anchor') {
     
     if (data.metadata) {
       console.log(`  - 标题: ${data.metadata.title || '未知'}`);
-      console.log(`  - 新闻数量: ${data.metadata.newsCount || 0}`);
+      console.log(`  - News数量: ${data.metadata.newsCount || 0}`);
       console.log(`  - 时长: ${data.metadata.duration ? Math.floor(data.metadata.duration / 60) + '分' + (data.metadata.duration % 60) + '秒' : '未知'}`);
     }
     
@@ -377,8 +377,8 @@ async function runE2ETests() {
     
     await sleep(1000);
     
-    // 测试 3: 生成新播客 (这是最重要的测试)
-    console.log('\n⏳ 准备生成新播客...');
+    // 测试 3: 生成新Podcast (这是最重要的测试)
+    console.log('\n⏳ 准备生成新Podcast...');
     const generateConfirm = process.argv.includes('--generate') || process.argv.includes('--full');
     
     if (generateConfirm) {
@@ -392,8 +392,8 @@ async function runE2ETests() {
         await sleep(3000);
       }
     } else {
-      console.log('\n⚠️  跳过播客生成测试 (使用 --generate 或 --full 参数启用)');
-      console.log('   原因: 播客生成耗时较长 (2-3分钟) 且会消耗 API 配额');
+      console.log('\n⚠️  跳过Podcast生成测试 (使用 --generate 或 --full 参数启用)');
+      console.log('   原因: Podcast生成耗时较长 (2-3分钟) 且会消耗 API 配额');
       results.generatePodcast = { success: true, skipped: true };
       
       // 尝试从现有剧集中获取一个ID用于测试
@@ -431,7 +431,7 @@ async function runE2ETests() {
     const testItems = [
       { name: '健康检查', result: results.healthCheck },
       { name: '获取剧集列表', result: results.getEpisodes },
-      { name: '生成播客 (完整流程)', result: results.generatePodcast },
+      { name: '生成Podcast (完整流程)', result: results.generatePodcast },
       { name: '查询剧集详情', result: results.getEpisodeDetail },
       { name: '音频文件访问', result: results.audioAccess },
       { name: 'RSS Feed 生成', result: results.rssFeed },
@@ -470,7 +470,7 @@ async function runE2ETests() {
       { name: '🌐 Worker 部署', checked: results.healthCheck?.success },
       { name: '🗄️  D1 数据库连接', checked: results.healthCheck?.data?.services?.database },
       { name: '💾 R2 存储连接', checked: results.healthCheck?.data?.services?.storage },
-      { name: '📰 新闻获取 (BBC RSS)', checked: results.generatePodcast?.success || results.generatePodcast?.skipped },
+      { name: '📰 News获取 (BBC RSS)', checked: results.generatePodcast?.success || results.generatePodcast?.skipped },
       { name: '🤖 AI 脚本生成 (Gemini)', checked: results.generatePodcast?.success || results.generatePodcast?.skipped },
       { name: '🎙️  语音合成 (IndexTTS)', checked: results.generatePodcast?.success || results.generatePodcast?.skipped },
       { name: '📤 R2 文件上传', checked: results.generatePodcast?.success || results.generatePodcast?.skipped },
@@ -492,16 +492,16 @@ async function runE2ETests() {
     console.log('╚════════════════════════════════════════════════════════╝\n');
     
     if (failedCount === 0) {
-      console.log('🎉 所有测试通过！您的播客服务运行正常。\n');
+      console.log('🎉 所有测试通过！您的Podcast服务运行正常。\n');
       
       console.log('📱 使用方式:');
       console.log(`   - RSS 订阅: ${WORKER_URL}/rss.xml`);
       console.log(`   - 剧集列表: ${WORKER_URL}/episodes`);
-      console.log(`   - 生成播客: curl -X POST "${WORKER_URL}/generate?style=news-anchor"`);
+      console.log(`   - 生成Podcast: curl -X POST "${WORKER_URL}/generate?style=news-anchor"`);
       console.log(`   - 健康检查: ${WORKER_URL}/health`);
       
       console.log('\n💡 提示:');
-      console.log('   - 将 RSS URL 添加到您的播客客户端 (如 Apple Podcasts, Spotify)');
+      console.log('   - 将 RSS URL 添加到您的Podcast客户端 (如 Apple Podcasts, Spotify)');
       console.log('   - 可以设置 Cron Trigger 实现每日自动生成');
       console.log('   - 使用自定义域名替换 .workers.dev 域名\n');
       
@@ -521,23 +521,23 @@ async function runE2ETests() {
 // 显示使用说明
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`
-播客服务端到端测试工具
+Podcast服务端到端测试工具
 
 使用方法:
   node test-production-e2e.js [选项]
 
 选项:
-  --generate, --full    执行完整测试（包含播客生成，耗时 2-3 分钟）
+  --generate, --full    执行完整测试（包含Podcast生成，耗时 2-3 分钟）
   --help, -h            显示此帮助信息
 
 环境变量:
   WORKER_URL           Worker 地址（默认: https://podcast-rss-demo.tj15982183241.workers.dev）
 
 示例:
-  # 快速测试（跳过播客生成）
+  # 快速测试（跳过Podcast生成）
   node test-production-e2e.js
 
-  # 完整测试（包含播客生成）
+  # 完整测试（包含Podcast生成）
   node test-production-e2e.js --full
 
   # 使用自定义 Worker URL

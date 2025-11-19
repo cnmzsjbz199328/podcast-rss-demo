@@ -42,7 +42,7 @@ export class FallbackScriptService extends IScriptService {
   }
 
   /**
-   * 生成播客脚本 - 优先使用Gemini，失败时使用Cohere
+   * 生成Podcast脚本 - 优先使用Gemini，失败时使用Cohere
    */
   async generateScript(news, style) {
     this._initializeServices();

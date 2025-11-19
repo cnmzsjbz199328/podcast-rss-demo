@@ -1,36 +1,36 @@
-# 🎙️ AI播客生成系统 - 业务逻辑梳理
+# 🎙️ AIPodcast生成系统 - 业务逻辑梳理
 
 ## 📋 系统概述
 
-这是一个基于Cloudflare Workers的全自动播客生成系统，主要功能是将新闻内容通过AI转换为播客音频，并提供RSS订阅服务。
+这是一个基于Cloudflare Workers的全自动Podcast生成系统，主要功能是将News内容通过AI转换为Podcast音频，并提供RSS订阅服务。
 
 ## 🏗️ 核心业务流程
 
-### 1. 播客生成流程 (`POST /generate`)
+### 1. Podcast生成流程 (`POST /generate`)
 
 ```
-用户请求 → 播客生成器 → 新闻获取 → 脚本生成 → 语音合成 → 文件存储 → 数据库保存 → RSS更新
+用户请求 → Podcast生成器 → News获取 → 脚本生成 → 语音合成 → 文件存储 → 数据库保存 → RSS更新
 ```
 
 #### 详细步骤：
 
 1. **接收请求**
-   - 接受`style`参数（播客风格）
+   - 接受`style`参数（Podcast风格）
    - 默认风格：`news-anchor`
 
 2. **生成剧集ID**
    - 格式：`{style}-{timestamp}-{randomId}`
    - 示例：`news-anchor-2025-11-04T12-30-45-abc123`
 
-3. **新闻获取与处理**
-   - 调用BBC RSS服务获取最新新闻
-   - 过滤和整理新闻内容
+3. **News获取与处理**
+   - 调用BBC RSS服务获取最新News
+   - 过滤和整理News内容
    - 提取标题、描述、链接、发布时间
 
 4. **脚本生成**
-   - 使用Google Gemini AI生成播客脚本
+   - 使用Google Gemini AI生成Podcast脚本
    - 根据风格应用不同的提示词
-   - 返回结构化的播客内容
+   - 返回结构化的Podcast内容
 
 5. **语音合成**
    - 调用IndexTTS API生成音频
@@ -49,11 +49,11 @@
 
 ## 🎯 核心业务对象
 
-### NewsItem（新闻项）
+### NewsItem（News项）
 ```javascript
 {
-  title: string,        // 新闻标题
-  description: string,  // 新闻摘要
+  title: string,        // News标题
+  description: string,  // News摘要
   link: string,         // 原文链接
   pubDate: Date,        // 发布时间
   guid: string,         // 唯一标识
@@ -120,7 +120,7 @@
   scriptKey: string,    // 脚本Key
   duration: number,     // 时长(秒)
   fileSize: number,     // 文件大小
-  style: string,        // 播客风格
+  style: string,        // Podcast风格
   transcript: string,   // 文字稿
   status: string,       // 状态 ('published', 'draft')
   publishedAt: string,  // 发布时间
@@ -128,7 +128,7 @@
   ttsEventId: string,   // TTS事件ID
   ttsStatus: string,    // TTS状态 ('pending', 'completed', 'failed')
   metadata: {
-    newsCount: number,  // 新闻数量
+    newsCount: number,  // News数量
     wordCount: number,  // 字数统计
     generatedAt: string,// 生成时间
     scriptMetadata: {}, // 脚本元数据
@@ -141,12 +141,12 @@
 ## 🔧 核心服务组件
 
 ### 1. RSS服务 (BbcRssService)
-**职责**: 获取和解析新闻RSS源
+**职责**: 获取和解析NewsRSS源
 - 输入: RSS URL
 - 输出: NewsItem[]
 
 ### 2. 脚本服务 (GeminiScriptService)
-**职责**: 使用AI生成播客脚本
+**职责**: 使用AI生成Podcast脚本
 - 输入: NewsItem[], style
 - 输出: ScriptResult
 - 组件:
@@ -178,13 +178,13 @@
 
 ## 📡 API接口设计
 
-### 生成播客
+### 生成Podcast
 ```
 POST /generate?style={style}
 ```
 
 **参数:**
-- style: 播客风格 ('news-anchor', 'guo-de-gang', 'emotional')
+- style: Podcast风格 ('news-anchor', 'guo-de-gang', 'emotional')
 
 **响应:**
 ```json
@@ -192,8 +192,8 @@ POST /generate?style={style}
   "success": true,
   "data": {
     "episodeId": "news-anchor-2025-11-04T12-30-45-abc123",
-    "title": "今日热点播报 - 11月4日",
-    "description": "今日热点新闻：...",
+    "title": "Today Hot Topics - 11月4日",
+    "description": "Today HotNews：...",
     "newsCount": 5,
     "wordCount": 1200,
     "duration": 180,
@@ -222,16 +222,16 @@ GET /episodes/{episodeId}
 GET /rss.xml
 ```
 
-## 🎨 支持的播客风格
+## 🎨 支持的Podcast风格
 
-### 1. news-anchor (新闻主播)
+### 1. news-anchor (News主播)
 - **特点**: 专业、客观、正式
-- **适用场景**: 新闻播报、时事分析
+- **适用场景**: News播报、时事分析
 - **语音风格**: 标准普通话，语速适中
 
 ### 2. guo-de-gang (郭德纲风格)
 - **特点**: 幽默、包袱、接地气
-- **适用场景**: 娱乐新闻、生活趣事
+- **适用场景**: 娱乐News、生活趣事
 - **语音风格**: 带有方言特色，节奏感强
 
 ### 3. emotional (情感化风格)
@@ -264,15 +264,15 @@ GET /rss.xml
 
 ## 📊 业务规则
 
-### 新闻处理规则
-- 过滤重复新闻（基于标题相似度）
-- 限制新闻数量（默认5-10条）
+### News处理规则
+- 过滤重复News（基于标题相似度）
+- 限制News数量（默认5-10条）
 - 按时间倒序排列
-- 过滤过旧的新闻（24小时内）
+- 过滤过旧的News（24小时内）
 
 ### 脚本生成规则
 - 字数控制：1000-2000字
-- 包含新闻标题和关键信息
+- 包含News标题和关键信息
 - 根据风格调整语言风格
 - 保持客观中立（除幽默风格外）
 
@@ -301,7 +301,7 @@ GET /rss.xml
 - R2/D1: 存储失败、网络错误
 
 ### 业务错误
-- 新闻获取失败：返回默认新闻
+- News获取失败：返回默认News
 - 脚本生成失败：返回错误信息
 - 音频生成失败：标记为pending，允许重试
 
@@ -313,7 +313,7 @@ GET /rss.xml
 - 文件大小统计：脚本和音频的文件大小分布
 
 ### 业务指标
-- 日生成量：每日成功生成的播客数量
+- 日生成量：每日成功生成的Podcast数量
 - 用户使用情况：API调用频率和模式
 - 错误率：各环节的失败率统计
 

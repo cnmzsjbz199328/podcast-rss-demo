@@ -3,7 +3,7 @@
  * 脚本风格管理器 - 负责脚本风格配置和提示词管理
  */
 
-import { Logger } from '../../utils/logger.js';
+import { Logger } from '../utils/logger.js';
 
 export class ScriptStyleManager {
   constructor() {

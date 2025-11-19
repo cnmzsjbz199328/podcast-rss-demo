@@ -4,8 +4,8 @@
  */
 export class IScriptService {
   /**
-   * 生成播客脚本
-   * @param {NewsItem[]} news - 新闻数据
+   * 生成Podcast脚本
+   * @param {NewsItem[]} news - News数据
    * @param {string} style - 脚本风格
    * @returns {Promise<ScriptResult>} 生成的脚本结果
    */

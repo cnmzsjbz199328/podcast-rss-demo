@@ -156,7 +156,7 @@ curl "https://your-worker.workers.dev/health"
 src/
 ├── core/                          # ✅ 核心业务逻辑
 │   ├── PodcastGenerator.js        # 主控制器
-│   └── NewsProcessor.js           # 新闻处理
+│   └── NewsProcessor.js           # News处理
 ├── implementations/               # ✅ 服务实现
 │   ├── GeminiScriptService.js     # 脚本生成
 │   ├── IndexTtsVoiceService.js    # 语音合成

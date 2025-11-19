@@ -40,7 +40,7 @@ graph TD
     A[用户请求] --> B[PodcastHandler]
     B --> C[PodcastGenerator]
 
-    C --> D[获取新闻]
+    C --> D[获取News]
     D --> E[BbcRssService]
     E --> F[NewsProcessor]
 
@@ -156,7 +156,7 @@ graph TD
 src/
 ├── core/                          # 核心业务逻辑
 │   ├── PodcastGenerator.js        # 主控制器，编排整个生成流程
-│   └── NewsProcessor.js           # 新闻处理和过滤逻辑
+│   └── NewsProcessor.js           # News处理和过滤逻辑
 │
 ├── implementations/               # 服务具体实现
 │   ├── ai/                        # AI脚本生成服务
@@ -169,7 +169,7 @@ src/
 │   │   ├── FallbackScriptService.js # AI服务回退
 │   │   ├── ScriptStyleManager.js    # 脚本风格配置
 │   │   └── ScriptFormatter.js       # 脚本格式化和清理
-│   ├── BbcRssService.js           # BBC RSS新闻获取
+│   ├── BbcRssService.js           # BBC RSSNews获取
 │   ├── IndexTtsVoiceService.js    # IndexTTS语音合成
 │   ├── IndexTtsApiClient.js       # IndexTTS API客户端
 │   ├── IndexTtsAudioProcessor.js  # 音频处理
@@ -186,7 +186,7 @@ src/
 │
 ├── handlers/                      # HTTP请求处理器
 │   ├── Router.js                  # 路由分发
-│   ├── PodcastHandler.js          # 播客生成处理器
+│   ├── PodcastHandler.js          # Podcast生成处理器
 │   ├── ApiHandler.js              # 通用API处理器
 │   ├── FeedApiHandler.js          # RSS Feed处理器
 │   ├── EpisodeApiHandler.js       # 剧集管理处理器

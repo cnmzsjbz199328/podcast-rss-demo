@@ -1,5 +1,5 @@
 /**
- * 播客工作流协调器 - 协调各个步骤的执行
+ * Podcast工作流协调器 - 协调各个步骤的执行
  * 遵循单一职责原则，只负责工作流编排
  */
 
@@ -17,7 +17,7 @@ export class PodcastWorkflow {
   }
 
   /**
-  * 执行完整的播客生成工作流
+  * 执行完整的Podcast生成工作流
   */
   async executeWorkflow(context) {
     const useAsyncTts = context.options?.useAsyncTts || false;
@@ -57,7 +57,7 @@ export class PodcastWorkflow {
     }
 
   /**
-   * 执行异步播客生成工作流（语音生成异步）
+   * 执行异步Podcast生成工作流（语音生成异步）
    */
   async executeAsyncWorkflow(context) {
     const steps = [
@@ -190,14 +190,14 @@ export class PodcastWorkflow {
   _generateTitle(news, style) {
     // 标题生成逻辑
     const styleNames = {
-      'news-anchor': '今日热点播报',
-      'emotional': '新闻播报'
+      'news-anchor': 'Today Hot Topics',
+      'emotional': 'News播报'
     };
-    return `${styleNames[style] || '新闻播报'} - ${new Date().toLocaleDateString('zh-CN')}`;
+    return `${styleNames[style] || 'News播报'} - ${new Date().toLocaleDateString('zh-CN')}`;
   }
 
   _generateDescription(news) {
     // 描述生成逻辑
-    return `今日热点新闻：${news.slice(0, 3).map(item => item.title.split(' - ')[0]).join('；')}...`;
+    return `Today HotNews：${news.slice(0, 3).map(item => item.title.split(' - ')[0]).join('；')}...`;
   }
 }

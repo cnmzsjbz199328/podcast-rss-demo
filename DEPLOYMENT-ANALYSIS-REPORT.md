@@ -61,7 +61,7 @@ HTTP 500: "Audio generation failed: Unknown error (SSE stream error)"
 {
   "success": true,
   "script": {
-    "content": "好的，这是一份专业新闻播报员风格的播客脚本...",
+    "content": "好的，这是一份专业News播报员风格的Podcast脚本...",
     "wordCount": 922,
     "style": "news-anchor"
   }
@@ -80,7 +80,7 @@ HTTP 500: "Audio generation failed: Unknown error (SSE stream error)"
 ```
 用户请求 → PodcastHandler → PodcastGenerator
     ↓
-新闻获取 → ✅ BBC RSS成功
+News获取 → ✅ BBC RSS成功
     ↓
 脚本生成 → ✅ Gemini API成功
     ↓
@@ -125,7 +125,7 @@ HTTP 500: "Audio generation failed: Unknown error (SSE stream error)"
 ```javascript
 // 临时解决方案：跳过语音合成，直接保存脚本
 async generatePodcast(style) {
-  // 1. 获取新闻 ✅
+  // 1. 获取News ✅
   // 2. 生成脚本 ✅
   // 3. 跳过语音合成，标记为待处理
   // 4. 保存到数据库（audioUrl: null, status: 'script-only'）
@@ -208,8 +208,8 @@ const metrics = {
 4. **测试友好**: 组件独立可测
 
 ### ✅ **业务逻辑优势**
-1. **完整流程**: 端到端播客生成
-2. **多风格支持**: 新闻播报、相声、情感化
+1. **完整流程**: 端到端Podcast生成
+2. **多风格支持**: News播报、相声、情感化
 3. **RSS订阅**: 标准格式支持
 4. **数据持久化**: 完整的元数据管理
 
@@ -247,7 +247,7 @@ const metrics = {
 这不是系统设计问题，而是**外部服务集成问题**。核心业务逻辑和系统架构都非常优秀，问题仅在于IndexTTS API调用的技术细节。
 
 ### **风险评估**
-- **业务风险**: 🔴 高 - 当前无法生成播客
+- **业务风险**: 🔴 高 - 当前无法生成Podcast
 - **技术风险**: 🟡 中 - 单点TTS服务依赖
 - **运营风险**: 🟢 低 - 系统架构稳定
 
@@ -256,7 +256,7 @@ const metrics = {
 ## 🎉 **结论**
 
 ### **系统评估: 优秀 ✅**
-这是一个设计精良、架构先进的AI播客生成系统。代码质量上乘，业务逻辑完整，部署流程规范。
+这是一个设计精良、架构先进的AIPodcast生成系统。代码质量上乘，业务逻辑完整，部署流程规范。
 
 ### **问题定位: 精确 ✅**
 问题已精确定位为IndexTTS API调用失败，不是系统设计或代码实现问题。

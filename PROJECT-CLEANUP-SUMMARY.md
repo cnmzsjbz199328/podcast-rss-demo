@@ -94,7 +94,7 @@
 ```
 ├── core/
 │   ├── PodcastGenerator.js      # 主控制器
-│   └── NewsProcessor.js         # 新闻处理
+│   └── NewsProcessor.js         # News处理
 ```
 
 ### 服务实现层 (保持不变)

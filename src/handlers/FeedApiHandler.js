@@ -64,8 +64,8 @@ export class FeedApiHandler {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:podcast="https://podcastindex.org/namespace/1.0">
     <channel>
-    <title>Tom新闻播客</title>
-    <description>由AI生成的每日新闻播客</description>
+    <title>TomNewsPodcast</title>
+    <description>由AI生成的每日NewsPodcast</description>
     <link>https://podcast-rss-demo.tj15982183241.workers.dev</link>
     <language>en-us</language>
     <itunes:author>Jiang Tang</itunes:author>
@@ -85,14 +85,14 @@ export class FeedApiHandler {
       const opmlXml = `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="1.0">
   <head>
-    <title>Tom新闻播客订阅</title>
+    <title>TomNewsPodcast订阅</title>
     <dateCreated>${new Date().toISOString()}</dateCreated>
   </head>
   <body>
     <outline
       type="rss"
-      text="Tom新闻播客"
-      title="Tom新闻播客"
+      text="TomNewsPodcast"
+      title="TomNewsPodcast"
       xmlUrl="https://podcast-rss-demo.tj15982183241.workers.dev/rss.xml"
       htmlUrl="https://podcast-rss-demo.tj15982183241.workers.dev"/>
   </body>

@@ -169,8 +169,8 @@ async function generateAudio() {
  * 流式生成模式 - 使用 /generate_all 端点
  */
 async function generateAudioStreaming() {
-  // 使用较长的文本测试流式生成
-  const text = "Good morning and welcome to your comprehensive news briefing. Today, we bring you crucial political reforms from the UK, escalating international tensions, significant weather events, and updates from the realms of sports and entertainment. Leading our broadcast this hour, Home Secretary Shabana Mahmood is expected to announce sweeping reforms to the asylum system on Monday, proposals that could see refugees facing a stringent twenty-year wait before being eligible to settle permanently within the country.";
+  // 使用较短的文本测试基本功能
+  const text = "Hello world, this is a test.";
   const voice = "af_heart";
   const speed = 1.0;
   const usegpu = false;  // 布尔值，不是字符串

@@ -11,8 +11,8 @@ async function sleep(ms) {
 async function testAsyncFlow() {
   console.log('🚀 开始测试Event ID异步流程\n');
 
-  // 步骤1: 生成播客
-  console.log('1️⃣ 生成播客...');
+  // 步骤1: 生成Podcast
+  console.log('1️⃣ 生成Podcast...');
   const generateResponse = await fetch(`${BASE_URL}/generate?style=news-anchor`, {
     method: 'POST'
   });
@@ -31,7 +31,7 @@ async function testAsyncFlow() {
 
   const { episodeId, eventId, isAsync, audioUrl } = generateResult.data;
   
-  console.log('✅ 播客生成成功');
+  console.log('✅ Podcast生成成功');
   console.log(`  Episode ID: ${episodeId}`);
   console.log(`  Event ID: ${eventId}`);
   console.log(`  Is Async: ${isAsync}`);

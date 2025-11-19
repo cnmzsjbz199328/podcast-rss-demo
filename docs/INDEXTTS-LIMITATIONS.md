@@ -11,7 +11,7 @@ IndexTTS 使用 Gradio API，其 SSE（Server-Sent Events）机制存在以下�
 
 ### 2. 快速失效
 - IndexTTS 的 session 生命周期很短（通常几分钟）
-- 如果在生成播客脚本（25-30秒）后再轮询，session 可能已过期
+- 如果在生成Podcast脚本（25-30秒）后再轮询，session 可能已过期
 
 ### 3. 音频生成时间
 - 简短文本（200字符以内）：通常 5-15 秒
@@ -34,7 +34,7 @@ IndexTTS 使用 Gradio API，其 SSE（Server-Sent Events）机制存在以下�
 ### ❌ Worker 完整流程（失败）
 ```
 步骤：
-1. 获取新闻 (2-3秒)
+1. 获取News (2-3秒)
 2. 生成脚本 (20-25秒) 
 3. 调用 IndexTTS → 获得 event_id
 4. 返回给用户（异步）
@@ -47,7 +47,7 @@ IndexTTS session 已过期
 ## 当前实现状态
 
 ### 生成端点 `/generate`
-- ✅ 新闻获取正常
+- ✅ News获取正常
 - ✅ AI 脚本生成正常  
 - ✅ IndexTTS API 调用正常
 - ✅ 返回 `event_id`
@@ -132,7 +132,7 @@ node tests/integration/test-complete-workflow.js
 ## 推荐做法
 
 ### 短期方案
-1. ✅ 生成更短的播客脚本（已实现）
+1. ✅ 生成更短的Podcast脚本（已实现）
 2. ✅ 提供详细的 API 文档说明限制
 3. ⚠️ 建议用户在收到响应后立即轮询（虽然仍可能失败）
 

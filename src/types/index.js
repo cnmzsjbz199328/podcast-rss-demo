@@ -3,13 +3,13 @@
  */
 
 /**
- * 新闻项类型
+ * News项类型
  * @typedef {Object} NewsItem
- * @property {string} title - 新闻标题
- * @property {string} description - 新闻描述
- * @property {string} link - 新闻链接
+ * @property {string} title - News标题
+ * @property {string} description - News描述
+ * @property {string} link - News链接
  * @property {string} pubDate - 发布时间
- * @property {string} category - 新闻分类
+ * @property {string} category - News分类
  * @property {string} guid - 唯一标识符
  */
 
@@ -45,7 +45,7 @@
  */
 
 /**
- * 播客剧集类型
+ * Podcast剧集类型
  * @typedef {Object} PodcastEpisode
  * @property {string} title - 剧集标题
  * @property {string} description - 剧集描述
@@ -53,7 +53,7 @@
  * @property {string} scriptUrl - 脚本URL
  * @property {string} pubDate - 发布时间
  * @property {number} duration - 时长(秒)
- * @property {string} style - 播客风格
+ * @property {string} style - Podcast风格
  * @property {string} guid - 唯一标识符
  */
 

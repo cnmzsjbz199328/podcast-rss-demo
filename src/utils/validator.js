@@ -3,8 +3,8 @@
  */
 
 /**
- * 验证新闻项数据
- * @param {NewsItem} item - 新闻项
+ * 验证News项数据
+ * @param {NewsItem} item - News项
  * @returns {boolean} 是否有效
  */
 export function validateNewsItem(item) {

@@ -132,7 +132,7 @@ export class KokoroTtsVoiceService extends IVoiceService {
     // 根据风格映射到合适的语音
     // Kokoro-TTS 支持多种语音，这里提供一些映射
     const voiceMap = {
-      'news': 'af_heart', // 新闻播报风格
+      'news': 'af_heart', // News播报风格
       'story': 'af_heart', // 故事叙述
       'casual': 'af_heart', // 随意风格
       'formal': 'af_heart', // 正式风格

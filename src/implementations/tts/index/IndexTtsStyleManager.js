@@ -17,7 +17,7 @@ export class IndexTtsStyleManager {
   getStyleConfig(style) {
     const styles = {
       'news-anchor': {
-        name: '专业新闻播报',
+        name: '专业News播报',
         voiceSample: 'https://pub-b436254f85684e9e95bebad4567b11ff.r2.dev/voice/kaluoling.mp3',
         emotionSample: null,
         params: {

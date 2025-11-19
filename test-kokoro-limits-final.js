@@ -18,7 +18,7 @@ async function testKokoroLimits() {
 
   console.log('📊 测试策略：');
   console.log('1. 分析现有数据模式');
-  console.log('2. 生成不同长度的播客');
+  console.log('2. 生成不同长度的Podcast');
   console.log('3. 测量实际音频时长与估算时长的比例');
   console.log('4. 确定Kokoro TTS的实际处理极限\n');
 
@@ -41,7 +41,7 @@ async function testKokoroLimits() {
   console.log('- 处理比例: 实际音频时长 ÷ 估算脚本时长\n');
 
   console.log('📋 测试命令：');
-  console.log('# 生成播客');
+  console.log('# 生成Podcast');
   console.log('curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=news-anchor"');
   console.log('');
   console.log('# 检查音频文件大小');

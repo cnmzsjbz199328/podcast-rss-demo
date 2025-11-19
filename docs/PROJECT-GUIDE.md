@@ -1,6 +1,6 @@
-# AI 播客生成系统 - 完整指南
+# AI Podcast生成系统 - 完整指南
 
-> **基于 Cloudflare Workers + R2 + D1 的全自动播客生成系统**
+> **基于 Cloudflare Workers + R2 + D1 的全自动Podcast生成系统**
 
 ## 📋 目录
 
@@ -19,15 +19,15 @@
 
 ### 功能特性
 
-✅ **自动化播客生成**
-- 从 BBC RSS 自动获取最新新闻
-- 使用 Google Gemini AI 生成播客脚本
+✅ **自动化Podcast生成**
+- 从 BBC RSS 自动获取最新News
+- 使用 Google Gemini AI 生成Podcast脚本
 - 使用 IndexTTS 进行语音合成
 - 自动上传到 Cloudflare R2 存储
 - 自动保存元数据到 D1 数据库
 
 ✅ **多种播报风格**
-- `news-anchor` - 专业新闻主播风格
+- `news-anchor` - 专业News主播风格
 - `guo-de-gang` - 郭德纲相声风格
 - `emotional` - 情感化播报风格
 
@@ -60,8 +60,8 @@
 podcast-rss-demo/
 ├── src/                          # 源代码
 │   ├── core/                     # 核心业务逻辑
-│   │   ├── NewsProcessor.js      # 新闻处理器
-│   │   └── PodcastGenerator.js   # 播客生成器
+│   │   ├── NewsProcessor.js      # News处理器
+│   │   └── PodcastGenerator.js   # Podcast生成器
 │   ├── implementations/          # 服务实现
 │   │   ├── BbcRssService.js      # BBC RSS 服务
 │   │   ├── GeminiScriptService.js    # Gemini 脚本生成
@@ -163,7 +163,7 @@ curl http://localhost:8787/health
 │  │  ┌───────────────────────────────────────────┐  │   │
 │  │  │      PodcastGenerator (核心)              │  │   │
 │  │  │  ┌─────────────────────────────────────┐  │  │   │
-│  │  │  │  1. BBC RSS Service (新闻获取)     │  │  │   │
+│  │  │  │  1. BBC RSS Service (News获取)     │  │  │   │
 │  │  │  │     ↓                               │  │  │   │
 │  │  │  │  2. Gemini Script Service (AI脚本)  │  │  │   │
 │  │  │  │     ↓                               │  │  │   │
@@ -186,16 +186,16 @@ curl http://localhost:8787/health
 
 ### 数据流
 
-1. **新闻获取**: BBC RSS → XML 解析 → 新闻列表
-2. **脚本生成**: 新闻列表 → Gemini AI → 播客脚本
-3. **语音合成**: 播客脚本 → IndexTTS → 音频文件
+1. **News获取**: BBC RSS → XML 解析 → News列表
+2. **脚本生成**: News列表 → Gemini AI → Podcast脚本
+3. **语音合成**: Podcast脚本 → IndexTTS → 音频文件
 4. **文件存储**: 音频文件 → R2 Bucket → 公开 URL
 5. **元数据保存**: 剧集信息 → D1 Database → 持久化
 6. **RSS 生成**: D1 查询 → XML 生成 → RSS Feed
 
 ### 数据库设计
 
-**episodes 表** (播客剧集):
+**episodes 表** (Podcast剧集):
 ```sql
 CREATE TABLE episodes (
   id TEXT PRIMARY KEY,              -- 剧集唯一ID
@@ -306,7 +306,7 @@ curl $WORKER_URL/health
 # 查看剧集列表
 curl $WORKER_URL/episodes
 
-# 生成播客（耗时约30秒）
+# 生成Podcast（耗时约30秒）
 curl -X POST "$WORKER_URL/generate?style=news-anchor"
 
 # RSS Feed
@@ -338,10 +338,10 @@ GET /
 {
   "name": "Podcast RSS API",
   "version": "2.0.0",
-  "description": "由AI生成的新闻播客服务，支持多种播报风格",
+  "description": "由AI生成的NewsPodcast服务，支持多种播报风格",
   "endpoints": {
     "GET /rss.xml": { "description": "获取RSS Feed" },
-    "POST /generate": { "description": "生成播客" },
+    "POST /generate": { "description": "生成Podcast" },
     "GET /episodes": { "description": "获取剧集列表" },
     "GET /episodes/:id": { "description": "获取剧集详情" },
     "GET /health": { "description": "健康检查" }
@@ -375,7 +375,7 @@ GET /health
 }
 ```
 
-#### 3. 生成播客
+#### 3. 生成Podcast
 
 ```http
 POST /generate?style={style}
@@ -383,7 +383,7 @@ POST /generate?style={style}
 
 **参数**:
 - `style` (必需): 播报风格
-  - `news-anchor` - 专业新闻主播
+  - `news-anchor` - 专业News主播
   - `guo-de-gang` - 郭德纲相声风格
   - `emotional` - 情感化播报
 
@@ -393,8 +393,8 @@ POST /generate?style={style}
   "success": true,
   "data": {
     "episodeId": "news-anchor-2025-11-03T12-00-00-abc123",
-    "title": "今日热点播报 - 11月3日",
-    "description": "今日热点新闻...",
+    "title": "Today Hot Topics - 11月3日",
+    "description": "Today HotNews...",
     "style": "news-anchor",
     "newsCount": 10,
     "duration": 373,
@@ -426,7 +426,7 @@ GET /episodes?limit={limit}&offset={offset}&style={style}
     "episodes": [
       {
         "id": "news-anchor-2025-11-03...",
-        "title": "今日热点播报",
+        "title": "Today Hot Topics",
         "description": "...",
         "audioUrl": "https://...",
         "style": "news-anchor",
@@ -457,7 +457,7 @@ GET /episodes/{id}
   "success": true,
   "data": {
     "id": "news-anchor-2025-11-03...",
-    "title": "今日热点播报",
+    "title": "Today Hot Topics",
     "description": "...",
     "audioUrl": "https://...",
     "scriptUrl": "https://...",
@@ -484,7 +484,7 @@ GET /rss.xml
 **响应**: RSS 2.0 XML 格式
 
 **使用方式**:
-- 将 URL 添加到播客客户端（Apple Podcasts, Spotify 等）
+- 将 URL 添加到Podcast客户端（Apple Podcasts, Spotify 等）
 - 自动获取最新剧集
 
 ---
@@ -494,10 +494,10 @@ GET /rss.xml
 ### 端到端测试
 
 ```bash
-# 快速测试（跳过播客生成）
+# 快速测试（跳过Podcast生成）
 npm run test:production
 
-# 完整测试（包含播客生成，约3分钟）
+# 完整测试（包含Podcast生成，约3分钟）
 npm run test:production:full
 ```
 
@@ -510,7 +510,7 @@ npm run test:production:full
 - 健康检查接口
 
 ✅ **功能测试**
-- 新闻获取 (BBC RSS)
+- News获取 (BBC RSS)
 - AI 脚本生成 (Gemini)
 - 语音合成 (IndexTTS)
 - 文件上传 (R2)
@@ -519,7 +519,7 @@ npm run test:production:full
 - RSS Feed 生成
 
 ✅ **集成测试**
-- 完整播客生成流程
+- 完整Podcast生成流程
 - 端到端数据流验证
 - API 响应格式验证
 
@@ -532,7 +532,7 @@ export WORKER_URL="https://your-worker.workers.dev"
 # 1. 健康检查
 curl $WORKER_URL/health | jq '.'
 
-# 2. 生成播客
+# 2. 生成Podcast
 curl -X POST "$WORKER_URL/generate?style=news-anchor" | jq '.'
 
 # 3. 查看剧集列表
@@ -555,7 +555,7 @@ npx wrangler r2 object list podcast-files --limit 10
 
 ### 常见问题
 
-#### 1. 播客生成失败
+#### 1. Podcast生成失败
 
 **症状**: 
 ```
@@ -622,7 +622,7 @@ npx wrangler deploy
 
 **症状**:
 ```
-播客生成成功但 GET /episodes 返回空列表
+Podcast生成成功但 GET /episodes 返回空列表
 ```
 
 **调试步骤**:
@@ -630,7 +630,7 @@ npx wrangler deploy
 # 1. 查看实时日志
 npx wrangler tail
 
-# 2. 在生成播客时观察日志输出，寻找 "Episode saved to database" 或错误信息
+# 2. 在生成Podcast时观察日志输出，寻找 "Episode saved to database" 或错误信息
 
 # 3. 手动查询数据库
 npx wrangler d1 execute podcast-database --remote \
@@ -645,7 +645,7 @@ npx wrangler d1 execute podcast-database --remote \
 # 实时日志（推荐）
 npx wrangler tail --format pretty
 
-# 在另一个终端生成播客
+# 在另一个终端生成Podcast
 curl -X POST "https://your-worker.workers.dev/generate?style=news-anchor"
 
 # 日志输出示例:
@@ -706,8 +706,8 @@ npm run dev
 ### 代码结构说明
 
 **核心类**:
-- `PodcastGenerator`: 播客生成主控制器
-- `NewsProcessor`: 新闻内容处理
+- `PodcastGenerator`: Podcast生成主控制器
+- `NewsProcessor`: News内容处理
 - `*Service`: 各种服务的接口定义
 - `*ServiceImpl`: 服务的具体实现
 

@@ -19,9 +19,9 @@ export class BbcRssService extends IRssService {
   }
 
   /**
-   * 获取新闻列表
+   * 获取News列表
    * @param {Object} options - 获取选项
-   * @returns {Promise<NewsItem[]>} 新闻列表
+   * @returns {Promise<NewsItem[]>} News列表
    */
   async fetchNews(options = {}) {
     const finalOptions = { ...this.config, ...options };
@@ -45,7 +45,7 @@ export class BbcRssService extends IRssService {
    * 获取RSS源数据
    * @private
    * @param {Object} options - 获取选项
-   * @returns {Promise<NewsItem[]>} 新闻列表
+   * @returns {Promise<NewsItem[]>} News列表
    */
   async _fetchRssFeed(options) {
     const { url, timeout = 30000, maxItems = 10 } = options;
@@ -88,7 +88,7 @@ export class BbcRssService extends IRssService {
    * @private
    * @param {Array} items - RSS项目数组
    * @param {number} maxItems - 最大项目数
-   * @returns {NewsItem[]} 处理后的新闻项
+   * @returns {NewsItem[]} 处理后的News项
    */
   _processFeedItems(items, maxItems) {
     return items
@@ -98,10 +98,10 @@ export class BbcRssService extends IRssService {
   }
 
   /**
-   * 转换RSS项目为新闻项
+   * 转换RSS项目为News项
    * @private
    * @param {Object} item - RSS项目
-   * @returns {NewsItem|null} 新闻项或null
+   * @returns {NewsItem|null} News项或null
    */
   _convertToNewsItem(item) {
     try {

@@ -457,7 +457,7 @@ export class IndexTTSService {
   }
 
   /**
-   * 批量生成语音（用于单条新闻的所有角色）
+   * 批量生成语音（用于单条News的所有角色）
    */
   async generateBatchSpeech(
     segments: Array<{ text: string; speaker: Speaker; id: string }>

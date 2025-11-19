@@ -22,7 +22,7 @@ async function testPodcastGeneration(textName, text) {
   const startTime = Date.now();
 
   try {
-    // 调用播客生成API
+    // 调用Podcast生成API
     const response = await fetch('https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=news-anchor', {
       method: 'POST',
       headers: {
@@ -42,7 +42,7 @@ async function testPodcastGeneration(textName, text) {
 
     if (result.success) {
       const episodeId = result.data.episodeId;
-      console.log(`✅ 播客生成成功: ${episodeId}`);
+      console.log(`✅ Podcast生成成功: ${episodeId}`);
 
       // 获取详细信息
       const detailResponse = await fetch(`https://podcast-rss-demo.tj15982183241.workers.dev/episodes/${episodeId}`);
@@ -67,7 +67,7 @@ async function testPodcastGeneration(textName, text) {
         }
       }
     } else {
-      console.log(`❌ 播客生成失败: ${result.error}`);
+      console.log(`❌ Podcast生成失败: ${result.error}`);
     }
 
   } catch (error) {

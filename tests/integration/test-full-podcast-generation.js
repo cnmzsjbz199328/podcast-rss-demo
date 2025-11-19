@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * 完整播客生成流程集成测试
+ * 完整Podcast生成流程集成测试
  * 
- * 测试完整的端到端播客生成流程：
- * 1. 发起播客生成请求
+ * 测试完整的端到端Podcast生成流程：
+ * 1. 发起Podcast生成请求
  * 2. 验证初始响应数据
  * 3. 轮询音频生成状态
  * 4. 验证最终生成的音频文件
@@ -43,13 +43,13 @@ args.forEach(arg => {
     options.skipAudioCheck = true;
   } else if (arg === '--help' || arg === '-h') {
     console.log(`
-完整播客生成流程集成测试
+完整Podcast生成流程集成测试
 
 用法:
   node tests/integration/test-full-podcast-generation.js [options]
 
 选项:
-  --style=<style>      指定播客风格 (news-anchor, guo-de-gang, emotional)
+  --style=<style>      指定Podcast风格 (news-anchor, guo-de-gang, emotional)
   --timeout=<seconds>  最大等待时间，秒 (默认: 180)
   --verbose           显示详细日志
   --skip-audio-check  跳过音频文件下载验证
@@ -119,10 +119,10 @@ class PodcastGenerationTest {
   }
 
   /**
-   * 步骤 1: 发起播客生成请求
+   * 步骤 1: 发起Podcast生成请求
    */
   async testPodcastGeneration() {
-    log(`开始测试播客生成 (风格: ${this.options.style})`, 'info');
+    log(`开始测试Podcast生成 (风格: ${this.options.style})`, 'info');
     log(`Worker URL: ${BASE_URL}`, 'debug');
     
     const url = `${BASE_URL}/generate?style=${this.options.style}`;
@@ -181,7 +181,7 @@ class PodcastGenerationTest {
       }
       
       // 记录生成信息
-      log(`播客生成请求成功`, 'success');
+      log(`Podcast生成请求成功`, 'success');
       log(`  Episode ID: ${this.episodeId}`, 'info');
       log(`  Event ID: ${this.eventId}`, 'info');
       log(`  标题: ${data.title}`, 'info');
@@ -190,7 +190,7 @@ class PodcastGenerationTest {
       log(`  TTS 状态: ${data.ttsStatus}`, 'info');
       
       if (data.metadata) {
-        log(`  新闻数量: ${data.metadata.newsCount || 'N/A'}`, 'info');
+        log(`  News数量: ${data.metadata.newsCount || 'N/A'}`, 'info');
         log(`  字数: ${data.metadata.wordCount || 'N/A'}`, 'info');
         log(`  预估时长: ${data.metadata.duration ? formatDuration(data.metadata.duration) : 'N/A'}`, 'info');
       }
@@ -206,7 +206,7 @@ class PodcastGenerationTest {
       return true;
       
     } catch (error) {
-      log(`播客生成失败: ${error.message}`, 'error');
+      log(`Podcast生成失败: ${error.message}`, 'error');
       this.results.generation = {
         success: false,
         error: error.message
@@ -552,7 +552,7 @@ class PodcastGenerationTest {
    */
   async run() {
     console.log('╔═══════════════════════════════════════════════════════════╗');
-    console.log('║       完整播客生成流程集成测试                          ║');
+    console.log('║       完整Podcast生成流程集成测试                          ║');
     console.log('╚═══════════════════════════════════════════════════════════╝\n');
     
     log(`Worker URL: ${BASE_URL}`, 'info');
@@ -561,7 +561,7 @@ class PodcastGenerationTest {
     log(`开始时间: ${new Date().toLocaleString('zh-CN')}\n`, 'info');
     
     const steps = [
-      { name: '播客生成', fn: () => this.testPodcastGeneration() },
+      { name: 'Podcast生成', fn: () => this.testPodcastGeneration() },
       { name: '音频轮询', fn: () => this.testAudioPolling() },
       { name: '音频验证', fn: () => this.testAudioVerification() },
       { name: '数据库检查', fn: () => this.testDatabaseCheck() },
@@ -615,7 +615,7 @@ class PodcastGenerationTest {
     console.log('╚═══════════════════════════════════════════════════════════╝\n');
     
     const testResults = [
-      { name: '播客生成', result: this.results.generation },
+      { name: 'Podcast生成', result: this.results.generation },
       { name: '音频轮询', result: this.results.polling },
       { name: '音频验证', result: this.results.audioVerification },
       { name: '数据库检查', result: this.results.databaseCheck },
@@ -664,7 +664,7 @@ class PodcastGenerationTest {
     console.log('\n' + '='.repeat(60));
     
     if (success && failed === 0) {
-      console.log('🎉 所有测试通过！播客生成流程运行正常。');
+      console.log('🎉 所有测试通过！Podcast生成流程运行正常。');
     } else if (failed > 0) {
       console.log('⚠️  有测试失败，请查看上述错误信息。');
     } else {

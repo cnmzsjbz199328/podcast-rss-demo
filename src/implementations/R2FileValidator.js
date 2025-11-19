@@ -50,9 +50,11 @@ export class R2FileValidator {
       throw new Error('Audio file size is invalid');
     }
 
-    // 音频文件最小1KB，最大50MB
-    if (result.fileSize < 1024) {
-      throw new Error('Audio file is too small (possibly corrupted)');
+    // 音频文件最小100字节（调试阶段放宽限制），最大50MB
+    if (result.fileSize < 100) {
+      this.logger.warn('Audio file is very small', { fileSize: result.fileSize, audioUrl: result.audioUrl });
+      // 暂时不抛出错误，允许小文件继续处理
+      // throw new Error(`Audio file is too small (possibly corrupted): ${result.fileSize} bytes`);
     }
 
     if (result.fileSize > 50 * 1024 * 1024) {

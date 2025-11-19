@@ -2,28 +2,28 @@
 
 /**
  * Kokoro TTS 截断问题分析脚本
- * 分析现有播客数据，验证截断问题并设计修复方案
+ * 分析现有Podcast数据，验证截断问题并设计修复方案
  */
 
 async function analyzeTruncation() {
   console.log('🔍 Kokoro TTS 截断问题深度分析\n');
 
   try {
-    // 获取最近的几个播客
-    console.log('📊 获取播客数据...');
+    // 获取最近的几个Podcast
+    console.log('📊 获取Podcast数据...');
     const episodesResponse = await fetch('https://podcast-rss-demo.tj15982183241.workers.dev/episodes?limit=5');
     const episodesData = await episodesResponse.json();
 
     if (!episodesData.success) {
-      throw new Error('获取播客数据失败');
+      throw new Error('获取Podcast数据失败');
     }
 
     const episodes = episodesData.data.episodes;
-    console.log(`✅ 获取到 ${episodes.length} 个播客\n`);
+    console.log(`✅ 获取到 ${episodes.length} 个Podcast\n`);
 
-    // 分析每个播客
+    // 分析每个Podcast
     for (const episode of episodes) {
-      console.log(`🎙️  分析播客: ${episode.title}`);
+      console.log(`🎙️  分析Podcast: ${episode.title}`);
       console.log(`   ID: ${episode.id}`);
       console.log(`   风格: ${episode.style}`);
       console.log(`   记录时长: ${episode.duration}秒`);

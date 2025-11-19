@@ -1,30 +1,30 @@
 /** 限制：每个文件不超过200行，当前行数：87行 */
 /**
- * Cohere脚本生成服务实现 - 重构后的精简版本
+ * Gemini脚本生成服务实现 - 重构后的精简版本
  * 使用组合模式，将职责分离到专用组件中
  */
 
-import { IScriptService } from '../../../services/IScriptService.js';
-import { Logger } from '../../../utils/logger.js';
-import { withRetry } from '../../../utils/retryUtils.js';
-import { CohereApiClient } from './CohereApiClient.js';
-import { ScriptStyleManager } from '../ScriptStyleManager.js';
-import { ScriptFormatter } from '../ScriptFormatter.js';
+import { IScriptService } from '../services/IScriptService.js';
+import { Logger } from '../utils/logger.js';
+import { withRetry } from '../utils/retryUtils.js';
+import { GeminiApiClient } from './GeminiApiClient.js';
+import { ScriptStyleManager } from './ScriptStyleManager.js';
+import { ScriptFormatter } from './ScriptFormatter.js';
 
-export class CohereScriptService extends IScriptService {
+export class GeminiScriptService extends IScriptService {
   /**
-   * 创建Cohere脚本服务实例
+   * 创建Gemini脚本服务实例
    * @param {Object} config - 服务配置
    */
   constructor(config) {
     super();
     this.config = config;
-    this.logger = new Logger('CohereScriptService');
+    this.logger = new Logger('GeminiScriptService');
 
     // 初始化组件
-    this.apiClient = new CohereApiClient(
+    this.apiClient = new GeminiApiClient(
       config.apiKey,
-      config.model || 'command-a-03-2025'
+      config.model || 'gemini-2.5-flash'
     );
     this.styleManager = new ScriptStyleManager();
     this.formatter = new ScriptFormatter();
@@ -36,7 +36,7 @@ export class CohereScriptService extends IScriptService {
   async generateScript(news, style) {
     // 验证API密钥
     if (!this.config.apiKey) {
-      throw new Error('Cohere API key is not configured. Please set COHERE_API_KEY environment variable.');
+      throw new Error('Gemini API key is not configured. Please set GEMINI_API_KEY environment variable.');
     }
 
     return withRetry(
@@ -86,10 +86,10 @@ export class CohereScriptService extends IScriptService {
     });
 
     // 调用API
-    this.logger.info('Calling Cohere API for script generation', {
+    this.logger.info('Calling Gemini API for script generation', {
       style,
       newsCount: news.length,
-      model: this.config.model || 'command-a-03-2025'
+      model: this.config.model || 'gemini-2.5-flash'
     });
 
     const result = await this.apiClient.generateContent(prompt, {
@@ -97,7 +97,7 @@ export class CohereScriptService extends IScriptService {
       maxTokens: this.config.maxTokens || 1500
     });
 
-    this.logger.debug('Cohere API call completed', {
+    this.logger.debug('Gemini API call completed', {
       hasText: !!result.text,
       textLength: result.text?.length || 0
     });
@@ -159,7 +159,6 @@ export class CohereScriptService extends IScriptService {
   _shouldRetry(error) {
     return error.message.includes('quota') ||
            error.message.includes('rate') ||
-           error.message.includes('overloaded') ||
            error.status === 429 ||
            error.status >= 500;
   }

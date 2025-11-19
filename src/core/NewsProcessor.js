@@ -1,5 +1,5 @@
 /**
- * 新闻处理逻辑
+ * News处理逻辑
  */
 
 import { Logger } from '../utils/logger.js';
@@ -7,7 +7,7 @@ import { validateNewsItem } from '../utils/validator.js';
 
 export class NewsProcessor {
   /**
-   * 创建新闻处理器
+   * 创建News处理器
    * @param {Object} config - 配置对象
    */
   constructor(config) {
@@ -16,9 +16,9 @@ export class NewsProcessor {
   }
 
   /**
-   * 处理新闻列表
-   * @param {NewsItem[]} rawNews - 原始新闻数据
-   * @returns {NewsItem[]} 处理后的新闻
+   * 处理News列表
+   * @param {NewsItem[]} rawNews - 原始News数据
+   * @returns {NewsItem[]} 处理后的News
    */
   processNews(rawNews) {
     if (!Array.isArray(rawNews)) {
@@ -41,13 +41,13 @@ export class NewsProcessor {
   }
 
   /**
-   * 将新闻格式化为脚本输入
-   * @param {NewsItem[]} news - 新闻列表
-   * @returns {string} 格式化的新闻文本
+   * 将News格式化为脚本输入
+   * @param {NewsItem[]} news - News列表
+   * @returns {string} 格式化的News文本
    */
   formatNewsForScript(news) {
     if (!news || news.length === 0) {
-      return '暂无新闻内容';
+      return '暂无News内容';
     }
 
     const formattedNews = news.map((item, index) => {
@@ -61,17 +61,17 @@ ${item.description}
 `;
     }).join('---\n\n');
 
-    return `以下是今日热点新闻：
+    return `以下是Today HotNews：
 
 ${formattedNews}
 
-请根据以上新闻内容生成播客脚本。`;
+请根据以上News内容生成Podcast脚本。`;
   }
 
   /**
-   * 验证和清理新闻项
+   * 验证和清理News项
    * @private
-   * @param {NewsItem} item - 新闻项
+   * @param {NewsItem} item - News项
    * @returns {boolean} 是否有效
    */
   _validateAndCleanItem(item) {
@@ -105,10 +105,10 @@ ${formattedNews}
   }
 
   /**
-   * 丰富新闻项数据
+   * 丰富News项数据
    * @private
-   * @param {NewsItem} item - 新闻项
-   * @returns {NewsItem} 丰富后的新闻项
+   * @param {NewsItem} item - News项
+   * @returns {NewsItem} 丰富后的News项
    */
   _enrichNewsItem(item) {
     return {
@@ -121,9 +121,9 @@ ${formattedNews}
   }
 
   /**
-   * 生成新闻GUID
+   * 生成NewsGUID
    * @private
-   * @param {NewsItem} item - 新闻项
+   * @param {NewsItem} item - News项
    * @returns {string} GUID
    */
   _generateGuid(item) {
@@ -179,9 +179,9 @@ ${formattedNews}
   }
 
   /**
-   * 按分类分组新闻
-   * @param {NewsItem[]} news - 新闻列表
-   * @returns {Object} 按分类分组的新闻
+   * 按分类分组News
+   * @param {NewsItem[]} news - News列表
+   * @returns {Object} 按分类分组的News
    */
   groupNewsByCategory(news) {
     const grouped = {};
@@ -198,9 +198,9 @@ ${formattedNews}
   }
 
   /**
-   * 过滤重复新闻
-   * @param {NewsItem[]} news - 新闻列表
-   * @returns {NewsItem[]} 去重后的新闻
+   * 过滤重复News
+   * @param {NewsItem[]} news - News列表
+   * @returns {NewsItem[]} 去重后的News
    */
   removeDuplicates(news) {
     const seen = new Set();

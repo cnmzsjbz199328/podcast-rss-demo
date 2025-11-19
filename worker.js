@@ -1,5 +1,5 @@
 /**
- * Cloudflare Worker - RSS播客API
+ * Cloudflare Worker - RSSPodcastAPI
  * 重构后的精简版本
  */
 
@@ -62,10 +62,10 @@ router.register('GET', '/', (req, services) => {
   return new Response(JSON.stringify({
     name: 'Podcast RSS API',
     version: '2.0.0',
-    description: '由AI生成的新闻播客服务，支持多种播报风格',
+    description: '由AI生成的NewsPodcast服务，支持多种播报风格',
     endpoints: {
       'POST /generate': {
-        description: '生成播客',
+        description: '生成Podcast',
         parameters: { style: 'guo-de-gang | news-anchor | emotional' },
         example: `${baseUrl}/generate?style=news-anchor`
       },
@@ -87,7 +87,7 @@ router.register('GET', '/', (req, services) => {
         example: `${baseUrl}/health`
       }
     },
-    styles: ['guo-de-gang - 郭德纲风格', 'news-anchor - 新闻主播风格', 'emotional - 情感化风格']
+    styles: ['guo-de-gang - 郭德纲风格', 'news-anchor - News主播风格', 'emotional - 情感化风格']
   }), {
     headers: {
       'Content-Type': 'application/json',
@@ -134,6 +134,38 @@ const services = serviceInitializer.getServices(env);
           'Access-Control-Allow-Origin': '*'
         }
       });
+    }
+  },
+
+  /**
+   * 处理定时任务 - 自动生成Podcast
+   */
+  async scheduled(event, env, ctx) {
+    console.log('🎯 Cron trigger activated:', event.cron);
+
+    try {
+      // 初始化服务
+      const services = serviceInitializer.getServices(env);
+
+      // 创建模拟请求来生成Podcast
+      const generateUrl = `https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=news-anchor&useAsyncTts=true`;
+      const mockRequest = new Request(generateUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // 调用Podcast生成处理器
+      const response = await podcastHandler.handleGenerate(mockRequest, services);
+
+      // 记录结果
+      console.log('✅ Scheduled podcast generation completed');
+
+      return response;
+    } catch (error) {
+      console.error('❌ Scheduled podcast generation failed:', error);
+      throw error;
     }
   }
 };

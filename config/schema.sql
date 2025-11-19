@@ -1,4 +1,4 @@
--- 播客剧集表
+-- Podcast剧集表
 CREATE TABLE IF NOT EXISTS episodes (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -24,7 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_episodes_status ON episodes(status);
 CREATE INDEX IF NOT EXISTS idx_episodes_style ON episodes(style);
 CREATE INDEX IF NOT EXISTS idx_episodes_published_at ON episodes(published_at DESC);
 
--- 新闻源表（记录已处理的新闻）
+-- News源表（记录已处理的News）
 CREATE TABLE IF NOT EXISTS news_sources (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS news_sources (
 
 CREATE INDEX IF NOT EXISTS idx_news_sources_processed_at ON news_sources(processed_at DESC);
 
--- 生成任务表（记录播客生成任务）
+-- 生成任务表（记录Podcast生成任务）
 CREATE TABLE IF NOT EXISTS generation_tasks (
   id TEXT PRIMARY KEY,
   style TEXT NOT NULL,

@@ -1,5 +1,5 @@
 /**
- * 播客生成器 - 主控制器 (重构版)
+ * Podcast生成器 - 主控制器 (重构版)
  * 遵循单一职责原则，专注于协调各个服务
  */
 
@@ -9,7 +9,7 @@ import { safeExecute, validateServiceInterface } from '../utils/errorHandling.js
 
 export class PodcastGenerator {
   /**
-   * 创建播客生成器
+   * 创建Podcast生成器
    * @param {Object} services - 服务实例
    * @param {Object} config - 配置对象
    */
@@ -29,8 +29,8 @@ export class PodcastGenerator {
   }
 
   /**
-  * 生成播客
-  * @param {string} style - 播客风格
+  * 生成Podcast
+  * @param {string} style - Podcast风格
   * @param {Object} options - 生成选项
   * @returns {Promise<PodcastResult>} 生成结果
   */
@@ -104,8 +104,8 @@ export class PodcastGenerator {
 
   return {
   episodeId,
-  title: results.generateScript?.title || `播客 - ${episodeId}`,
-  description: results.generateScript?.description || 'AI生成的播客内容',
+  title: results.generateScript?.title || `Podcast - ${episodeId}`,
+  description: results.generateScript?.description || 'AI生成的Podcast内容',
   style: results.generateScript?.style || 'news-anchor',
   newsCount: results.fetchNews?.length || 0,
   wordCount: results.generateScript?.wordCount || 0,

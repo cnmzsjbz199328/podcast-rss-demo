@@ -138,9 +138,9 @@ async function testImmediatePoll() {
   console.log(`时间: ${new Date().toLocaleString('zh-CN')}\n`);
   console.log('📝 策略: 生成 → 立即直接向 IndexTTS 轮询（绕过 Worker）\n');
   
-  // 步骤 1: 生成播客
+  // 步骤 1: 生成Podcast
   console.log('='.repeat(60));
-  console.log('步骤 1: 生成播客');
+  console.log('步骤 1: 生成Podcast');
   console.log('='.repeat(60));
   
   const genStart = Date.now();
@@ -168,7 +168,7 @@ async function testImmediatePoll() {
 
   const { episodeId, eventId, title, isAsync } = generateResult.data;
   
-  console.log('✅ 播客生成请求成功');
+  console.log('✅ Podcast生成请求成功');
   console.log(`  Episode ID: ${episodeId}`);
   console.log(`  Event ID: ${eventId}`);
   console.log(`  标题: ${title}`);

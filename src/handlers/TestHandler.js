@@ -11,7 +11,7 @@ export class TestHandler {
 
   /**
    * 测试 IndexTTS 直接调用
-   * 使用固定文本，绕过新闻和脚本生成
+   * 使用固定文本，绕过News和脚本生成
    */
   async handleTestTts(request, services) {
     this.logger.info('Testing IndexTTS direct call');

@@ -1,5 +1,5 @@
 /**
- * 异步播客工作流测试脚本
+ * 异步Podcast工作流测试脚本
  */
 
 const BASE_URL = 'https://podcast-rss-demo.tj15982183241.workers.dev';
@@ -9,10 +9,10 @@ async function sleep(ms) {
 }
 
 async function testAsyncWorkflow() {
-  console.log('🚀 开始测试异步播客工作流\n');
+  console.log('🚀 开始测试异步Podcast工作流\n');
 
-  // 步骤1: 生成播客
-  console.log('1️⃣ 生成播客...');
+  // 步骤1: 生成Podcast
+  console.log('1️⃣ 生成Podcast...');
   const generateResponse = await fetch(`${BASE_URL}/generate?style=news-anchor`, {
     method: 'POST'
   });
@@ -31,7 +31,7 @@ async function testAsyncWorkflow() {
 
   const { episodeId, eventId, isAsync, audioUrl, ttsEventId, ttsStatus } = generateResult.data;
   
-  console.log('✅ 播客生成成功');
+  console.log('✅ Podcast生成成功');
   console.log(`  Episode ID: ${episodeId}`);
   console.log(`  Event ID: ${eventId}`);
   console.log(`  TTS Event ID: ${ttsEventId}`);

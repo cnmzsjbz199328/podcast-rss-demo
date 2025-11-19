@@ -1,5 +1,5 @@
 /**
- * 播客处理器 - 处理播客生成相关业务逻辑
+ * Podcast处理器 - 处理Podcast生成相关业务逻辑
  */
 
 import { PodcastGenerator } from '../core/PodcastGenerator.js';
@@ -11,7 +11,7 @@ export class PodcastHandler {
   }
 
   /**
-   * 处理播客生成请求
+   * 处理Podcast生成请求
    * @param {Request} request - 请求对象
    * @param {Object} services - 服务实例
    * @returns {Promise<Response>} 响应

@@ -1,22 +1,22 @@
 # 🎙️ AI Podcast Generator
 
-> **基于 Cloudflare Workers 的全自动播客生成系统**
+> **基于 Cloudflare Workers 的全自动Podcast生成系统**
 
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare)](https://workers.cloudflare.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## ⚡ 快速开始
 
-这是一个完全自动化的播客生成系统，从新闻获取到语音合成，一键完成。
+这是一个完全自动化的Podcast生成系统，从News获取到语音合成，一键完成。
 
 ### 核心特性
 
-- 🤖 **AI 驱动**: 使用 Google Gemini AI 生成播客脚本
+- 🤖 **AI 驱动**: 使用 Google Gemini AI 生成Podcast脚本
 - 🎵 **语音合成**: 采用 IndexTTS 进行自然语音转换
-- 📡 **RSS 支持**: 自动生成 RSS Feed，兼容所有播客客户端
+- 📡 **RSS 支持**: 自动生成 RSS Feed，兼容所有Podcast客户端
 - 🌍 **边缘计算**: 基于 Cloudflare Workers，全球低延迟
 - 💾 **云端存储**: R2 + D1 存储，无限容量
-- 🎨 **多种风格**: 新闻主播、相声风格、情感播报等
+- 🎨 **多种风格**: News主播、相声风格、情感播报等
 
 ### 一键部署
 
@@ -55,7 +55,7 @@ npm run test:production
 # 健康检查
 curl https://your-worker.workers.dev/health
 
-# 生成播客（约30秒）
+# 生成Podcast（约30秒）
 curl -X POST "https://your-worker.workers.dev/generate?style=news-anchor"
 
 # 查看剧集列表

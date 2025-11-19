@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-/** 详细调试播客生成过程 */
+/** 详细调试Podcast生成过程 */
 
 const BASE_URL = 'https://podcast-rss-demo.tj15982183241.workers.dev';
 
 async function testStepByStep() {
-  console.log('🔍 详细调试播客生成过程...\n');
+  console.log('🔍 详细调试Podcast生成过程...\n');
 
   try {
     // 步骤1: 检查系统状态
@@ -14,8 +14,8 @@ async function testStepByStep() {
     const healthData = await healthResponse.json();
     console.log('健康状态:', JSON.stringify(healthData, null, 2));
 
-    // 步骤2: 尝试生成播客
-    console.log('\n步骤2: 尝试生成播客');
+    // 步骤2: 尝试生成Podcast
+    console.log('\n步骤2: 尝试生成Podcast');
     console.log('发送请求到:', `${BASE_URL}/generate?style=news-anchor`);
 
     const startTime = Date.now();

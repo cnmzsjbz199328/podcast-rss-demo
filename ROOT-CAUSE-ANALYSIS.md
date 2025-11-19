@@ -85,7 +85,7 @@ SSE响应: "event: error\ndata: null"
 // 在PodcastGenerator中添加降级策略
 async generatePodcast(style) {
   try {
-    // 1. 获取新闻 ✅
+    // 1. 获取News ✅
     // 2. 生成脚本 ✅
     // 3. 尝试语音合成
     const voiceResult = await this.generateVoiceWithFallback(script, style);
@@ -98,7 +98,7 @@ async generatePodcast(style) {
     // 4. 正常流程
     return await this.completePodcastGeneration(scriptResult, voiceResult);
   } catch (error) {
-    // 记录错误，返回脚本版播客
+    // 记录错误，返回脚本版Podcast
     return await this.createFallbackPodcast(scriptResult, error);
   }
 }
@@ -140,7 +140,7 @@ async generatePodcast(style) {
 ## 📈 **业务影响评估**
 
 ### **当前影响**
-- ❌ **播客生成完全失败**
+- ❌ **Podcast生成完全失败**
 - ❌ **用户体验严重受损**
 - ❌ **核心功能不可用**
 
@@ -158,7 +158,7 @@ async generatePodcast(style) {
 ## 🎯 **行动计划**
 
 ### **Phase 1: 应急响应 (立即)**
-1. **部署降级版本** - 支持脚本模式播客
+1. **部署降级版本** - 支持脚本模式Podcast
 2. **用户通知** - 说明临时服务不可用
 3. **监控IndexTTS状态** - 等待服务恢复
 
@@ -212,7 +212,7 @@ async generatePodcast(style) {
 3. **长期:** 多服务负载均衡
 
 ### **业务恢复策略**
-- **立即:** 部署脚本模式播客功能
+- **立即:** 部署脚本模式Podcast功能
 - **短期:** 集成多个TTS服务提供商
 - **长期:** 建立服务监控和自动切换机制
 

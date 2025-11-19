@@ -10,19 +10,19 @@ async function testScriptGeneration() {
   console.log('测试脚本生成...\n');
 
   try {
-    // 1. 获取新闻
+    // 1. 获取News
     const rssService = new BbcRssService({
       url: 'https://feeds.bbci.co.uk/news/rss.xml'
     });
 
-    console.log('获取新闻...');
+    console.log('获取News...');
     const rawNews = await rssService.fetchNews();
-    console.log(`获取到 ${rawNews.length} 条新闻`);
+    console.log(`获取到 ${rawNews.length} 条News`);
 
-    // 2. 处理新闻
+    // 2. 处理News
     const newsProcessor = new NewsProcessor();
     const processedNews = newsProcessor.processNews(rawNews);
-    console.log(`处理后 ${processedNews.length} 条新闻`);
+    console.log(`处理后 ${processedNews.length} 条News`);
 
     // 3. 生成脚本
     const scriptService = new GeminiScriptService({

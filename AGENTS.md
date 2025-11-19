@@ -2,7 +2,7 @@
 
 ## 📋 项目概述
 
-这是一个基于Cloudflare Workers的AI播客生成系统，使用多种AI服务和代理来自动生成、转录和分发播客内容。系统采用分层架构设计，确保高内聚、低耦合，每个组件代码量控制在200行以内。
+这是一个基于Cloudflare Workers的AIPodcast生成系统，使用多种AI服务和代理来自动生成、转录和分发Podcast内容。系统采用分层架构设计，确保高内聚、低耦合，每个组件代码量控制在200行以内。
 
 ## 🏗️ 架构分层
 
@@ -17,7 +17,7 @@
 - **文件大小**: ≤ 200行
 
 ### 3. **领域层 (Domain Layer)**
-- **核心业务逻辑 (Core)**: 播客生成、处理逻辑
+- **核心业务逻辑 (Core)**: Podcast生成、处理逻辑
 - **接口定义 (Interfaces)**: 服务契约和抽象
 - **文件大小**: ≤ 200行
 
@@ -32,14 +32,14 @@
 
 #### 1. **Gemini 脚本生成代理**
 - **位置**: `src/implementations/ai/gemini/GeminiScriptService.js`
-- **职责**: 基于新闻内容生成播客脚本（主要服务）
+- **职责**: 基于News内容生成Podcast脚本（主要服务）
 - **接口**: `IScriptService.generateScript()`
 - **依赖**: Google Gemini API
 - **代码行数**: 89行
 
 #### 2. **Cohere 脚本生成代理**
 - **位置**: `src/implementations/ai/cohere/CohereScriptService.js`
-- **职责**: 基于新闻内容生成播客脚本（备用服务）
+- **职责**: 基于News内容生成Podcast脚本（备用服务）
 - **接口**: `IScriptService.generateScript()`
 - **依赖**: Cohere API
 - **代码行数**: 89行
@@ -75,16 +75,16 @@
 
 ### 数据处理代理
 
-#### 7. **RSS新闻获取代理**
+#### 7. **RSSNews获取代理**
 - **位置**: `src/implementations/BbcRssService.js`
-- **职责**: 从BBC RSS源获取新闻数据
+- **职责**: 从BBC RSS源获取News数据
 - **接口**: `IRssService.fetchNews()`
-- **特性**: 新闻内容过滤和预处理
+- **特性**: News内容过滤和预处理
 - **代码行数**: 65行
 
 #### 8. **数据库代理**
 - **位置**: `src/implementations/D1DatabaseService.js`
-- **职责**: 播客元数据存储和管理
+- **职责**: Podcast元数据存储和管理
 - **接口**: `IDatabaseService`
 - **依赖**: Cloudflare D1数据库
 - **代码行数**: 148行
@@ -129,10 +129,10 @@
 ```mermaid
 graph TD
     A[HTTP请求] --> B[路由器]
-    B --> C[播客处理器]
+    B --> C[Podcast处理器]
     C --> D[工作流协调器]
 
-    D --> E[新闻获取代理]
+    D --> E[News获取代理]
     D --> F[脚本生成代理]
     D --> G[语音合成代理]
     D --> H[字幕生成代理]

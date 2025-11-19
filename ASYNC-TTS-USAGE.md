@@ -13,7 +13,7 @@
 
 ## API 使用方法
 
-### 1. 发起异步播客生成
+### 1. 发起异步Podcast生成
 
 ```bash
 curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=news-anchor&useAsyncTts=true"
@@ -25,7 +25,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=
   "success": true,
   "data": {
     "episodeId": "news-anchor-2025-11-14T12-00-00-abc123",
-    "title": "今日热点播报 - 2025/11/14",
+    "title": "Today Hot Topics - 2025/11/14",
     "isAsync": true,
     "eventId": "gradio-event-12345",
     "status": "processing",
@@ -79,7 +79,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/{episodeId}"
 
 ## 工作流程
 
-1. **脚本生成**: 使用 Gemini API 生成播客脚本
+1. **脚本生成**: 使用 Gemini API 生成Podcast脚本
 2. **异步发起**: 调用 Kokoro-TTS 流式 API 发起生成任务
 3. **状态记录**: 在数据库中记录 event_id 和 processing 状态
 4. **流式处理**: 后台接收音频块并合并
@@ -133,6 +133,6 @@ wrangler tail --format pretty
 ## 兼容性
 
 - ✅ 向下兼容现有同步TTS功能
-- ✅ 支持所有现有的播客风格
+- ✅ 支持所有现有的Podcast风格
 - ✅ 保持相同的API接口结构
 - ✅ 不影响RSS feed和现有功能

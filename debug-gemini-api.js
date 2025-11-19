@@ -4,7 +4,7 @@
 
 const BASE_URL = 'https://podcast-rss-demo.tj15982183241.workers.dev';
 
-// 模拟新闻数据
+// 模拟News数据
 const mockNews = [
   {
     title: "Test News 1",
@@ -59,7 +59,7 @@ async function testGeminiDirectly() {
 }
 
 async function testFullGeneration() {
-  console.log('\n🎙️ 测试完整播客生成流程...\n');
+  console.log('\n🎙️ 测试完整Podcast生成流程...\n');
 
   try {
     console.log('发送完整生成请求...');

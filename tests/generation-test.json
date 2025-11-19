@@ -1,4 +1,38 @@
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:05 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:06 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:07 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:08 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:09 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:10 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:11 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:12 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:13 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:14 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:15 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:16 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:17 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:18 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:19 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:20 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:21 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:22 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:23 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:24 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:25 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:26 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:27 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:28 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:29 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:30 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:31 --:--:--     0100  1318  100  1318    0     0     40      0  0:00:32  0:00:32 --:--:--   270
-{"success":true,"data":{"episodeId":"news-anchor-2025-11-03T05-47-01-xlscm0","title":"今日热点播报 - 11月3日","description":"今日热点新闻：'Heroic' train worker saved lives, police say, as man, 32, only suspect in stabbing；What we know about stabbings on Doncaster to London train；Firms ordered to reduce forever chemicals in drinking water for 6m people...","style":"news-anchor","newsCount":10,"wordCount":1233,"duration":374.9,"fileSize":0,"scriptUrl":"https://pub-d5b744245f574abcac229cefccabaa2f.r2.dev/scripts/2025-11-03T05-47-32-news-anchor-dj1m8v.txt","audioUrl":"https://pub-d5b744245f574abcac229cefccabaa2f.r2.dev/audio/2025-11-03T05-47-32-news-anchor-ylh2u8.wav","generatedAt":"2025-11-03T05:47:33.021Z","metadata":{"scriptMetadata":{"usageMetadata":{"promptTokenCount":1082,"candidatesTokenCount":1085,"totalTokenCount":4074,"promptTokensDetails":[{"modality":"TEXT","tokenCount":1082}],"thoughtsTokenCount":1907},"styleConfig":"专业新闻播报"},"voiceMetadata":{"provider":"indextts","endpoint":"https://indexteam-indextts-2-demo.hf.space","styleConfig":"专业新闻播报","apiMethod":"HTTP Direct","eventId":"aafcbafa82d3404dbc6baddc3ba39387","generatedAt":"2025-11-03T05:47:32.571Z"},"storageMetadata":{"uploadedAt":"2025-11-03T05:47:33.021Z","scriptSize":1609,"audioSize":0}}}}
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0NewsNewsNews
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:05 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:06 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:07 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:08 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:09 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:10 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:11 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:12 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:13 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:14 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:15 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:16 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:17 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:18 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:19 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:20 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:21 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:22 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:23 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:24 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:25 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:26 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:27 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:28 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:29 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:30 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:31 --:--:--     0
+100  1318  100  1318    0     0     40      0  0:00:32  0:00:32 --:--:--   270
+{"success":true,"data":{"episodeId":"news-anchor-2025-11-03T05-47-01-xlscm0","title":"Today Hot Topics - 11月3日","description":"Today Hot新闻：'Heroic' train worker saved lives, police say, as man, 32, only suspect in stabbing；What we know about stabbings on Doncaster to London train；Firms ordered to reduce forever chemicals in drinking water for 6m people...","style":"news-anchor","newsCount":10,"wordCount":1233,"duration":374.9,"fileSize":0,"scriptUrl":"https://pub-d5b744245f574abcac229cefccabaa2f.r2.dev/scripts/2025-11-03T05-47-32-news-anchor-dj1m8v.txt","audioUrl":"https://pub-d5b744245f574abcac229cefccabaa2f.r2.dev/audio/2025-11-03T05-47-32-news-anchor-ylh2u8.wav","generatedAt":"2025-11-03T05:47:33.021Z","metadata":{"scriptMetadata":{"usageMetadata":{"promptTokenCount":1082,"candidatesTokenCount":1085,"totalTokenCount":4074,"promptTokensDetails":[{"modality":"TEXT","tokenCount":1082}],"thoughtsTokenCount":1907},"styleConfig":"专业新闻播报"},"voiceMetadata":{"provider":"indextts","endpoint":"https://indexteam-indextts-2-demo.hf.space","styleConfig":"专业新闻播报","apiMethod":"HTTP Direct","eventId":"aafcbafa82d3404dbc6baddc3ba39387","generatedAt":"2025-11-03T05:47:32.571Z"},"storageMetadata":{"uploadedAt":"2025-11-03T05:47:33.021Z","scriptSize":1609,"audioSize":0}}}}

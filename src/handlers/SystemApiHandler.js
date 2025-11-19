@@ -111,10 +111,10 @@ export class SystemApiHandler {
       const apiInfo = {
         name: 'Podcast RSS API',
         version: '2.0.0',
-        description: '由AI生成的新闻播客服务，支持多种播报风格',
+        description: '由AI生成的NewsPodcast服务，支持多种播报风格',
         endpoints: {
           'POST /generate': {
-            description: '生成播客',
+            description: '生成Podcast',
             parameters: { style: 'guo-de-gang | news-anchor | emotional' },
             example: `${baseUrl}/generate?style=news-anchor`
           },
@@ -140,7 +140,7 @@ export class SystemApiHandler {
             example: `${baseUrl}/stats`
           }
         },
-        styles: ['guo-de-gang - 郭德纲风格', 'news-anchor - 新闻主播风格', 'emotional - 情感化风格']
+        styles: ['guo-de-gang - 郭德纲风格', 'news-anchor - News主播风格', 'emotional - 情感化风格']
       };
 
       return new Response(JSON.stringify(apiInfo), {
