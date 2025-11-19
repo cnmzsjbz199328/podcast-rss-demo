@@ -31,7 +31,7 @@ export class GeminiScriptService extends IScriptService {
   }
 
   /**
-   * 生成Podcast脚本
+   * 生成播客脚本
    */
   async generateScript(news, style) {
     // 验证API密钥

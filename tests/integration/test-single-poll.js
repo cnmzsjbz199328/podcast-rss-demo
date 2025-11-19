@@ -18,9 +18,9 @@ async function testSinglePoll() {
   console.log(`时间: ${new Date().toLocaleString('zh-CN')}\n`);
   console.log('📝 策略: 生成 → 等待 120 秒 → 单次轮询（不重试）\n');
   
-  // 步骤 1: 生成Podcast
+  // 步骤 1: 生成播客
   console.log('='.repeat(60));
-  console.log('步骤 1: 生成Podcast');
+  console.log('步骤 1: 生成播客');
   console.log('='.repeat(60));
   
   const genStart = Date.now();
@@ -48,7 +48,7 @@ async function testSinglePoll() {
 
   const { episodeId, eventId, title, isAsync } = generateResult.data;
   
-  console.log('✅ Podcast生成请求成功');
+  console.log('✅ 播客生成请求成功');
   console.log(`  Episode ID: ${episodeId}`);
   console.log(`  Event ID: ${eventId}`);
   console.log(`  标题: ${title}`);
@@ -200,7 +200,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   本测试实现"等待 + 单次轮询"策略，避免 Gradio SSE 重复读取失效问题。
   
   流程:
-  1. 发起Podcast生成请求（约 20-30 秒）
+  1. 发起播客生成请求（约 20-30 秒）
   2. 等待 120 秒让 IndexTTS 完成音频生成
   3. 进行单次轮询获取结果（不重试）
   4. 验证音频文件可访问性

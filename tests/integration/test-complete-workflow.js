@@ -12,13 +12,13 @@ async function sleep(ms) {
 }
 
 async function testCompleteWorkflow() {
-  console.log('🚀 测试完整Podcast生成工作流\n');
+  console.log('🚀 测试完整播客生成工作流\n');
   console.log(`Worker URL: ${BASE_URL}`);
   console.log(`时间: ${new Date().toLocaleString('zh-CN')}\n`);
   
-  // 步骤 1: 生成Podcast
+  // 步骤 1: 生成播客
   console.log('=' .repeat(60));
-  console.log('步骤 1: 生成Podcast');
+  console.log('步骤 1: 生成播客');
   console.log('='.repeat(60));
   
   const genStart = Date.now();
@@ -46,7 +46,7 @@ async function testCompleteWorkflow() {
 
   const { episodeId, eventId, title, isAsync } = generateResult.data;
   
-  console.log('✅ Podcast生成请求成功');
+  console.log('✅ 播客生成请求成功');
   console.log(`  Episode ID: ${episodeId}`);
   console.log(`  Event ID: ${eventId}`);
   console.log(`  标题: ${title}`);
