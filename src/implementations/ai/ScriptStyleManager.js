@@ -17,52 +17,73 @@ export class ScriptStyleManager {
   const styleConfigs = {
   'guo-de-gang': {
   name: 'Guo Degang Crosstalk Style',
-  scriptPrompt: `Please narrate the following news in Guo Degang's crosstalk style. Create pure spoken text as one continuous paragraph without any formatting marks or stage directions.
+  scriptPrompt: `Please narrate the following news in ENGLISH, adapting Guo Degang's crosstalk style with witty remarks and humor. Create pure spoken text as one continuous paragraph without any formatting marks or stage directions.
 
 Requirements:
-1. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
-2. Use crosstalk language features, including punchlines and witty remarks
-3. Add appropriate comments and banter
-4. Maintain a light-hearted and humorous tone
-5. Control the length appropriately for podcast listening
-6. Write only the words that will be spoken aloud
-7. Do NOT include any text in parentheses, brackets, or special formatting
+1. Write ENTIRELY in ENGLISH - do not use any Chinese characters or text
+2. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
+3. Adapt crosstalk language features, including punchlines and witty remarks
+4. Add appropriate comments and banter in English
+5. Maintain a light-hearted and humorous tone
+6. Control the length appropriately for podcast listening
+7. Write only the words that will be spoken aloud
+8. Do NOT include any text in parentheses, brackets, or special formatting
 
 News content:
 {news}`
       },
   'news-anchor': {
   name: 'Professional News Broadcasting',
-  scriptPrompt: `Please create a concise, continuous podcast script of about 5 minutes, in a style similar to a professional news anchor. The script should be pure spoken text as one continuous paragraph without any line breaks, formatting marks, or special characters.
+  scriptPrompt: `Please create a concise, continuous podcast script in ENGLISH of about 5 minutes, in a style similar to a professional news anchor. The script should be pure spoken text as one continuous paragraph without any line breaks, formatting marks, or special characters.
 
 Requirements:
-1. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
-2. Use formal, objective language suitable for broadcast
-3. Include smooth transitions between different news items
-4. Start with a natural introduction and end with a conclusion
-5. Maintain professional news anchor tone throughout
-6. Do NOT include any line breaks, empty lines, or paragraph breaks
-7. Do NOT include any text in parentheses, brackets, or special formatting
-8. Do NOT include music cues or stage directions
-9. Write only the words that will be spoken aloud as one flowing narrative
+1. Write ENTIRELY in ENGLISH - do not use any Chinese characters or text
+2. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
+3. Use formal, objective language suitable for broadcast
+4. Include smooth transitions between different news items
+5. Start with a natural introduction and end with a conclusion
+6. Maintain professional news anchor tone throughout
+7. Do NOT include any line breaks, empty lines, or paragraph breaks
+8. Do NOT include any text in parentheses, brackets, or special formatting
+9. Do NOT include music cues or stage directions
+10. Write only the words that will be spoken aloud as one flowing narrative
 
 News content:
 {news}`
       },
   'emotional': {
   name: 'Emotional Storytelling Style',
-  scriptPrompt: `Please narrate the following news in a warm and moving narrative style for approximately 5 minutes. Create pure spoken text as one continuous paragraph without any formatting marks or stage directions.
+  scriptPrompt: `Please narrate the following news in ENGLISH in a warm and moving narrative style for approximately 5 minutes. Create pure spoken text as one continuous paragraph without any formatting marks or stage directions.
 
 Requirements:
-1. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
-2. Incorporate emotional elements, showing human care
-3. Use warm, empathetic language
-4. Include personal reflections and insights
-5. Convey positive and uplifting values
-6. Write only the words that will be spoken aloud
-7. Do NOT include any text in parentheses, brackets, or special formatting
+1. Write ENTIRELY in ENGLISH - do not use any Chinese characters or text
+2. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
+3. Incorporate emotional elements, showing human care
+4. Use warm, empathetic language
+5. Include personal reflections and insights
+6. Convey positive and uplifting values
+7. Write only the words that will be spoken aloud
+8. Do NOT include any text in parentheses, brackets, or special formatting
 
 News content:
+{news}`},
+   'topic-explainer': {
+   name: 'Topic Explainer Style',
+   scriptPrompt: `Please create an educational podcast script in ENGLISH that explains and explores the given topic in depth for approximately 5 minutes. Create pure spoken text as one continuous paragraph without any formatting marks or stage directions.
+
+Requirements:
+1. Write ENTIRELY in ENGLISH - do not use any Chinese characters or text
+2. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
+3. Explain the topic clearly and comprehensively
+4. Use educational, informative language suitable for learning
+5. Include key facts, context, and insights about the topic
+6. Structure the explanation logically from introduction to conclusion
+7. Maintain an engaging and accessible tone for listeners
+8. Write only the words that will be spoken aloud
+9. Do NOT include any text in parentheses, brackets, or special formatting
+10. Focus on making complex topics understandable
+
+Topic content:
 {news}`
       }
   };
@@ -79,7 +100,7 @@ News content:
    * 获取所有支持的风格
    */
   getSupportedStyles() {
-    return ['guo-de-gang', 'news-anchor', 'emotional'];
+  return ['guo-de-gang', 'news-anchor', 'emotional', 'topic-explainer'];
   }
 
   /**

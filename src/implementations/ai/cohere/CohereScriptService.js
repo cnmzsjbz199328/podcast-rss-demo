@@ -31,16 +31,20 @@ export class CohereScriptService extends IScriptService {
   }
 
   /**
-   * 生成Podcast脚本
+  * 生成Podcast脚本
+  * @param {Object} contentData - 内容数据
+   * @param {string} contentData.type - 内容类型 ('news' | 'topic')
+   * @param {any} contentData.data - 内容数据
+   * @param {string} style - 脚本风格
    */
-  async generateScript(news, style) {
+  async generateScript(contentData, style) {
     // 验证API密钥
     if (!this.config.apiKey) {
       throw new Error('Cohere API key is not configured. Please set COHERE_API_KEY environment variable.');
     }
 
     return withRetry(
-      () => this._generateScript(news, style),
+      () => this._generateScript(contentData, style),
       {
         maxAttempts: this.config.maxRetries || 3,
         initialDelay: 2000,
@@ -51,22 +55,37 @@ export class CohereScriptService extends IScriptService {
   }
 
   /**
-   * 生成脚本核心逻辑
-   */
-  async _generateScript(news, style) {
-    this.logger.info('Starting script generation process', {
-      style,
-      newsCount: news.length,
-      hasNews: news && news.length > 0
-    });
+  * 生成脚本核心逻辑
+  * @param {Object} contentData - 内容数据
+   * @param {string} style - 脚本风格
+  */
+  async _generateScript(contentData, style) {
+  this.logger.info('Starting script generation process', {
+  style,
+    contentType: contentData.type,
+      hasData: !!contentData.data
+  });
 
-    // 验证输入参数
-    if (!news || news.length === 0) {
-      throw new Error('No news data provided for script generation');
+  // 验证输入参数
+  if (!contentData || !contentData.data) {
+      throw new Error('No content data provided for script generation');
+  }
+
+  if (!style) {
+      throw new Error('No style specified for script generation');
     }
 
-    if (!style) {
-      throw new Error('No style specified for script generation');
+    // 根据内容类型处理数据
+    let processedData;
+    switch (contentData.type) {
+      case 'news':
+        processedData = contentData.data;
+        break;
+      case 'topic':
+        processedData = this._processTopicData(contentData.data);
+        break;
+      default:
+        throw new Error(`Unsupported content type: ${contentData.type}`);
     }
 
     // 获取风格配置
@@ -78,17 +97,18 @@ export class CohereScriptService extends IScriptService {
     });
 
     // 构建提示词
-    this.logger.debug('Building prompt from news data');
-    const prompt = this.styleManager.buildPrompt(news, styleConfig);
+    this.logger.debug('Building prompt from content data');
+    const prompt = this.styleManager.buildPrompt(processedData, styleConfig);
     this.logger.info('Prompt built successfully', {
       promptLength: prompt.length,
-      style: styleConfig.name
+      style: styleConfig.name,
+      contentType: contentData.type
     });
 
     // 调用API
     this.logger.info('Calling Cohere API for script generation', {
       style,
-      newsCount: news.length,
+      contentType: contentData.type,
       model: this.config.model || 'command-a-03-2025'
     });
 
@@ -179,13 +199,33 @@ export class CohereScriptService extends IScriptService {
   }
 
   /**
-   * 获取API使用统计
-   */
+  * 获取API使用统计
+  */
   getUsageStats() {
-    return {
-      totalRequests: 0,
-      totalTokens: 0,
-      averageResponseTime: 0
-    };
+  return {
+  totalRequests: 0,
+  totalTokens: 0,
+  averageResponseTime: 0
+  };
+  }
+
+  /**
+   * 处理主题数据，转换为适合脚本生成的格式
+   * @private
+   * @param {Object} topicData - 主题数据 { topic, content }
+   * @returns {Array} 格式化的新闻数据数组
+   */
+  _processTopicData(topicData) {
+    const { topic, content } = topicData;
+
+    // 将主题数据转换为类似新闻的格式
+    return [{
+      title: topic.title,
+      description: topic.description,
+      keywords: topic.keywords,
+      category: topic.category,
+      content: content || topic.description,
+      source: 'topic-based'
+    }];
   }
 }

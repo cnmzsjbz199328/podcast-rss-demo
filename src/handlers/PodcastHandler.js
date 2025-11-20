@@ -11,73 +11,71 @@ export class PodcastHandler {
   }
 
   /**
-   * 处理Podcast生成请求
-   * @param {Request} request - 请求对象
-   * @param {Object} services - 服务实例
-   * @returns {Promise<Response>} 响应
-   */
+  * 处理Podcast生成请求
+  * @param {Request} request - 请求对象
+  * @param {Object} services - 服务实例
+  * @returns {Promise<Response>} 响应
+  */
   async handleGenerate(request, services) {
-    try {
-      const url = new URL(request.url);
-      const style = url.searchParams.get('style') || 'news-anchor';
-      const useAsyncTts = url.searchParams.get('useAsyncTts') === 'true';
+  try {
+  const url = new URL(request.url);
+  const style = url.searchParams.get('style') || 'news-anchor';
+  const useAsyncTts = url.searchParams.get('useAsyncTts') === 'true';
 
-      this.logger.info('Starting podcast generation', { style, useAsyncTts, url: request.url });
+  this.logger.info('Starting podcast generation via IPodcastService', {
+        style,
+    useAsyncTts,
+    url: request.url
+  });
 
-      // 创建生成器实例
-      const config = {
-        services: {
-          rss: { url: 'https://feeds.bbci.co.uk/news/rss.xml' },
-          script: { apiKey: 'dummy' }, // Will be overridden by service
-          voice: { endpoint: 'Tom1986/indextts2' },
-          storage: { bucket: 'podcast-files' }
-        }
-      };
+  // 使用新的业务服务
+  const podcastService = services.newsPodcastService;
 
-      const generator = new PodcastGenerator(services, config);
-      const result = await generator.generatePodcast(style, { useAsyncTts });
-
-      this.logger.info('Podcast generated successfully', {
-        episodeId: result.episodeId,
-        title: result.title
-      });
-
-      // 保存到数据库
-      if (result.episodeId) {
-        await this._saveEpisodeToDatabase(services, result, style);
+  let result;
+  if (useAsyncTts) {
+        result = await podcastService.generatePodcastAsync({ style });
+  } else {
+    result = await podcastService.generatePodcast({ style });
       }
 
-      return new Response(JSON.stringify({
-        success: true,
-        data: result
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
+  this.logger.info('Podcast generated successfully via IPodcastService', {
+  episodeId: result.episodeId,
+    status: result.status,
+        useAsyncTts
+  });
 
-    } catch (error) {
-      this.logger.error('Podcast generation failed', {
+  return new Response(JSON.stringify({
+    success: true,
+        data: result
+  }), {
+  headers: {
+    'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+  }
+  });
+
+  } catch (error) {
+  this.logger.error('Podcast generation failed', {
         error: error.message,
-        stack: error.stack,
-        type: error.constructor.name
-      });
-      return new Response(JSON.stringify({
-        success: false,
-        error: `${error.message} (${error.constructor.name})`
-      }), {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
-    }
+      stack: error.stack,
+    type: error.constructor.name
+  });
+  return new Response(JSON.stringify({
+  success: false,
+    error: `${error.message} (${error.constructor.name})`
+  }), {
+  status: 500,
+  headers: {
+      'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*'
+  }
+  });
+  }
   }
 
   /**
-   * 保存剧集到数据库
+   * 保存剧集到数据库 (已废弃 - 现在由 NewsPodcastService 处理)
+   * @deprecated
    * @private
    * @param {Object} services - 服务实例
    * @param {Object} result - 生成结果

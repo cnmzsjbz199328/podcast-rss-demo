@@ -11,6 +11,13 @@ import { AsyncStreamingTtsService } from '../implementations/tts/AsyncStreamingT
 import { SubtitleGenerator } from '../implementations/SubtitleGenerator.js';
 import { R2StorageService } from '../implementations/R2StorageService.js';
 import { D1DatabaseService } from '../implementations/D1DatabaseService.js';
+
+// 新的仓库和服务
+import { TopicRepository } from '../repositories/TopicRepository.js';
+import { TopicPodcastRepository } from '../repositories/TopicPodcastRepository.js';
+import { NewsPodcastService } from '../core/NewsPodcastService.js';
+import { TopicPodcastService } from '../core/TopicPodcastService.js';
+
 import { Logger } from '../utils/logger.js';
 
 export class ServiceInitializer {
@@ -25,18 +32,41 @@ export class ServiceInitializer {
   * @returns {Object} 服务实例
   */
   getServices(env) {
-    if (!this.services) {
-      this.logger.info('Initializing services with R2 and D1 bindings');
+  if (!this.services) {
+  this.logger.info('Initializing services with R2 and D1 bindings');
 
-      // 创建各个服务实例
+  // 第一阶段：创建技术服务
+  const databaseService = this._createDatabaseService(env);
+
+  const techServices = {
+  rssService: this._createRssService(env),
+  scriptService: this._createScriptService(env),
+  voiceService: this._createVoiceService(env),
+  asyncVoiceService: this._createAsyncVoiceService(env),
+  subtitleService: this._createSubtitleService(),
+  storageService: this._createStorageService(env),
+  database: databaseService
+  };
+
+  // 第二阶段：创建仓库层
+  const repositories = {
+  topicRepository: this._createTopicRepository(databaseService),
+        topicPodcastRepository: this._createTopicPodcastRepository(databaseService)
+  };
+
+  // 第三阶段：创建业务服务
+  const allServices = { ...techServices, ...repositories };
+
+  const businessServices = {
+      newsPodcastService: this._createNewsPodcastService(allServices),
+        topicPodcastService: this._createTopicPodcastService(allServices)
+    };
+
+      // 合并所有服务
       this.services = {
-      rssService: this._createRssService(env),
-      scriptService: this._createScriptService(env),
-      voiceService: this._createVoiceService(env),
-      asyncVoiceService: this._createAsyncVoiceService(env),
-      subtitleService: this._createSubtitleService(),
-      storageService: this._createStorageService(env),
-        database: this._createDatabaseService(env)
+        ...techServices,
+        ...repositories,
+        ...businessServices
       };
 
       this.logger.info('Services initialized successfully');
@@ -151,13 +181,64 @@ export class ServiceInitializer {
   }
 
   /**
-   * 创建数据库服务
-   * @private
-   * @param {Object} env - 环境变量
-   * @returns {D1DatabaseService} 数据库服务实例
-   */
+  * 创建数据库服务
+  * @private
+  * @param {Object} env - 环境变量
+  * @returns {D1DatabaseService} 数据库服务实例
+  */
   _createDatabaseService(env) {
-    return new D1DatabaseService(env.DB);
+  return new D1DatabaseService(env.DB);
+  }
+
+  /**
+  * 创建主题仓库
+  * @private
+   * @param {D1DatabaseService} databaseService - 数据库服务
+  * @returns {TopicRepository} 主题仓库实例
+  */
+  _createTopicRepository(databaseService) {
+    return new TopicRepository(databaseService.db);
+  }
+
+  /**
+   * 创建主题播客仓库
+   * @private
+   * @param {D1DatabaseService} databaseService - 数据库服务
+   * @returns {TopicPodcastRepository} 主题播客仓库实例
+   */
+  _createTopicPodcastRepository(databaseService) {
+    return new TopicPodcastRepository(databaseService.db);
+  }
+
+  /**
+   * 创建新闻播客业务服务
+   * @private
+   * @param {Object} services - 技术服务集合
+   * @returns {NewsPodcastService} 新闻播客服务实例
+   */
+  _createNewsPodcastService(services) {
+    return new NewsPodcastService(services, {
+      maxRetries: 3,
+      retryDelay: 1000
+    });
+  }
+
+  /**
+   * 创建主题播客业务服务
+   * @private
+   * @param {Object} services - 技术服务集合
+   * @returns {TopicPodcastService} 主题播客服务实例
+   */
+  _createTopicPodcastService(services) {
+    return new TopicPodcastService(
+      services,
+      services.topicRepository,
+      services.topicPodcastRepository,
+      {
+        maxRetries: 3,
+        retryDelay: 1000
+      }
+    );
   }
 
   /**

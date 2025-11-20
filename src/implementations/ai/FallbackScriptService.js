@@ -42,19 +42,24 @@ export class FallbackScriptService extends IScriptService {
   }
 
   /**
-   * 生成Podcast脚本 - 优先使用Gemini，失败时使用Cohere
+  * 生成Podcast脚本 - 优先使用Gemini，失败时使用Cohere
+  * @param {Object} contentData - 内容数据
+   * @param {string} contentData.type - 内容类型 ('news' | 'topic')
+   * @param {any} contentData.data - 内容数据
+   * @param {string} style - 脚本风格
    */
-  async generateScript(news, style) {
+  async generateScript(contentData, style) {
     this._initializeServices();
 
     // 尝试使用主服务 (Gemini)
     try {
       this.logger.info('Attempting script generation with primary service (Gemini)', {
         style,
-        newsCount: news?.length || 0
+        contentType: contentData.type,
+        dataSize: this._getDataSize(contentData)
       });
 
-      const result = await this.primaryService.generateScript(news, style);
+      const result = await this.primaryService.generateScript(contentData, style);
       this.logger.info('Primary service succeeded', {
         style,
         wordCount: result.wordCount
@@ -66,6 +71,7 @@ export class FallbackScriptService extends IScriptService {
       this.logger.warn('Primary service failed, attempting fallback', {
         error: error.message,
         style,
+        contentType: contentData.type,
         hasFallbackService: !!this.fallbackService
       });
 
@@ -74,10 +80,11 @@ export class FallbackScriptService extends IScriptService {
         try {
           this.logger.info('Attempting script generation with fallback service (Cohere)', {
             style,
-            newsCount: news?.length || 0
+            contentType: contentData.type,
+            dataSize: this._getDataSize(contentData)
           });
 
-          const fallbackResult = await this.fallbackService.generateScript(news, style);
+          const fallbackResult = await this.fallbackService.generateScript(contentData, style);
           this.logger.info('Fallback service succeeded', {
             style,
             wordCount: fallbackResult.wordCount
@@ -166,5 +173,29 @@ export class FallbackScriptService extends IScriptService {
       totalRequests: (primaryStats.totalRequests || 0) + (fallbackStats.totalRequests || 0),
       totalTokens: (primaryStats.totalTokens || 0) + (fallbackStats.totalTokens || 0)
     };
+  }
+
+  /**
+   * 获取内容数据的大小描述（用于日志）
+   * @private
+   * @param {Object} contentData - 内容数据
+   * @returns {string} 大小描述
+   */
+  _getDataSize(contentData) {
+    try {
+      switch (contentData.type) {
+        case 'news':
+          const newsArray = contentData.data;
+          return Array.isArray(newsArray) ? `${newsArray.length} items` : '1 item';
+
+        case 'topic':
+          return 'topic data';
+
+        default:
+          return 'unknown';
+      }
+    } catch (error) {
+      return 'error calculating size';
+    }
   }
 }

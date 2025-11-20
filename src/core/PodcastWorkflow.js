@@ -99,7 +99,12 @@ export class PodcastWorkflow {
 
   async _generateScript(context, previousResults) {
     const news = previousResults.fetchNews;
-    return await context.services.scriptService.generateScript(news, context.style);
+    // 适配新的脚本服务接口
+    const contentData = {
+      type: 'news',
+      data: news
+    };
+    return await context.services.scriptService.generateScript(contentData, context.style);
   }
 
   async _generateAudio(context, previousResults) {
