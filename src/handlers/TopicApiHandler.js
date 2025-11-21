@@ -9,43 +9,48 @@ export class TopicApiHandler {
   }
 
   /**
-   * 创建新主题
-   */
+  * 创建新主题
+  */
   async handleCreateTopic(request, services) {
-    try {
-      const { title, description, keywords, category } = await request.json();
-
-      if (!title) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'Title is required'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-
-      this.logger.info('Creating new topic', { title, category });
-
-      const topicId = await services.topicRepository.create({
+  try {
+  const {
         title,
-        description,
-        keywords,
-        category
-      });
+    description,
+  is_active = true,
+  generation_interval_hours = 24
+  } = await request.json();
 
-      return new Response(JSON.stringify({
+  if (!title) {
+  return new Response(JSON.stringify({
+    success: false,
+      error: 'Title is required'
+        }), {
+      status: 400,
+          headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  this.logger.info('Creating new topic', { title, is_active, generation_interval_hours });
+
+  const topicId = await services.topicRepository.create({
+        title,
+    description,
+  is_active,
+  generation_interval_hours
+  });
+
+  return new Response(JSON.stringify({
         success: true,
-        data: { topicId }
-      }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
+      data: { topicId }
+  }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
 
-    } catch (error) {
-      this.logger.error('Failed to create topic', error);
-      return new Response(JSON.stringify({
-        success: false,
-        error: error.message
+  } catch (error) {
+  this.logger.error('Failed to create topic', error);
+  return new Response(JSON.stringify({
+    success: false,
+      error: error.message
       }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
@@ -370,38 +375,123 @@ export class TopicApiHandler {
   }
 
   /**
-   * 轮询主题播客生成状态
-   */
+  * 轮询主题播客生成状态
+  */
   async handlePollTopicPodcast(request, services, params) {
-    try {
-      const episodeId = params[0];
+  try {
+  const episodeId = params[0];
 
-      if (!episodeId) {
+  if (!episodeId) {
+  return new Response(JSON.stringify({
+  success: false,
+  error: 'Episode ID is required'
+  }), {
+  status: 400,
+  headers: { 'Content-Type': 'application/json' }
+  });
+  }
+
+  this.logger.info('Polling topic podcast generation status', { episodeId });
+
+  const podcastService = services.topicPodcastService;
+  const pollResult = await podcastService.pollGeneration(episodeId);
+
+  return new Response(JSON.stringify({
+  success: true,
+  status: pollResult.status,
+  podcast: pollResult.podcast,
+  error: pollResult.error
+  }), {
+  headers: { 'Content-Type': 'application/json' }
+  });
+
+  } catch (error) {
+  this.logger.error('Failed to poll topic podcast generation', error);
+  return new Response(JSON.stringify({
+  success: false,
+  error: error.message
+  }), {
+  status: 500,
+  headers: { 'Content-Type': 'application/json' }
+  });
+  }
+  }
+
+  /**
+   * 生成主题的下一集播客（系列延续）
+   */
+  async handleGenerateNextEpisode(request, services, params) {
+    try {
+      const topicId = parseInt(params[0], 10);
+
+      if (!topicId || isNaN(topicId)) {
         return new Response(JSON.stringify({
           success: false,
-          error: 'Episode ID is required'
+          error: 'Invalid topic ID'
         }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
         });
       }
 
-      this.logger.info('Polling topic podcast generation status', { episodeId });
+      const url = new URL(request.url);
+      const style = url.searchParams.get('style') || 'topic-explainer';
 
+      this.logger.info('Generating next episode for topic', { topicId, style });
+
+      // 使用 TopicSeriesGenerator 生成下一集
+      const seriesGenerator = services.topicSeriesGenerator;
+      const episodeInfo = await seriesGenerator.generateNextEpisode(topicId);
+
+      if (!episodeInfo) {
+        return new Response(JSON.stringify({
+          success: false,
+          message: 'Generation interval not reached yet'
+        }), { status: 200, headers: { 'Content-Type': 'application/json' }});
+      }
+
+      // 使用 TopicPodcastService 生成完整的播客
       const podcastService = services.topicPodcastService;
-      const pollResult = await podcastService.pollGeneration(episodeId);
+      const result = await podcastService.generatePodcastWithContent({
+        topicId: episodeInfo.topicId,
+        episodeNumber: episodeInfo.episodeNumber,
+        title: episodeInfo.title,
+        keywords: episodeInfo.keywords,
+        abstract: episodeInfo.abstract,
+        script: episodeInfo.script,
+        style
+      });
+
+      // 更新主题的最后生成时间
+      await services.topicRepository.updateLastGenerated(
+        topicId,
+        new Date().toISOString()
+      );
+
+      this.logger.info('Next episode generated successfully', {
+        topicId,
+        episodeNumber: episodeInfo.episodeNumber,
+        episodeId: result.episodeId
+      });
 
       return new Response(JSON.stringify({
         success: true,
-        status: pollResult.status,
-        podcast: pollResult.podcast,
-        error: pollResult.error
+        data: {
+          topicId,
+          episodeNumber: episodeInfo.episodeNumber,
+          title: episodeInfo.title,
+          keywords: episodeInfo.keywords,
+          abstract: episodeInfo.abstract,
+          episodeId: result.episodeId,
+          status: result.status,
+          duration: result.duration
+        }
       }), {
         headers: { 'Content-Type': 'application/json' }
       });
 
     } catch (error) {
-      this.logger.error('Failed to poll topic podcast generation', error);
+      this.logger.error('Failed to generate next episode', error);
       return new Response(JSON.stringify({
         success: false,
         error: error.message

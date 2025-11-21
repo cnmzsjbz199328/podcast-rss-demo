@@ -10,26 +10,91 @@ export class EpisodeApiHandler {
   }
 
   /**
-   * 处理剧集列表请求
-   */
+  * 处理剧集列表请求 - 同时获取news episodes和topic podcasts
+  */
   async handleEpisodes(request, services) {
-    try {
-      const url = new URL(request.url);
-      const limit = parseInt(url.searchParams.get('limit') || '20', 10);
-      const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-      const style = url.searchParams.get('style');
+  try {
+  const url = new URL(request.url);
+  const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+  const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+  const style = url.searchParams.get('style');
 
-      this.logger.info('Fetching episodes via NewsPodcastService', { limit, offset, style });
+  this.logger.info('Fetching episodes from both news and topic sources', { limit, offset, style });
 
-      // 使用新的业务服务
-      const podcastService = services.newsPodcastService;
+  // 获取news episodes（只有当没有style过滤或style为news-anchor时）
+  let newsEpisodes = [];
+  if (!style || style === 'news-anchor') {
+  const rawNewsEpisodes = await services.newsPodcastService.getPodcasts({ style, limit, offset });
+  newsEpisodes = rawNewsEpisodes.map(ep => ({
+      ...ep,
+      style: 'news-anchor' // News episodes use news-anchor style
+    }));
+  }
 
-      const filters = { style, limit, offset };
-      const result = await podcastService.getPodcasts(filters);
-      const episodes = result;
+  // 获取topic podcasts（如果没有style过滤或style为topic-explainer时）
+  let topicEpisodes = [];
+  if (!style || style === 'topic-explainer') {
+        try {
+          const topicFilters = { limit, offset, status: 'completed' };
+          const topicResult = await services.topicPodcastRepository.getAll(topicFilters);
+          topicEpisodes = topicResult.map(tp => ({
+            episodeId: tp.episode_id, // 数据库字段是episode_id
+            title: tp.title || `Topic Episode ${tp.episodeNumber}`,
+            description: tp.abstract || tp.title,
+            audioUrl: tp.audio_url, // 数据库字段是audio_url
+            style: 'topic-explainer', // Topic episodes use topic-explainer style
+            duration: tp.duration || 0,
+            publishedAt: tp.updated_at || tp.created_at, // 数据库字段是updated_at/created_at
+            createdAt: tp.created_at,
+            topicId: tp.topic_id, // 数据库字段是topic_id
+            episodeNumber: tp.episode_number
+          }));
+        } catch (error) {
+          this.logger.warn('Failed to fetch topic episodes', error);
+          // 继续处理，不影响news episodes
+        }
+      }
 
-      // 获取统计信息（这里简化处理，未来可以从服务获取）
-      const stats = await services.database.getStatistics();
+      // 合并并排序所有episodes（按创建时间倒序），去重
+      const episodeMap = new Map();
+
+      // 先添加news episodes
+      newsEpisodes.forEach(ep => {
+        episodeMap.set(ep.episodeId, ep);
+      });
+
+      // 再添加topic episodes（如果不存在或需要更新）
+      topicEpisodes.forEach(ep => {
+        if (!episodeMap.has(ep.episodeId)) {
+          episodeMap.set(ep.episodeId, ep);
+        } else {
+          // 如果已存在，优先使用topic episodes的style
+          const existing = episodeMap.get(ep.episodeId);
+          if (existing.style !== 'topic-explainer' && ep.style === 'topic-explainer') {
+            episodeMap.set(ep.episodeId, ep);
+          }
+        }
+      });
+
+      const allEpisodes = Array.from(episodeMap.values())
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(offset, offset + limit);
+
+      const episodes = allEpisodes;
+
+      // 获取统计信息（合并news和topic的统计）
+      const newsStats = await services.database.getStatistics();
+      const topicStats = await services.topicPodcastRepository.getGlobalStatistics();
+
+      const stats = {
+        totalEpisodes: (newsStats.totalEpisodes || 0) + (topicStats.totalPodcasts || 0),
+        publishedEpisodes: (newsStats.publishedEpisodes || 0) + (topicStats.completedPodcasts || 0),
+        totalDuration: (newsStats.totalDuration || 0) + (topicStats.totalDuration || 0),
+        styles: {
+          'news-anchor': newsStats.totalEpisodes || 0,
+          'topic-explainer': topicStats.totalPodcasts || 0
+        }
+      };
 
       const response = {
         success: true,
@@ -39,7 +104,7 @@ export class EpisodeApiHandler {
             title: ep.title || `Episode ${ep.episodeId}`,
             description: ep.description,
             audioUrl: ep.audioUrl,
-            style: 'news-anchor', // 默认风格
+            style: ep.style || 'news-anchor', // 使用episode对象的style属性
             duration: ep.duration,
             fileSize: 0, // 暂时使用默认值
             publishedAt: ep.publishedAt || ep.createdAt,

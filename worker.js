@@ -26,7 +26,10 @@ router.register('GET', '/episodes', (req, services) => apiHandler.handleEpisodes
 router.register('GET', '/episodes/*/poll-audio', (req, services, params) => apiHandler.handlePollAudio(req, services, params));
 router.register('GET', '/episodes/*', (req, services, params) => apiHandler.handleEpisodeDetail(req, services, params));
 
-// 主题播客路由（更具体的路由放在前面）
+// 主题系列生成路由（最具体的路由放在最前面）
+router.register('POST', '/topics/*/generate-next', (req, services, params) => topicApiHandler.handleGenerateNextEpisode(req, services, params));
+
+// 主题播客路由
 router.register('POST', '/topics/*/generate', (req, services, params) => topicApiHandler.handleGenerateTopicPodcast(req, services, params));
 router.register('GET', '/topics/*/podcasts', (req, services, params) => topicApiHandler.handleGetTopicPodcasts(req, services, params));
 router.register('GET', '/topics/podcasts/*/poll-audio', (req, services, params) => topicApiHandler.handlePollTopicPodcast(req, services, params));
@@ -110,7 +113,7 @@ router.register('GET', '/', (req, services) => {
       endpoints: {
         'POST /topics': {
           description: '创建新主题',
-          body: { title: '主题标题', description: '描述', keywords: '关键词', category: '分类' },
+          body: { title: '主题标题 (必需)', description: '详细描述', is_active: '激活状态 (默认true)', generation_interval_hours: '生成间隔小时 (默认24)' },
           example: `${baseUrl}/topics`
         },
         'GET /topics': {
@@ -134,6 +137,11 @@ router.register('GET', '/', (req, services) => {
         'GET /topics/podcasts/:episodeId/poll-audio': {
           description: '轮询主题播客生成状态',
           example: `${baseUrl}/topics/podcasts/episode-123/poll-audio`
+        },
+        'POST /topics/:id/generate-next': {
+          description: '生成主题的下一集播客（智能系列延续）',
+          parameters: { style: '播客风格 (默认topic-explainer)' },
+          example: `${baseUrl}/topics/1/generate-next?style=topic-explainer`
         }
       }
     },

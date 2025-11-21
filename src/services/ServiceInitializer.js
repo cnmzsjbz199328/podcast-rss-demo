@@ -17,6 +17,7 @@ import { TopicRepository } from '../repositories/TopicRepository.js';
 import { TopicPodcastRepository } from '../repositories/TopicPodcastRepository.js';
 import { NewsPodcastService } from '../core/NewsPodcastService.js';
 import { TopicPodcastService } from '../core/TopicPodcastService.js';
+import { TopicSeriesGenerator } from '../core/TopicSeriesGenerator.js';
 
 import { Logger } from '../utils/logger.js';
 
@@ -58,15 +59,16 @@ export class ServiceInitializer {
   const allServices = { ...techServices, ...repositories };
 
   const businessServices = {
-      newsPodcastService: this._createNewsPodcastService(allServices),
-        topicPodcastService: this._createTopicPodcastService(allServices)
-    };
+  newsPodcastService: this._createNewsPodcastService(allServices),
+  topicPodcastService: this._createTopicPodcastService(allServices),
+    topicSeriesGenerator: this._createTopicSeriesGenerator(allServices)
+     };
 
-      // 合并所有服务
-      this.services = {
-        ...techServices,
-        ...repositories,
-        ...businessServices
+  // 合并所有服务
+  this.services = {
+  ...techServices,
+  ...repositories,
+    ...businessServices
       };
 
       this.logger.info('Services initialized successfully');
@@ -224,20 +226,34 @@ export class ServiceInitializer {
   }
 
   /**
-   * 创建主题播客业务服务
+  * 创建主题播客业务服务
+  * @private
+  * @param {Object} services - 技术服务集合
+  * @returns {TopicPodcastService} 主题播客服务实例
+  */
+  _createTopicPodcastService(services) {
+  return new TopicPodcastService(
+  services,
+  services.topicRepository,
+  services.topicPodcastRepository,
+  {
+  maxRetries: 3,
+  retryDelay: 1000
+  }
+  );
+  }
+
+  /**
+   * 创建主题系列生成器
    * @private
    * @param {Object} services - 技术服务集合
-   * @returns {TopicPodcastService} 主题播客服务实例
+   * @returns {TopicSeriesGenerator} 主题系列生成器实例
    */
-  _createTopicPodcastService(services) {
-    return new TopicPodcastService(
-      services,
+  _createTopicSeriesGenerator(services) {
+    return new TopicSeriesGenerator(
       services.topicRepository,
       services.topicPodcastRepository,
-      {
-        maxRetries: 3,
-        retryDelay: 1000
-      }
+      services.scriptService
     );
   }
 

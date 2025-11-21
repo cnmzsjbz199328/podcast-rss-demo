@@ -62,12 +62,7 @@ export class CronHandler {
         case '30 14 * * *': // 每天阿德莱德时间14:30 (UTC 5:00)
         case '30 0 * * *':  // 每天阿德莱德时间00:30 (UTC 15:00)
         case '*/5 * * * *': // 每5分钟测试
-          const nextTopicId = await this._getNextPendingTopic(services);
-          if (nextTopicId) {
-            results.push(await this._generateDailyTopicPodcast(services, nextTopicId));
-          } else {
-            results.push(await this._generateDailyNewsPodcast(services));
-          }
+          results.push(...(await this._generateSeriesEpisodes(services)));
           break;
 
         case '0 */6 * * *': // 每6小时 (可选的额外任务)
@@ -293,12 +288,134 @@ export class CronHandler {
   }
 
   /**
-  * 获取下一个待处理的主题
+  * 生成系列剧集（扫描激活主题并生成新剧集）
   * @private
   * @param {Object} services - 服务实例集合
-  */
+  * @returns {Promise<Array>} 生成结果列表
+   */
+  async _generateSeriesEpisodes(services) {
+  const results = [];
+
+    try {
+      // 1. 获取所有激活的主题
+      const activeTopics = await services.topicRepository.getActiveTopics();
+      this.logger.info(`Found ${activeTopics.length} active topics for series generation`);
+
+      // 2. 为每个主题生成下一集
+      for (const topic of activeTopics) {
+        try {
+          const result = await this._generateTopicSeriesEpisode(services, topic);
+          if (result) {
+            results.push(result);
+          }
+        } catch (error) {
+          this.logger.error(`Failed to generate episode for topic ${topic.id}`, error);
+          results.push({
+            task: 'topic-series-episode',
+            topicId: topic.id,
+            topicTitle: topic.title,
+            status: 'failed',
+            error: error.message
+          });
+        }
+      }
+
+      // 3. 如果没有激活主题，生成新闻播客
+      if (activeTopics.length === 0) {
+        this.logger.info('No active topics found, generating news podcast');
+        results.push(await this._generateDailyNewsPodcast(services));
+      }
+
+      return results;
+
+    } catch (error) {
+      this.logger.error('Series episodes generation failed', error);
+      return [{
+        task: 'series-generation',
+        status: 'failed',
+        error: error.message
+      }];
+    }
+  }
+
+  /**
+   * 为主题生成系列剧集
+   * @private
+   * @param {Object} services - 服务实例集合
+   * @param {Object} topic - 主题信息
+   */
+  async _generateTopicSeriesEpisode(services, topic) {
+    this.logger.info('Generating series episode for topic', {
+      topicId: topic.id,
+      topicTitle: topic.title
+    });
+
+    try {
+      // 使用 TopicSeriesGenerator 生成下一集
+      const seriesGenerator = new TopicSeriesGenerator(
+        services.topicRepository,
+        services.topicPodcastRepository,
+        services.scriptService
+      );
+
+      const episodeInfo = await seriesGenerator.generateNextEpisode(topic.id);
+
+      if (!episodeInfo) {
+        this.logger.info('Topic generation skipped due to interval', { topicId: topic.id });
+        return {
+          task: 'topic-series-episode',
+          topicId: topic.id,
+          status: 'skipped',
+          reason: 'Generation interval not reached'
+        };
+      }
+
+      // 调用 TopicPodcastService 完成完整的播客生成
+      const result = await services.topicPodcastService.generatePodcastWithContent({
+        topicId: topic.id,
+        episodeNumber: episodeInfo.episodeNumber,
+        title: episodeInfo.title,
+        keywords: episodeInfo.keywords,
+        abstract: episodeInfo.abstract,
+        script: episodeInfo.script,
+        style: 'topic-explainer'
+      });
+
+      // 更新主题的最后生成时间
+      await services.topicRepository.updateLastGenerated(
+        topic.id,
+        new Date().toISOString()
+      );
+
+      this.logger.info('Topic series episode generated successfully', {
+        topicId: topic.id,
+        episodeNumber: episodeInfo.episodeNumber,
+        episodeId: result.episodeId
+      });
+
+      return {
+        task: 'topic-series-episode',
+        topicId: topic.id,
+        topicTitle: topic.title,
+        episodeNumber: episodeInfo.episodeNumber,
+        episodeId: result.episodeId,
+        status: 'completed',
+        duration: result.duration
+      };
+
+    } catch (error) {
+      this.logger.error('Topic series episode generation failed', error);
+      throw error;
+    }
+  }
+
+  /**
+    * 获取下一个待处理的主题
+    * @private
+    * @param {Object} services - 服务实例集合
+    */
   async _getNextPendingTopic(services) {
-  const topicRepository = services.topicRepository;
-  return await topicRepository.getNextPendingTopic();
+    const topicRepository = services.topicRepository;
+    return await topicRepository.getNextPendingTopic();
   }
 }

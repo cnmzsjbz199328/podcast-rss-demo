@@ -10,6 +10,7 @@ import { withRetry } from '../../../utils/retryUtils.js';
 import { GeminiApiClient } from './GeminiApiClient.js';
 import { ScriptStyleManager } from '../ScriptStyleManager.js';
 import { ScriptFormatter } from '../ScriptFormatter.js';
+import { ContentDataAdapter } from '../../../core/ContentDataAdapter.js';
 
 export class GeminiScriptService extends IScriptService {
   /**
@@ -28,6 +29,7 @@ export class GeminiScriptService extends IScriptService {
     );
     this.styleManager = new ScriptStyleManager();
     this.formatter = new ScriptFormatter();
+    this.dataAdapter = new ContentDataAdapter();
   }
 
   /**
@@ -75,18 +77,11 @@ export class GeminiScriptService extends IScriptService {
       throw new Error('No style specified for script generation');
     }
 
-    // 根据内容类型处理数据
-    let processedData;
-    switch (contentData.type) {
-      case 'news':
-        processedData = contentData.data;
-        break;
-      case 'topic':
-        processedData = this._processTopicData(contentData.data);
-        break;
-      default:
-        throw new Error(`Unsupported content type: ${contentData.type}`);
-    }
+    // 使用数据适配器转换数据
+    const processedData = this.dataAdapter.adapt(
+      contentData.type,
+      contentData.data
+    );
 
     // 获取风格配置
     this.logger.debug('Getting style configuration', { style });
@@ -208,23 +203,5 @@ export class GeminiScriptService extends IScriptService {
   };
   }
 
-  /**
-   * 处理主题数据，转换为适合脚本生成的格式
-   * @private
-   * @param {Object} topicData - 主题数据 { topic, content }
-   * @returns {Array} 格式化的新闻数据数组
-   */
-  _processTopicData(topicData) {
-    const { topic, content } = topicData;
-
-    // 将主题数据转换为类似新闻的格式
-    return [{
-      title: topic.title,
-      description: topic.description,
-      keywords: topic.keywords,
-      category: topic.category,
-      content: content || topic.description,
-      source: 'topic-based'
-    }];
-  }
+  
 }

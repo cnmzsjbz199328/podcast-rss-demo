@@ -22,31 +22,50 @@ export class TopicPodcastRepository {
    * @returns {Promise<string>} 剧集ID
    */
   async create(data) {
-    const {
-      topicId,
-      episodeId,
-      status = 'processing',
-      ttsEventId = null,
-      audioUrl = null,
-      duration = null
-    } = data;
+  const {
+  topicId,
+  episodeId,
+  episodeNumber,
+  title = '',
+  keywords = '',
+  abstract = '',
+  scriptUrl = null,
+    audioUrl = null,
+      srtUrl = null,
+    vttUrl = null,
+    jsonUrl = null,
+    duration = 0,
+      fileSize = 0,
+    wordCount = 0,
+      status = 'draft',
+    ttsEventId = null,
+  ttsStatus = 'pending'
+  } = data;
 
-    const createdAt = new Date().toISOString();
-    const updatedAt = createdAt;
+  const createdAt = new Date().toISOString();
 
-    this.logger.info('Creating new topic podcast', { topicId, episodeId, status });
+  this.logger.info('Creating new topic podcast', { topicId, episodeNumber, title, status });
 
     try {
-      await this.db.prepare(`
+      const result = await this.db.prepare(`
         INSERT INTO topic_podcasts (
-          topic_id, episode_id, status, tts_event_id, audio_url, duration, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          topic_id, episode_id, episode_number, title, keywords, abstract,
+          script_url, audio_url, srt_url, vtt_url, json_url,
+          duration, file_size, word_count,
+          status, created_at, updated_at,
+          tts_event_id, tts_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        topicId, episodeId, status, ttsEventId, audioUrl, duration, createdAt, updatedAt
+        topicId, episodeId, episodeNumber, title, keywords, abstract,
+        scriptUrl, audioUrl, srtUrl, vttUrl, jsonUrl,
+        duration, fileSize, wordCount,
+        status, createdAt, createdAt,
+        ttsEventId, ttsStatus
       ).run();
 
-      this.logger.info('Topic podcast created successfully', { topicId, episodeId });
-      return episodeId;
+      const podcastId = result.meta.last_row_id;
+      this.logger.info('Topic podcast created successfully', { podcastId, topicId, episodeNumber });
+      return podcastId;
 
     } catch (error) {
       this.logger.error('Failed to create topic podcast', error);
@@ -227,6 +246,102 @@ export class TopicPodcastRepository {
   }
 
   /**
+  * 获取全局统计信息（所有topic podcasts）
+  * @returns {Promise<Object>} 全局统计信息
+   */
+  async getGlobalStatistics() {
+    this.logger.info('Fetching global topic podcast statistics');
+
+    try {
+      const result = await this.db.prepare(`
+        SELECT
+          COUNT(*) as totalPodcasts,
+          COUNT(CASE WHEN status = 'completed' THEN 1 END) as completedPodcasts,
+          COUNT(CASE WHEN status = 'processing' THEN 1 END) as processingPodcasts,
+          COUNT(CASE WHEN status = 'failed' THEN 1 END) as failedPodcasts,
+          SUM(duration) as totalDuration,
+          MAX(created_at) as lastCreatedAt
+        FROM topic_podcasts
+      `).first();
+
+      this.logger.info('Global topic podcast statistics fetched', {
+        totalPodcasts: result.totalPodcasts,
+        completedPodcasts: result.completedPodcasts
+      });
+
+      return {
+        totalPodcasts: result.totalPodcasts || 0,
+        completedPodcasts: result.completedPodcasts || 0,
+        processingPodcasts: result.processingPodcasts || 0,
+        failedPodcasts: result.failedPodcasts || 0,
+        totalDuration: result.totalDuration || 0,
+        lastCreatedAt: result.lastCreatedAt
+      };
+
+    } catch (error) {
+      this.logger.error('Failed to fetch global topic podcast statistics', error);
+      throw new Error(`Failed to fetch global topic podcast statistics: ${error.message}`);
+    }
+  }
+
+  /**
+  * 获取所有topic podcasts（支持过滤和分页）
+  * @param {Object} filters - 过滤条件
+  * @returns {Promise<Array>} topic podcasts列表
+  */
+  async getAll(filters = {}) {
+    const { status, limit = 50, offset = 0 } = filters;
+
+    this.logger.info('Fetching all topic podcasts', { status, limit, offset });
+
+    try {
+      let query = `
+        SELECT
+          tp.id,
+          tp.topic_id,
+          tp.episode_id,
+          tp.episode_number,
+          tp.title,
+          tp.keywords,
+          tp.abstract,
+          tp.status,
+          tp.audio_url,
+          tp.srt_url,
+          tp.vtt_url,
+          tp.json_url,
+          tp.duration,
+          tp.created_at,
+          tp.updated_at,
+          tp.tts_event_id,
+          t.title as topic_title,
+          t.category as topic_category
+        FROM topic_podcasts tp
+        JOIN topics t ON tp.topic_id = t.id
+      `;
+
+      const params = [];
+
+      if (status) {
+        query += ' WHERE tp.status = ?';
+        params.push(status);
+      }
+
+      query += ' ORDER BY tp.created_at DESC LIMIT ? OFFSET ?';
+      params.push(limit, offset);
+
+      const result = await this.db.prepare(query).bind(...params).all();
+      const podcasts = result.results;
+
+      this.logger.info('Topic podcasts fetched successfully', { count: podcasts.length });
+      return podcasts;
+
+    } catch (error) {
+      this.logger.error('Failed to fetch topic podcasts', error);
+      throw new Error(`Failed to fetch topic podcasts: ${error.message}`);
+    }
+  }
+
+  /**
    * 获取所有主题的播客概览
    * @param {Object} filters - 过滤条件
    * @returns {Promise<Array>} 主题播客概览列表
@@ -335,6 +450,145 @@ export class TopicPodcastRepository {
     } catch (error) {
       this.logger.error('Failed to cleanup failed podcasts', error);
       throw new Error(`Failed to cleanup failed podcasts: ${error.message}`);
+    }
+  }
+
+  /**
+  * 获取主题的最大剧集编号
+  * @param {number} topicId - 主题ID
+    * @returns {Promise<number>} 最大剧集编号
+  */
+  async getMaxEpisodeNumber(topicId) {
+  this.logger.debug('Getting max episode number for topic', { topicId });
+
+  try {
+  const result = await this.db.prepare(`
+  SELECT COALESCE(MAX(episode_number), 0) AS max_episode_number
+    FROM topic_podcasts
+        WHERE topic_id = ?
+  `).bind(topicId).first();
+
+  const maxEpisodeNumber = result.max_episode_number || 0;
+    this.logger.debug('Max episode number retrieved', { topicId, maxEpisodeNumber });
+  return maxEpisodeNumber;
+  } catch (error) {
+    this.logger.error('Failed to get max episode number', { topicId, error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+    * 获取主题的下一集编号（用于系列生成）
+    */
+  async getNextEpisodeNumber(topicId) {
+    const maxEpisodeNumber = await this.getMaxEpisodeNumber(topicId);
+    return maxEpisodeNumber + 1;
+  }
+
+  /**
+   * 获取主题的最近N集播客（用于AI生成历史）
+   */
+  async getRecentEpisodes(topicId, limit = 10) {
+    this.logger.debug('Getting recent episodes for topic', { topicId, limit });
+
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM topic_podcasts
+        WHERE topic_id = ? AND status IN ('completed', 'published')
+        ORDER BY episode_number DESC
+        LIMIT ?
+      `).bind(topicId, limit).all();
+
+      const episodes = result.results || result;
+      this.logger.debug('Recent episodes fetched', { topicId, count: episodes.length });
+      return episodes.reverse();  // 反转为正序
+    } catch (error) {
+      this.logger.error('Failed to get recent episodes', { topicId, error: error.message });
+      throw error;
+    }
+  }
+
+  /**
+   * 更新播客状态和内容链接
+   */
+  async updatePodcastWithContent(podcastId, updates) {
+    this.logger.info('Updating podcast with content', { podcastId, updates: Object.keys(updates) });
+
+    try {
+      const fields = [];
+      const params = [];
+
+      // 构建更新字段
+      if (updates.title !== undefined) {
+        fields.push('title = ?');
+        params.push(updates.title);
+      }
+      if (updates.keywords !== undefined) {
+        fields.push('keywords = ?');
+        params.push(updates.keywords);
+      }
+      if (updates.abstract !== undefined) {
+        fields.push('abstract = ?');
+        params.push(updates.abstract);
+      }
+      if (updates.scriptUrl !== undefined) {
+        fields.push('script_url = ?');
+        params.push(updates.scriptUrl);
+      }
+      if (updates.audioUrl !== undefined) {
+        fields.push('audio_url = ?');
+        params.push(updates.audioUrl);
+      }
+      if (updates.srtUrl !== undefined) {
+        fields.push('srt_url = ?');
+        params.push(updates.srtUrl);
+      }
+      if (updates.vttUrl !== undefined) {
+        fields.push('vtt_url = ?');
+        params.push(updates.vttUrl);
+      }
+      if (updates.status !== undefined) {
+        fields.push('status = ?');
+        params.push(updates.status);
+        if (updates.status === 'published') {
+          fields.push('published_at = ?');
+          params.push(new Date().toISOString());
+        }
+      }
+      if (updates.ttsStatus !== undefined) {
+        fields.push('tts_status = ?');
+        params.push(updates.ttsStatus);
+      }
+      if (updates.duration !== undefined) {
+        fields.push('duration = ?');
+        params.push(updates.duration);
+      }
+      if (updates.fileSize !== undefined) {
+        fields.push('file_size = ?');
+        params.push(updates.fileSize);
+      }
+      if (updates.wordCount !== undefined) {
+        fields.push('word_count = ?');
+        params.push(updates.wordCount);
+      }
+
+      if (fields.length === 0) {
+        this.logger.warn('No fields to update', { podcastId });
+        return false;
+      }
+
+      params.push(podcastId); // WHERE 条件
+
+      const sql = `UPDATE topic_podcasts SET ${fields.join(', ')} WHERE id = ?`;
+      const result = await this.db.prepare(sql).bind(...params).run();
+
+      const success = result.success;
+      this.logger.info('Podcast update result', { podcastId, success, changes: result.meta.changes });
+
+      return success;
+    } catch (error) {
+      this.logger.error('Failed to update podcast with content', { podcastId, error: error.message });
+      throw new Error(`Failed to update podcast: ${error.message}`);
     }
   }
 }

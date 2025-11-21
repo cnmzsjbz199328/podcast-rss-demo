@@ -221,41 +221,204 @@ export class TopicPodcastService extends IPodcastService {
   }
 
   /**
-   * 保存主题播客记录
-   * @private
-   * @param {string} episodeId - 剧集ID
-   * @param {number} topicId - 主题ID
-   * @param {Object} results - 工作流结果
-   * @param {boolean} isAsync - 是否异步
-   */
+  * 保存主题播客记录
+  * @private
+  * @param {string} episodeId - 剧集ID
+  * @param {number} topicId - 主题ID
+  * @param {Object} results - 工作流结果
+  * @param {boolean} isAsync - 是否异步
+  */
   async _saveTopicPodcast(episodeId, topicId, results, isAsync) {
-    const podcastData = {
-      topicId,
-      episodeId,
-      status: isAsync ? 'processing' : 'completed'
-    };
+  const podcastData = {
+  topicId,
+  episodeId,
+  status: isAsync ? 'processing' : 'completed'
+  };
 
-    if (isAsync) {
-      podcastData.ttsEventId = results.initiateAudio?.eventId;
-    } else {
-      if (results.storeFiles?.audioUrl) {
-        podcastData.audioUrl = results.storeFiles.audioUrl;
-        podcastData.duration = results.generateAudio?.duration;
-      }
-    }
+  if (isAsync) {
+  podcastData.ttsEventId = results.initiateAudio?.eventId;
+  } else {
+  if (results.storeFiles?.audioUrl) {
+  podcastData.audioUrl = results.storeFiles.audioUrl;
+  podcastData.duration = results.generateAudio?.duration;
+  }
+  }
 
-    await this.topicPodcastRepository.create(podcastData);
+  await this.topicPodcastRepository.create(podcastData);
   }
 
   /**
-   * 创建主题专用服务（替换 RSS 服务为主题内容提供）
+   * 保存主题播客记录（包含完整内容信息）
    * @private
+   * @param {string} episodeId - 剧集ID
+   * @param {Object} podcastData - 播客数据
    */
+  async _saveTopicPodcastWithContent(episodeId, podcastData) {
+    const createData = {
+      topicId: podcastData.topicId,
+      episodeId,
+      episodeNumber: podcastData.episodeNumber,
+      title: podcastData.title || '',
+      keywords: podcastData.keywords || '',
+      abstract: podcastData.abstract || '',
+      scriptUrl: podcastData.scriptUrl,
+      audioUrl: podcastData.audioUrl,
+      srtUrl: podcastData.srtUrl,
+      vttUrl: podcastData.vttUrl,
+      jsonUrl: podcastData.jsonUrl,
+      duration: podcastData.duration || 0,
+      fileSize: podcastData.fileSize || 0,
+      wordCount: podcastData.wordCount || 0,
+      status: podcastData.status || 'draft',
+      ttsEventId: podcastData.ttsEventId || null,
+      ttsStatus: podcastData.ttsStatus || 'pending'
+    };
+
+    // 创建播客记录（TopicPodcastRepository.create已经支持新字段）
+    await this.topicPodcastRepository.create(createData);
+  }
+
+  /**
+  * 生成主题播客（支持预定义内容）
+  * @param {Object} options - 生成选项
+  * @param {number} options.topicId - 主题ID
+   * @param {number} options.episodeNumber - 剧集编号
+  * @param {string} options.title - 剧集标题
+  * @param {string} options.keywords - 关键词
+  * @param {string} options.abstract - 摘要
+  * @param {string} options.script - 脚本内容
+  * @param {string} [options.style='topic-explainer'] - 播客风格
+   * @returns {Promise<PodcastResult>} 播客生成结果
+   */
+  async generatePodcastWithContent(options) {
+    const {
+      topicId,
+      episodeNumber,
+      title,
+      keywords,
+      abstract,
+      script,
+      style = 'topic-explainer'
+    } = options;
+
+    if (!topicId || !episodeNumber || !script) {
+      throw new Error('topicId, episodeNumber, and script are required');
+    }
+
+
+
+    this.logger.info('Starting topic podcast generation with content', {
+      topicId,
+      episodeNumber,
+      title,
+      style
+    });
+
+    try {
+      // 获取主题信息
+      const topic = await this.topicRepository.getTopic(topicId);
+      if (!topic) {
+        throw new Error(`Topic not found: ${topicId}`);
+      }
+
+      // 生成剧集ID
+      const episodeId = TopicPodcastHelper.generateEpisodeId(topicId, episodeNumber);
+
+      // 先保存主题播客记录（基本信息）
+      const initialPodcastData = {
+        topicId,
+        episodeNumber,
+        title,
+        keywords,
+        abstract,
+        scriptUrl: null, // 稍后更新
+        audioUrl: null, // 稍后更新
+        srtUrl: null,   // 稍后更新
+        vttUrl: null,   // 稍后更新
+        jsonUrl: null,  // 稍后更新
+        duration: 0,    // 稍后更新
+        fileSize: 0,
+        wordCount: script.length,
+        status: 'processing', // 先标记为处理中
+        ttsEventId: null,
+        ttsStatus: 'pending'
+      };
+      await this._saveTopicPodcastWithContent(episodeId, initialPodcastData);
+
+      // 构建工作流上下文（使用预定义内容）
+      const context = {
+        episodeId,
+        style,
+        services: this._createTopicServicesWithContent(topic, {
+          title,
+          keywords,
+          abstract,
+          script
+        }),
+        options: { useAsyncTts: false },
+        topicId,
+        episodeNumber
+      };
+
+      // 执行工作流
+      const results = await this.workflow.executeWorkflow(context);
+
+      // 更新主题播客记录（包含完整信息）
+      await this.topicPodcastRepository.update(episodeId, {
+        script_url: results.storeFiles?.scriptUrl,
+        audio_url: results.storeFiles?.audioUrl,
+        srt_url: results.storeFiles?.srtUrl,
+        vtt_url: results.storeFiles?.vttUrl,
+        json_url: results.storeFiles?.jsonUrl,
+        duration: results.generateAudio?.duration || 0,
+        file_size: results.storeFiles?.fileSize || 0,
+        status: 'completed',
+        tts_status: 'completed'
+      });
+
+      const podcastResult = TopicPodcastHelper.formatPodcastResult(
+        results,
+        episodeId,
+        topicId,
+        false
+      );
+
+      this.logger.info('Topic podcast with content generation completed', {
+        episodeId: context.episodeId,
+        topicId,
+        episodeNumber,
+        duration: podcastResult.duration
+      });
+
+      return podcastResult;
+
+    } catch (error) {
+      this.logger.error('Topic podcast with content generation failed', error);
+      throw new Error(`Topic podcast generation failed: ${error.message}`);
+    }
+  }
+
+  /**
+    * 创建主题专用服务（替换 RSS 服务为主题内容提供）
+    * @private
+    */
   _createTopicServices(topic) {
     return {
       ...this.services,
       rssService: new TopicContentServiceAdapter(topic),
       scriptService: new TopicScriptServiceAdapter(this.services.scriptService, topic)
+    };
+  }
+
+  /**
+   * 创建主题专用服务（使用预定义内容）
+   * @private
+   */
+  _createTopicServicesWithContent(topic, content) {
+    return {
+      ...this.services,
+      rssService: new TopicContentServiceAdapter(topic, content),
+      scriptService: new TopicScriptServiceAdapter(this.services.scriptService, topic, content)
     };
   }
 }

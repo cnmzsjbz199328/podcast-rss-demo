@@ -96,12 +96,19 @@
 - **依赖**: Cloudflare R2存储
 - **代码行数**: 112行
 
+#### 10. **数据适配代理**
+- **位置**: `src/core/ContentDataAdapter.js`
+- **职责**: 统一处理不同类型业务数据转换为AI服务格式
+- **接口**: `adapt(type, data)`
+- **方法**: `adaptNewsData()`, `adaptTopicData()`, `adaptSeriesData()`
+- **代码行数**: 110行
+
 ## 📊 组件大小统计
 
 | 组件 | 文件数 | 平均行数 | 最大行数 | 符合规范 |
 |------|--------|----------|----------|----------|
 | 处理器 (Handlers) | 5 | 85行 | 148行 | ✅ |
-| 核心逻辑 (Core) | 3 | 92行 | 130行 | ✅ |
+| 核心逻辑 (Core) | 4 | 93行 | 130行 | ✅ |
 | 实现类 (Implementations) | 15 | 89行 | 186行 | ✅ |
 | 服务类 (Services) | 4 | 78行 | 148行 | ✅ |
 | 工具类 (Utils) | 6 | 45行 | 89行 | ✅ |
@@ -182,7 +189,7 @@ graph TD
 
 ---
 
-*最后更新: 2025-11-15*
+*最后更新: 2025-11-21*
 *代码行数统计基于当前实现*</content>
 </xai:function_call/>
 <xai:function_call name="read_web_page">

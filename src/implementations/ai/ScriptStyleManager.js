@@ -85,6 +85,10 @@ Requirements:
 
 Topic content:
 {news}`
+      },
+   'topic-series': {
+   name: 'Topic Series Generation',
+   scriptPrompt: `{news}`
       }
   };
 
@@ -100,7 +104,7 @@ Topic content:
    * 获取所有支持的风格
    */
   getSupportedStyles() {
-  return ['guo-de-gang', 'news-anchor', 'emotional', 'topic-explainer'];
+  return ['guo-de-gang', 'news-anchor', 'emotional', 'topic-explainer', 'topic-series'];
   }
 
   /**
@@ -111,17 +115,28 @@ Topic content:
   }
 
   /**
-   * 构建提示词
-   */
+  * 构建提示词
+  */
   buildPrompt(news, styleConfig) {
-    // 格式化News内容
+    // ✅ 对于 topic-series 风格，直接返回原始内容（不进行模板包装）
+    if (styleConfig.name === 'Topic Series Generation') {
+      this.logger.info('Using topic-series style: passing through user prompt directly');
+      
+      if (news && news.length === 1 && news[0]) {
+        const directPrompt = news[0].description || news[0].content || '';
+        this.logger.debug('Topic series prompt length', { length: directPrompt.length });
+        return directPrompt;
+      }
+    }
+
+    // 正常的新闻播客提示词构建
     const newsContent = news.map((item, index) => {
       return `${index + 1}. ${item.title}
 
 ${item.description}
 
-Source: ${item.link}
-Published: ${new Date(item.pubDate).toLocaleString('en-US')}
+Source: ${item.link || 'N/A'}
+Published: ${item.pubDate ? new Date(item.pubDate).toLocaleString('en-US') : 'N/A'}
 
 `;
     }).join('---\n\n');

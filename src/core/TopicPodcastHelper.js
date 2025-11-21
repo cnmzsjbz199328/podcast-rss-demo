@@ -4,14 +4,20 @@
  */
 export class TopicPodcastHelper {
   /**
-   * 生成唯一的剧集ID
-   * @param {number} topicId - 主题ID
-   * @returns {string} 剧集ID
-   */
-  static generateEpisodeId(topicId) {
+  * 生成唯一的剧集ID
+  * @param {number} topicId - 主题ID
+  * @param {number} [episodeNumber] - 剧集编号（可选，用于系列）
+  * @returns {string} 剧集ID
+    */
+  static generateEpisodeId(topicId, episodeNumber = null) {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substr(2, 9);
-    return `topic-${topicId}-${timestamp}-${random}`;
+
+    if (episodeNumber) {
+      return `topic-${topicId}-ep-${episodeNumber}-${timestamp}`;
+    } else {
+      return `topic-${topicId}-${timestamp}-${random}`;
+    }
   }
 
   /**
@@ -74,8 +80,9 @@ export class TopicPodcastHelper {
 
     return topicPodcasts.map(podcast => ({
       episodeId: podcast.episode_id,
-      title: podcast.title || `Episode ${podcast.id}`,
-      description: podcast.description,
+      title: podcast.title || `Episode ${podcast.episode_number}`,
+      keywords: podcast.keywords,
+      abstract: podcast.abstract,
       status: podcast.status,
       audioUrl: podcast.audio_url,
       duration: podcast.duration,
@@ -83,7 +90,7 @@ export class TopicPodcastHelper {
       updatedAt: podcast.updated_at,
       metadata: {
         topicId: podcast.topic_id,
-        episodeNumber: podcast.id, // 使用主键作为episode number
+        episodeNumber: podcast.episode_number,
         topicTitle: podcast.topic_title,
         topicCategory: podcast.topic_category
       }
@@ -102,8 +109,9 @@ export class TopicPodcastHelper {
 
     return {
       episodeId: podcast.episode_id,
-      title: podcast.title || `Episode ${podcast.id}`,
-      description: podcast.description,
+      title: podcast.title || `Episode ${podcast.episode_number}`,
+      keywords: podcast.keywords,
+      abstract: podcast.abstract,
       status: podcast.status,
       audioUrl: podcast.audio_url,
       duration: podcast.duration,
@@ -111,7 +119,7 @@ export class TopicPodcastHelper {
       updatedAt: podcast.updated_at,
       metadata: {
         topicId: podcast.topic_id,
-        episodeNumber: podcast.id, // 使用主键作为episode number
+        episodeNumber: podcast.episode_number,
         topicTitle: podcast.topic_title,
         topicCategory: podcast.topic_category
       }
@@ -175,7 +183,8 @@ export class TopicPodcastPollHelper {
         podcast: {
           episodeId: topicPodcast.episode_id,
           title: topicPodcast.title || `Episode ${topicPodcast.episode_number}`,
-          description: topicPodcast.description,
+          keywords: topicPodcast.keywords,
+          abstract: topicPodcast.abstract,
           status: 'completed',
           audioUrl: audioStatus.audioUrl,
           duration: audioStatus.duration,
@@ -207,7 +216,8 @@ export class TopicPodcastPollHelper {
       podcast: {
         episodeId: topicPodcast.episode_id,
         title: topicPodcast.title || `Episode ${topicPodcast.episode_number}`,
-        description: topicPodcast.description,
+        keywords: topicPodcast.keywords,
+        abstract: topicPodcast.abstract,
         status: 'processing',
         createdAt: topicPodcast.created_at,
         metadata: {
@@ -221,47 +231,69 @@ export class TopicPodcastPollHelper {
 }
 
 /**
- * 主题内容服务适配器
- * 将主题数据适配为RSS服务接口
- */
+* 主题内容服务适配器
+* 将主题数据适配为RSS服务接口
+*/
 export class TopicContentServiceAdapter {
-  constructor(topic) {
-    this.topic = topic;
+constructor(topic, predefinedContent = null) {
+this.topic = topic;
+  this.predefinedContent = predefinedContent;
   }
 
-  /**
-   * 模拟RSS服务的fetchNews方法
-   * @returns {Promise<Array>} 主题内容数组
-   */
-  async fetchNews() {
-    // 返回主题内容而非RSS
-    return [{
-      title: this.topic.title,
-      description: this.topic.description,
-      keywords: this.topic.keywords,
-      category: this.topic.category
-    }];
+/**
+* 模拟RSS服务的fetchNews方法
+* @returns {Promise<Array>} 主题内容数组
+  */
+async fetchNews() {
+// 如果有预定义内容，使用它；否则使用主题信息
+if (this.predefinedContent) {
+return [{
+  title: this.topic.title,  // ✅ 使用主题标题（如 "IELTS Test Strategies"）
+  description: this.predefinedContent.abstract || this.topic.description,
+    keywords: this.predefinedContent.keywords || this.topic.keywords,  // ✅ 传递关键词
+      category: this.topic.category,
+        content: this.predefinedContent.script || this.topic.description
+      }];
+    } else {
+      return [{
+        title: this.topic.title,
+        description: this.topic.description,
+        keywords: this.topic.keywords,
+        category: this.topic.category
+      }];
+    }
   }
 }
 
 /**
- * 主题脚本服务适配器
- * 将主题脚本生成适配为标准脚本服务接口
- */
+* 主题脚本服务适配器
+* 将主题脚本生成适配为标准脚本服务接口
+*/
 export class TopicScriptServiceAdapter {
-  constructor(baseScriptService, topic) {
-    this.baseScriptService = baseScriptService;
-    this.topic = topic;
+constructor(baseScriptService, topic, predefinedContent = null) {
+this.baseScriptService = baseScriptService;
+this.topic = topic;
+  this.predefinedContent = predefinedContent;
   }
 
-  /**
-   * 生成脚本（适配主题内容）
-   * @param {Array} content - 内容数组
-   * @param {string} style - 脚本风格
-   * @returns {Promise<Object>} 生成的脚本结果
-   */
-  async generateScript(content, style) {
-    // 转换为 contentData 格式
+/**
+* 生成脚本（适配主题内容）
+* @param {Array} content - 内容数组
+* @param {string} style - 脚本风格
+* @returns {Promise<Object>} 生成的脚本结果
+  */
+async generateScript(content, style) {
+// 如果有预定义内容，直接返回（跳过AI生成）
+if (this.predefinedContent && this.predefinedContent.script) {
+return {
+content: this.predefinedContent.script,
+style: style,
+  generated: true,
+    source: 'predefined'
+      };
+}
+
+    // 否则使用正常的AI生成流程
     const contentData = {
       type: 'topic',
       data: {

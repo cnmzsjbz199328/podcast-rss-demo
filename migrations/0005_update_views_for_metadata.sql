@@ -1,10 +1,11 @@
 -- ============================================
--- Compatibility views creation migration
--- 创建兼容性视图，提供统一的字段命名和更好的查询接口
+-- Update views for topic metadata support
+-- 更新视图以支持主题元数据字段
 -- ============================================
 
--- Topics 兼容视图（直接使用原始字段名）
-CREATE VIEW IF NOT EXISTS v_topics AS
+-- 更新 v_topics 视图，添加缺失的字段
+DROP VIEW IF EXISTS v_topics;
+CREATE VIEW v_topics AS
 SELECT
   id,
   title,
@@ -19,8 +20,9 @@ SELECT
   updated_at
 FROM topics;
 
--- Topic_Podcasts 兼容视图（提供关联查询）
-CREATE VIEW IF NOT EXISTS v_topic_podcasts AS
+-- 更新 v_topic_podcasts 视图，添加元数据字段
+DROP VIEW IF EXISTS v_topic_podcasts;
+CREATE VIEW v_topic_podcasts AS
 SELECT
   tp.id,
   tp.topic_id,
@@ -45,7 +47,7 @@ JOIN topics t ON tp.topic_id = t.id;
 
 -- 插入迁移记录
 INSERT INTO _migration_metadata (version, description, applied_at) VALUES (
-  3,
-  'Create compatibility views for unified field naming and enhanced queries',
+  5,
+  'Update views to include topic metadata fields (last_generated_at, is_active, title, keywords, abstract)',
   datetime('now')
 );

@@ -21,24 +21,31 @@ export class TopicRepository {
    * @returns {Promise<number>} 新创建的主题ID
    */
   async create(topicData) {
-    const {
-      title,
-      description = '',
-      keywords = '',
-      category = 'general',
-      status = 'active'
-    } = topicData;
+  const {
+  title,
+  description = '',
+  is_active = true,
+  generation_interval_hours = 24
+  } = topicData;
 
-    const createdAt = new Date().toISOString();
-    const updatedAt = createdAt;
+  const createdAt = new Date().toISOString();
+  const updatedAt = createdAt;
 
-    this.logger.info('Creating new topic', { title, category });
+  this.logger.info('Creating new topic', { title, is_active });
 
-    try {
-      const result = await this.db.prepare(`
-        INSERT INTO topics (title, description, keywords, category, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).bind(title, description, keywords, category, status, createdAt, updatedAt).run();
+  try {
+  const result = await this.db.prepare(`
+  INSERT INTO topics (
+    title, description, is_active, generation_interval_hours, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        title,
+        description,
+        is_active,
+        generation_interval_hours,
+        createdAt,
+        updatedAt
+      ).run();
 
       const topicId = result.meta.last_row_id;
       this.logger.info('Topic created successfully', { topicId, title });
@@ -274,6 +281,56 @@ export class TopicRepository {
   }
 
   /**
+   * 获取激活的主题列表（用于定时任务）
+   * @returns {Promise<Array>} 激活的主题列表
+   */
+  async getActiveTopics() {
+    this.logger.info('Fetching active topics for cron job');
+
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM topics
+        WHERE is_active = 1
+        ORDER BY last_generated_at ASC, created_at ASC
+      `).all();
+
+      this.logger.info('Active topics fetched', { count: result.results.length });
+      return result.results;
+
+    } catch (error) {
+      this.logger.error('Failed to fetch active topics', error);
+      throw new Error(`Failed to fetch active topics: ${error.message}`);
+    }
+  }
+
+  /**
+   * 更新主题的最后生成时间
+   * @param {number} topicId - 主题ID
+   * @param {string} lastGeneratedAt - 最后生成时间
+   * @returns {Promise<boolean>} 是否更新成功
+   */
+  async updateLastGenerated(topicId, lastGeneratedAt) {
+    this.logger.info('Updating last generated time', { topicId, lastGeneratedAt });
+
+    try {
+      const result = await this.db.prepare(`
+        UPDATE topics
+        SET last_generated_at = ?, updated_at = ?
+        WHERE id = ?
+      `).bind(lastGeneratedAt, new Date().toISOString(), topicId).run();
+
+      const success = result.meta.changes > 0;
+      this.logger.info('Last generated time updated', { topicId, success });
+
+      return success;
+
+    } catch (error) {
+      this.logger.error('Failed to update last generated time', error);
+      throw new Error(`Failed to update last generated time: ${error.message}`);
+    }
+  }
+
+  /**
     * 搜索主题
     * @param {string} searchTerm - 搜索关键词
     * @param {Object} filters - 其他过滤条件
@@ -313,6 +370,43 @@ export class TopicRepository {
     } catch (error) {
       this.logger.error('Failed to search topics', error);
       throw new Error(`Failed to search topics: ${error.message}`);
+    }
+  }
+
+  /**
+   * 检查主题是否应该生成新播客（基于时间间隔）
+   */
+  async shouldGenerate(topicId) {
+    this.logger.debug('Checking if topic should generate', { topicId });
+
+    try {
+      const topic = await this.getTopic(topicId);
+      if (!topic) {
+        return false;
+      }
+
+      if (!topic.last_generated_at) {
+        // 第一次生成
+        return true;
+      }
+
+      const intervalHours = topic.generation_interval_hours || 24;
+      const lastGenerated = new Date(topic.last_generated_at);
+      const now = new Date();
+      const hoursSinceLastGen = (now - lastGenerated) / (1000 * 60 * 60);
+
+      const shouldGen = hoursSinceLastGen >= intervalHours;
+      this.logger.debug('Generation check result', {
+        topicId,
+        hoursSinceLastGen: hoursSinceLastGen.toFixed(2),
+        intervalHours,
+        shouldGenerate: shouldGen
+      });
+
+      return shouldGen;
+    } catch (error) {
+      this.logger.error('Failed to check generation status', { topicId, error: error.message });
+      return false;
     }
   }
 }

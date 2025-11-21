@@ -168,8 +168,8 @@ export class PodcastWorkflow {
   // 构建完整的剧集数据对象
   return {
   id: context.episodeId,
-  title: this._generateTitle(results.fetchNews, context.style),
-  description: this._generateDescription(results.fetchNews),
+  title: this._generateTitle(results.fetchNews, context.style, context),
+  description: this._generateDescription(results.fetchNews, context),
   style: context.style,
   newsCount: results.fetchNews.length,
   wordCount: results.generateScript.wordCount,
@@ -192,17 +192,35 @@ export class PodcastWorkflow {
     };
   }
 
-  _generateTitle(news, style) {
-    // 标题生成逻辑
+  _generateTitle(news, style, context) {
+    // 检查是否为 Topic 播客（通过 context 传递的信息判断）
+    if (context && context.topicId !== undefined && context.episodeNumber !== undefined) {
+      // Topic 播客标题格式：主题名 Episode N: 关键词
+      // 示例："IELTS Test Strategies Episode 1: Speaking"
+      const topicTitle = news[0]?.title || 'Topic Series';
+      const episodeNumber = context.episodeNumber;
+      const keyword = news[0]?.keywords || '';
+      
+      return `${topicTitle} Episode ${episodeNumber}: ${keyword}`;
+    }
+    
+    // News 播客标题生成逻辑
     const styleNames = {
       'news-anchor': 'Today Hot Topics',
-      'emotional': 'News播报'
+      'emotional': 'News Broadcast',
+      'guo-de-gang': 'Crosstalk News'
     };
-    return `${styleNames[style] || 'News播报'} - ${new Date().toLocaleDateString('zh-CN')}`;
+    return `${styleNames[style] || 'News Broadcast'} - ${new Date().toLocaleDateString('en-US')}`;
   }
 
-  _generateDescription(news) {
-    // 描述生成逻辑
-    return `Today HotNews：${news.slice(0, 3).map(item => item.title.split(' - ')[0]).join('；')}...`;
+  _generateDescription(news, context) {
+    // 检查是否为 Topic 播客
+    if (context && context.topicId !== undefined && context.episodeNumber !== undefined) {
+      // Topic 播客描述：使用 abstract 或 description
+      return news[0]?.description || news[0]?.content || 'Topic episode description';
+    }
+
+    // News 播客描述生成逻辑
+    return `Today Hot News: ${news.slice(0, 3).map(item => item.title.split(' - ')[0]).join('; ')}...`;
   }
 }
