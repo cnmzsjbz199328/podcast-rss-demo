@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Podcast Home Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+      }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#13b6ec",
+              "background-light": "#f6f8f8",
+              "background-dark": "#101d22",
+              "surface-dark": "#192d33",
+              "secondary-text-dark": "#92bbc9",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Header Bar -->
+<header class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-background-light/80 px-4 py-3 backdrop-blur-sm dark:bg-background-dark/80">
+<div class="flex flex-1 items-center gap-2 rounded-lg bg-white/10 px-3 py-2">
+<span class="material-symbols-outlined text-secondary-text-dark">search</span>
+<input class="w-full flex-1 bg-transparent text-white placeholder-secondary-text-dark focus:outline-none" placeholder="搜索新闻、主题或创作者" type="search"/>
+</div>
+<button>
+<img class="size-10 rounded-full" data-alt="User avatar image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQadlhKnhKDNcQufIkPIKmcsy3xrKrk3TlDQgiETRizhrV7f0A7yJVt6O8WGn2bdp3GT6noc4Ca9OjAj7a0mifeh5YpyCXr-mrHD5FJ-PtNCAwt8XmzMNVJPpSbz9rAb6CLbQflEidTqUlfbqC6_XvozlZhh5WB6csjKaXXvKhW9AT-dRTla-BXXtBYTN0jmpKaLVKPoTwkAehJYSWNqTEBBglwgIX5V0hyXwEzKJmSQS5utYoW10W6ljMf6BUtuqHha7dz9V4cnk"/>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex flex-col">
+<!-- Featured Section: Carousel -->
+<div class="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
+<div class="flex items-stretch gap-3 p-4">
+<div class="flex h-full min-w-80 flex-1 flex-col gap-4 rounded-lg bg-surface-dark shadow-[0_0_4px_rgba(0,0,0,0.1)]">
+<div class="flex aspect-video w-full flex-col items-start justify-end rounded-t-lg bg-cover bg-center bg-no-repeat p-4" data-alt="Abstract blue and purple waves" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA2_9ObCfONvijhgVOs3in0B-EprZvvBQj8HmEo8C3ZrvHV13F7vylFUM1SN-SJH8FHZ1uLR1f0BL9PBJ71q8Le0dAEE0PKnBaMWZuvrzAYfpx9gsm0e87SJlE0NWzLgLGDL7NneGYtXMmTbnJ_vtZJ5PU7GtCsQtYba8dKC6fOrkRqxXzm5Y9DnIAS5qWU6R37P9PIy0YFmpAmSpfXq6HDduSTnYNEs4nq4eG1bUKANHo3kZ-wEjtaGTbllMRrHYU1FTRG-pEoJIA");'>
+<h3 class="text-xl font-bold leading-tight text-white">今日AI新闻摘要</h3>
+<p class="text-sm font-normal leading-normal text-white/80">每日更新，为您带来最新AI动态</p>
+</div>
+<div class="flex flex-col flex-1 justify-between p-4 pt-0">
+<button class="flex h-10 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg bg-primary px-4 text-sm font-bold leading-normal tracking-[0.015em] text-white">
+<span class="material-symbols-outlined">play_arrow</span>
+<span class="truncate">立即播放</span>
+</button>
+</div>
+</div>
+<div class="flex h-full min-w-80 flex-1 flex-col gap-4 rounded-lg bg-surface-dark shadow-[0_0_4px_rgba(0,0,0,0.1)]">
+<div class="flex aspect-video w-full flex-col items-start justify-end rounded-t-lg bg-cover bg-center bg-no-repeat p-4" data-alt="Glowing neon light trails in a dark environment" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDcHG_Au_PUVs_1XYLxCMjUhkQ2_u8_urrxrGpNvW5LHsVIDo__TYMTN5pDc715XAf9eCI9HRAytpIV6TwvyEY4Usyz_p2xAbcrrs3-VJqyKJu0nU53mxxeKvJfEDvkUWiGDK3zn8mws2tY-rDyV9rqk-UGsfUEY0bzM50W4AipzzdgH1M3PAzlD_7tXcuRGbTzKZJJpS7dxxX5vNSPlQ06tHYADp8H41fBwF2vxubmfM7G4kXk1HE-ewfSUZr7tmDp1ViH0lMdsvE");'>
+<h3 class="text-xl font-bold leading-tight text-white">深度解析：量子计算的未来</h3>
+<p class="text-sm font-normal leading-normal text-white/80">专家访谈，探索前沿科技</p>
+</div>
+<div class="flex flex-col flex-1 justify-between p-4 pt-0">
+<button class="flex h-10 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg bg-primary/20 px-4 text-sm font-bold leading-normal tracking-[0.015em] text-primary">
+<span class="material-symbols-outlined">play_arrow</span>
+<span class="truncate">播放</span>
+</button>
+</div>
+</div>
+<div class="flex h-full min-w-80 flex-1 flex-col gap-4 rounded-lg bg-surface-dark shadow-[0_0_4px_rgba(0,0,0,0.1)]">
+<div class="flex aspect-video w-full flex-col items-start justify-end rounded-t-lg bg-cover bg-center bg-no-repeat p-4" data-alt="Digital representation of a futuristic city skyline" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDosL342eUaaDpFKSGV-rfetq5Al0gMjZo2a5mE-wHUDiIg7cM4h40I490Onedky92e8q1DQ4YDZM3JWBgL9Vd8XbiLDXX_JUMeGjDIL-wQnXirgP5Tlq_ktVz71tjGCOF5v8cuR4JvOlgHyN8atBKM2YW5P0dxpIp72hnHgaflwut5EaItjLUblFUeu9_1R1dKfoe_m253yz1Q76WEPFmtsn_AR80FegpBDUOv9SpaJOxDgmvLHxfguYRc-idSfD5iBeE3bUtNA7E");'>
+<h3 class="text-xl font-bold leading-tight text-white">科技前沿：下一个十年</h3>
+<p class="text-sm font-normal leading-normal text-white/80">行业领袖洞察未来趋势</p>
+</div>
+<div class="flex flex-col flex-1 justify-between p-4 pt-0">
+<button class="flex h-10 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg bg-primary/20 px-4 text-sm font-bold leading-normal tracking-[0.015em] text-primary">
+<span class="material-symbols-outlined">play_arrow</span>
+<span class="truncate">播放</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- "最新发布" Section -->
+<h2 class="px-4 pb-3 pt-5 text-[22px] font-bold leading-tight tracking-[-0.015em] text-white">最新发布</h2>
+<div class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4 pt-0">
+<div class="flex flex-col gap-3 pb-3">
+<div class="relative w-full">
+<div class="aspect-square w-full rounded-lg bg-cover bg-center bg-no-repeat" data-alt="Abstract image of global financial charts and graphs" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB7_gVRC3I1E7bAzT4Vl0dfnXHCu-Gi_mrwvpJKx4IVW8zD3-54Vwfu_ktoHOssoYfnJELuTaaAOUC1fKV3CR1YI-NYNQhReu8k3XHpzQexURQiwUCHnxdXFKB4WTqyPb8mJRA6q8S9rYGscJDCm-8RvqcAX4eb1-yo7mVoBYFDXVUp8bDFDAwHBimufalKXut7tQvF10jNg9ae2NNTGWZTrRXb7ImpQS6eJh2SWwaVahb4rp16NuubaIWcf49_pQYXPZlIyqfsJGs");'></div>
+<button class="absolute bottom-2 right-2 flex size-9 items-center justify-center rounded-full bg-primary/80 backdrop-blur-sm">
+<span class="material-symbols-outlined text-white pl-0.5">play_arrow</span>
+</button>
+</div>
+<div>
+<p class="truncate text-base font-medium leading-normal text-white">全球经济快讯</p>
+<p class="text-sm font-normal leading-normal text-secondary-text-dark">财经播客 · 5分钟前</p>
+</div>
+</div>
+<div class="flex flex-col gap-3 pb-3">
+<div class="relative w-full">
+<div class="aspect-square w-full rounded-lg bg-cover bg-center bg-no-repeat" data-alt="Stylized illustration of a brain with circuit patterns" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAkl3PreaggYG8URlqwWv9mVKjHHbRGY3uDttIOAAy7ElJ4h1VfRbZa29k5LVjyZfGf-MaxDAb6ZWuYGc7aMbVha5SHBOU515M6eevzM_lBPKzY6oxfYm6RBX6Sfgd-PlH5GnGxjGKfTTRY9yHq5DNuMG6QK_o2xeU2LjycOzlwCy_EMFYchbIateVGNWQ7ujAa1hpGkkHMWck3lekIZEuSZio42XNbOOImO6JXttRmbzBGG9aPt16ZBTxMfXFdBCZa6AIdwj1i5vg");'></div>
+<button class="absolute bottom-2 right-2 flex size-9 items-center justify-center rounded-full bg-primary/80 backdrop-blur-sm">
+<span class="material-symbols-outlined text-white pl-0.5">play_arrow</span>
+</button>
+</div>
+<div>
+<p class="truncate text-base font-medium leading-normal text-white">AI伦理探讨</p>
+<p class="text-sm font-normal leading-normal text-secondary-text-dark">科技播客 · 20分钟前</p>
+</div>
+</div>
+<div class="flex flex-col gap-3 pb-3">
+<div class="relative w-full">
+<div class="aspect-square w-full rounded-lg bg-cover bg-center bg-no-repeat" data-alt="Stunning view of the Earth from space" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAaH0QTLQ51mDGrlz5e1jPZkxvbS8HBFpfrX6rjl2mioAOBkLokcwaA0fO3jBxDGS13Y5hhXf2EYlkUY640uULiGIqAg4VDCukjjocuxB1PHkcLOPdD6U2ypBFCe-AY1xxoQW3qg4WnqT32Dz2qyxpY5PHlDFJVO_iywyqq_gcz7Ru3cHZEHDoVyLVW0lFpLKjjEVyGGxuI7Mbc4Ko4BQ9rx2a23QPwyHAKS_P1sG9HIPz2v9nJQFSIshO1SlL97Wahq0-csmrABcM");'></div>
+<button class="absolute bottom-2 right-2 flex size-9 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm">
+<span class="material-symbols-outlined text-white pl-0.5">play_arrow</span>
+</button>
+</div>
+<div>
+<p class="truncate text-base font-medium leading-normal text-white">太空探索新篇章</p>
+<p class="text-sm font-normal leading-normal text-secondary-text-dark">科学播客 · 1小时前</p>
+</div>
+</div>
+<div class="flex flex-col gap-3 pb-3">
+<div class="relative w-full">
+<div class="aspect-square w-full rounded-lg bg-cover bg-center bg-no-repeat" data-alt="Minimalist interior of a smart home with glowing icons" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCrc9PbDj18YaIJRHf9_6e_h9-bASYEu73yqUmPOvSdgLQ2LDIJHJHWCCIbfaKq9x-Iz86ixNCKFJ-jrMhzD5NPUlFOe1aRvcKwOHPQdwmFuTx_QGTLgL-x2IZK63iAi6MtqEYFEuF6f9L9sgIJs9jMRPJrIj3qNCL2ITS5G4bS4a2raWelt_zyBqYGODyFj0elyp30Z6lsuLr_m_awNg6dETHyP18iXBmj7kuRsME1Pa-wvHBU8uvRT68_QBjSW35jhmiAsyrlRWk");'></div>
+<button class="absolute bottom-2 right-2 flex size-9 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm">
+<span class="material-symbols-outlined text-white pl-0.5">play_arrow</span>
+</button>
+</div>
+<div>
+<p class="truncate text-base font-medium leading-normal text-white">智能家居革命</p>
+<p class="text-sm font-normal leading-normal text-secondary-text-dark">生活播客 · 2小时前</p>
+</div>
+</div>
+</div>
+<!-- "为你推荐" Section -->
+<h2 class="px-4 pb-3 pt-5 text-[22px] font-bold leading-tight tracking-[-0.015em] text-white">为你推荐</h2>
+<div class="flex flex-col gap-4 px-4">
+<div class="flex items-center gap-4">
+<img class="size-20 shrink-0 rounded-lg object-cover" data-alt="Abstract art with circles and lines representing data" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWFLCVnwtgPh9wuVlIRf_0skOLwGt6Fl1PF0YUZ2J3EpaSIuLo4fi_nbsAwb8YquNytRd0Wi24WTlMULHez850Tyfb7gCAvkS1NRQLqEZ_-7IIgOfK8f4elW96-Em7eQS4jW_OIVDj4jq-G4P4ZuyQx9w4T5wqRxuwx8CaMAvzpKK48jQSyxaEK5Jz6QCy4-4BhOPhxv7bZLwv5D-tMPygf3WC9eV2xQO6D-z3LYb9OJsKpmUsDeTZr5JfEFHATR8uz3mkLpCFYk4"/>
+<div class="flex flex-1 flex-col">
+<p class="font-medium text-white">数据科学入门</p>
+<p class="text-sm text-secondary-text-dark">由AI为你解读复杂概念</p>
+<p class="text-xs text-secondary-text-dark/70">教育播客 · 15分钟</p>
+</div>
+<button class="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/20">
+<span class="material-symbols-outlined text-primary pl-0.5 !text-3xl">play_arrow</span>
+</button>
+</div>
+<div class="flex items-center gap-4">
+<img class="size-20 shrink-0 rounded-lg object-cover" data-alt="A person meditating in a calm, natural setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKLXaT7NThEUP9efnII5OxAzcAJXs0TyIizT7te2IYY5Ha_qlx8RTBEf83P8Wepv1DZetv1nsEFzwVNX_7IDGox2YLV5boBduvH8HjkSFzdtcLaUOLVxOAymT9vf0v8RW012WZ0yAD4_BYoh3Dgzymz_4sc_ZG7Jk-hXyUKS9NYBvmAbadf-ApA5YRbU8WZi1tdm8f9Q3PdBmegfGKNj-c8JRHNVx43mYPVcINexv-C1PXzO9SW7fwmhmlOLj3T4CAu52qfb5mJMo"/>
+<div class="flex flex-1 flex-col">
+<p class="font-medium text-white">五分钟正念冥想</p>
+<p class="text-sm text-secondary-text-dark">AI引导你进入平静时刻</p>
+<p class="text-xs text-secondary-text-dark/70">健康播客 · 5分钟</p>
+</div>
+<button class="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/10">
+<span class="material-symbols-outlined text-white pl-0.5 !text-3xl">play_arrow</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Bottom Spacer to prevent MiniPlayer from overlapping content -->
+<div class="h-28"></div>
+<!-- Mini Player (Persistent) -->
+<footer class="fixed bottom-0 left-0 right-0 z-10 p-2">
+<div class="flex h-16 items-center gap-3 rounded-lg bg-surface-dark/90 p-2 pr-4 text-white backdrop-blur-md">
+<img class="size-12 shrink-0 rounded-md object-cover" data-alt="Abstract blue and purple waves" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmkt9s0Ap8jim98WjTHEYZXD1OpOO9JJN185GSvX3xFxjFeQ3qljFscFFgvvQ9RxN3kZrM3-rnRsaLuw_OFa4DFz_vNiJlcb_ZEc3r1B5-Vb2_4tf42Jrl-tL7aYMlGgQvO5v3MdJXvoXHNx4EiPnNRX2hmfo5lU8VcMdvzTQhZLMDe_QPlcxuloWOw_twozLG2Q8DyNZCNTNTC2NLLPTZeV39T36gX_OpqxB-1Q-E_9O6Wm433IMMxt8fiSmpBLQJO1nGDFas84w"/>
+<div class="flex-1 overflow-hidden">
+<p class="truncate text-sm font-bold">今日AI新闻摘要</p>
+<p class="truncate text-xs text-secondary-text-dark">每日更新</p>
+</div>
+<button class="flex items-center justify-center">
+<span class="material-symbols-outlined !text-4xl">play_circle</span>
+</button>
+</div>
+</footer>
+</div>
+</body></html>

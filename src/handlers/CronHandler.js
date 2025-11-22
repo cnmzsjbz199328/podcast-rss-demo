@@ -1,4 +1,5 @@
 import { Logger } from '../utils/logger.js';
+import { TopicSeriesGenerator } from '../core/TopicSeriesGenerator.js';
 
 /**
  * Cron触发器处理器
@@ -61,7 +62,6 @@ export class CronHandler {
       switch (cronExpression) {
         case '30 14 * * *': // 每天阿德莱德时间14:30 (UTC 5:00)
         case '30 0 * * *':  // 每天阿德莱德时间00:30 (UTC 15:00)
-        case '*/5 * * * *': // 每5分钟测试
           results.push(...(await this._generateSeriesEpisodes(services)));
           break;
 

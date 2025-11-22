@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>创建新的主题播客</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24;
+      line-height: 1; /* Ensure icon is vertically centered */
+    }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#5A67D8",
+            "background-light": "#F7FAFC",
+            "background-dark": "#101d22",
+            "success": "#38A169"
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-10 flex items-center bg-background-light/80 dark:bg-background-dark/80 p-4 pb-3 backdrop-blur-sm">
+<button class="text-slate-700 dark:text-slate-300 flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<h1 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-10">创建新的主题播客</h1>
+</header>
+<main class="flex-1 px-4 py-2">
+<!-- Section 1: 基本信息 -->
+<section class="mb-6">
+<h2 class="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">基本信息</h2>
+<div class="space-y-4">
+<label class="flex flex-col">
+<p class="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal pb-2">播客系列标题 <span class="text-red-500">*</span></p>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border-slate-300 bg-slate-100 p-3 text-base font-normal leading-normal text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500" placeholder="例如：AI前沿动态" value=""/>
+</label>
+<label class="flex flex-col">
+<p class="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal pb-2">播客系列描述</p>
+<textarea class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border-slate-300 bg-slate-100 p-3 text-base font-normal leading-normal text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 min-h-28" placeholder="例如：每周探讨人工智能领域的最新进展和趋势"></textarea>
+</label>
+</div>
+</section>
+<!-- Section 2: 生成设置 -->
+<section class="mb-6">
+<h2 class="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">生成设置</h2>
+<div class="space-y-4">
+<label class="flex flex-col">
+<p class="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal pb-2">内容语言</p>
+<div class="relative">
+<select class="form-select w-full appearance-none rounded-lg border-slate-300 bg-slate-100 p-3 text-base text-slate-900 focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+<option>中文</option>
+<option>英文</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">expand_more</span>
+</div>
+</label>
+<label class="flex flex-col">
+<p class="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal pb-2 flex items-center">声音风格
+              <span class="material-symbols-outlined ml-1.5 text-base text-slate-400 dark:text-slate-500 cursor-help" title="选择您喜欢的声音来播报内容">info</span>
+</p>
+<div class="relative">
+<select class="form-select w-full appearance-none rounded-lg border-slate-300 bg-slate-100 p-3 text-base text-slate-900 focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+<option>专业男声</option>
+<option>温柔女声</option>
+<option>活泼风格</option>
+<option>沉稳男声</option>
+<option>知性女声</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">expand_more</span>
+</div>
+</label>
+</div>
+</section>
+<!-- Section 3: 更新规则 -->
+<section class="mb-8">
+<h2 class="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">更新规则</h2>
+<div class="space-y-4">
+<div class="flex flex-col">
+<p class="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal pb-3">生成频率</p>
+<div class="grid grid-cols-3 gap-2">
+<button class="px-3 py-2 text-sm font-semibold rounded-lg bg-primary/20 text-primary ring-1 ring-primary dark:bg-primary/20 dark:text-primary dark:ring-primary">每天</button>
+<button class="px-3 py-2 text-sm font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">每周</button>
+<button class="px-3 py-2 text-sm font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">每月</button>
+</div>
+</div>
+<label class="flex flex-col">
+<p class="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal pb-2">生成时间点</p>
+<div class="relative">
+<input class="form-input w-full appearance-none rounded-lg border-slate-300 bg-slate-100 p-3 text-base text-slate-900 focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white" type="time" value="09:00"/>
+<span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">schedule</span>
+</div>
+</label>
+<div class="flex items-center justify-between rounded-lg bg-slate-100 p-3 dark:bg-slate-800">
+<p class="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal flex items-center">
+              生成后自动发布
+              <span class="material-symbols-outlined ml-1.5 text-base text-slate-400 dark:text-slate-500 cursor-help" title="开启后，新生成的播客会自动添加到播放列表">info</span>
+</p>
+<label class="relative inline-flex cursor-pointer items-center">
+<input checked="" class="peer sr-only" type="checkbox" value=""/>
+<div class="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-success peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-success/50 dark:bg-slate-700 dark:border-slate-600"></div>
+</label>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<footer class="sticky bottom-0 bg-background-light/80 dark:bg-background-dark/80 px-4 py-4 backdrop-blur-sm">
+<button class="flex w-full items-center justify-center rounded-xl bg-primary py-3.5 text-base font-bold text-white shadow-lg shadow-primary/30 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background-dark">
+        完成并创建
+      </button>
+</footer>
+</div>
+</body></html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Podcast Player</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3A86FF",
+                        "background-light": "#f6f8f8",
+                        "background-dark": "#121212",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<!-- Top App Bar -->
+<div class="flex items-center bg-transparent p-4 pb-2 justify-between">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white/80 dark:text-white/80 gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10">
+<span class="material-symbols-outlined text-white">expand_more</span>
+</button>
+<div class="flex flex-col items-center">
+<p class="text-xs font-normal leading-normal text-slate-300 dark:text-slate-400">正在播放</p>
+<h2 class="text-white text-base font-bold leading-tight tracking-[-0.015em]">AI每日新闻</h2>
+</div>
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white/80 dark:text-white/80 gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10">
+<span class="material-symbols-outlined text-white">more_vert</span>
+</button>
+</div>
+<!-- Cover Image -->
+<div class="flex w-full grow px-6 @container py-8">
+<div class="w-full gap-1 overflow-hidden bg-transparent @[480px]:gap-2 aspect-square flex rounded-xl">
+<div class="w-full bg-center bg-no-repeat bg-cover aspect-auto flex-1" data-alt="AI generated abstract art with blue and purple gradients" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBLLimdLg5EGtNuZglsvyjmPPCFWXf1d1SwzaWk9ODNxbKt3wC9vTSSknitAgeW6r6EDXuKfHNdIkjQvgfJ9g8Aw7QABhjOCOu8743xXTX13oX63cb_cNad7GmMgyY2A7A1QNYqu2TRiS3bZEnJp_3tFzONPI3Km-F70PFOGz2870zFBNLHERTjMPGA7QmgguPd-zuaxaEmlbyYwEeaFqVNHj_9enZrR7FA6w3A8DKx29bx5T3IGL-fm4gvGQpvTVMb3w2g26c2C0g");'></div>
+</div>
+</div>
+<!-- Episode Info Area -->
+<div class="px-6 py-4">
+<h1 class="text-white tracking-tight text-[24px] font-bold leading-tight text-left">今日科技头条：AI伦理的新进展</h1>
+<p class="text-slate-300 dark:text-slate-400 text-sm font-normal leading-normal pt-2">AI每日新闻</p>
+</div>
+<!-- Progress Bar -->
+<div class="flex flex-col gap-2 p-6">
+<div class="relative group">
+<div class="rounded-full bg-slate-300/30 dark:bg-slate-700 h-2">
+<div class="h-2 rounded-full bg-primary" style="width: 30%;"></div>
+</div>
+<div class="absolute h-4 w-4 bg-white rounded-full -top-1" style="left: 30%; transform: translateX(-50%);"></div>
+</div>
+<div class="flex justify-between">
+<p class="text-slate-300 dark:text-slate-400 text-xs font-normal leading-normal">10:30</p>
+<p class="text-slate-300 dark:text-slate-400 text-xs font-normal leading-normal">35:00</p>
+</div>
+</div>
+<!-- Playback Controls -->
+<div class="flex items-center justify-center gap-8 px-6 py-4">
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 w-14 bg-transparent text-white/80 dark:text-white/80 gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10">
+<span class="material-symbols-outlined text-3xl">replay_10</span>
+</button>
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-20 w-20 bg-primary text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 shadow-lg shadow-primary/30">
+<span class="material-symbols-outlined text-5xl" style="font-variation-settings: 'FILL' 1;">pause</span>
+</button>
+<button class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 w-14 bg-transparent text-white/80 dark:text-white/80 gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10">
+<span class="material-symbols-outlined text-3xl">forward_30</span>
+</button>
+</div>
+<!-- Action Button Bar -->
+<div class="flex items-center justify-between px-6 py-6">
+<button class="flex flex-col items-center justify-center gap-1 text-slate-300 dark:text-slate-400 hover:text-white w-16">
+<span class="material-symbols-outlined text-2xl">speed</span>
+<span class="text-xs">1x</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-slate-300 dark:text-slate-400 hover:text-white w-16">
+<span class="material-symbols-outlined text-2xl">dark_mode</span>
+<span class="text-xs">定时</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-primary w-16">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">closed_caption</span>
+<span class="text-xs">字幕</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-slate-300 dark:text-slate-400 hover:text-white w-16">
+<span class="material-symbols-outlined text-2xl">share</span>
+<span class="text-xs">分享</span>
+</button>
+</div>
+</div>
+</body></html>

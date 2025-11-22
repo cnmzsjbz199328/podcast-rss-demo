@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Podcast Series Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#3498DB",
+              "background-light": "#F4F6F9",
+              "background-dark": "#101d22",
+              "text-light-title": "#34495E",
+              "text-light-body": "#7F8C8D",
+              "text-dark-title": "#FFFFFF",
+              "text-dark-body": "#92bbc9",
+              "card-light": "#FFFFFF",
+              "card-dark": "#1a2c33",
+              "border-light": "#E0E0E0",
+              "border-dark": "#325a67"
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden pb-28">
+<!-- TopAppBar -->
+<div class="sticky top-0 z-10 flex items-center justify-between bg-background-light/80 p-4 pb-2 backdrop-blur-sm dark:bg-background-dark/80">
+<div class="flex size-10 shrink-0 items-center justify-center text-text-light-title dark:text-text-dark-title">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</div>
+<h2 class="flex-1 text-center text-lg font-bold leading-tight tracking-[-0.015em] text-text-light-title dark:text-text-dark-title">Weekly Tech News</h2>
+<div class="flex w-10 items-center justify-center">
+<button class="flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-text-light-title dark:text-text-dark-title">
+<span class="material-symbols-outlined text-2xl">more_vert</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<!-- ProfileHeader -->
+<div class="flex p-4 @container">
+<div class="flex w-full flex-col items-start gap-4">
+<div class="flex w-full flex-col items-start gap-4 sm:flex-row">
+<div class="aspect-square w-32 shrink-0 rounded-lg bg-cover bg-center bg-no-repeat" data-alt="Abstract cover art for Weekly Tech News podcast" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA-yEMgFZPUZZe7fWEMdOAMOy3y9yS3BLBjVGoFcviBBZItsS0wYYbUnX2zARX1GJ82Oqgpl31lCbG-ldq6GFj8Z9KnZNn5ZWBHJNuiVG0aaERlUyTNwlxsuTbFAPGc36kbTrFBeQ7t2o7PdG1H8PM1rVuiDJtb0LmSauEGQ6UOA4-SOstyvppRa-AghKhvPd4s2YN65BAj0qyCpY48K4bKozYNdm1EOfvMXK7ekUfqzD25Q7KRMGXray5o35qm4WxR7XRCeERswcI");'></div>
+<div class="flex flex-col">
+<p class="text-[22px] font-bold leading-tight tracking-[-0.015em] text-text-light-title dark:text-text-dark-title">Weekly Tech News</p>
+<p class="mt-1 text-base font-normal leading-normal text-text-light-body dark:text-text-dark-body">
+                            A brief introduction to what this podcast series is about, delivering the latest updates in the tech world.
+                        </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Stats -->
+<div class="flex flex-wrap gap-4 px-4">
+<div class="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg border border-border-light bg-card-light p-4 dark:border-border-dark dark:bg-card-dark">
+<p class="text-base font-medium leading-normal text-text-light-body dark:text-text-dark-body">Generated</p>
+<p class="text-2xl font-bold leading-tight tracking-tight text-text-light-title dark:text-text-dark-title">8 Episodes</p>
+</div>
+<div class="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg border border-border-light bg-card-light p-4 dark:border-border-dark dark:bg-card-dark">
+<p class="text-base font-medium leading-normal text-text-light-body dark:text-text-dark-body">Total Duration</p>
+<p class="text-2xl font-bold leading-tight tracking-tight text-text-light-title dark:text-text-dark-title">2h 35m</p>
+</div>
+</div>
+<!-- SectionHeader -->
+<h3 class="px-4 pb-2 pt-4 text-lg font-bold leading-tight tracking-[-0.015em] text-text-light-title dark:text-text-dark-title">Episodes</h3>
+<!-- ListItem 1 -->
+<div class="flex min-h-[72px] items-center justify-between gap-4 px-4 py-2">
+<div class="flex items-center gap-4">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined text-3xl">play_circle</span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-base font-medium leading-normal text-text-light-title dark:text-text-dark-title line-clamp-1">Episode 8</p>
+<p class="text-sm font-normal leading-normal text-text-light-body dark:text-text-dark-body line-clamp-2">Duration: 18m 22s・Generated: Oct 26, 2023</p>
+</div>
+</div>
+<div class="shrink-0">
+<div class="flex size-7 items-center justify-center text-text-light-body dark:text-text-dark-body">
+<span class="material-symbols-outlined text-2xl">download</span>
+</div>
+</div>
+</div>
+<!-- ListItem 2 -->
+<div class="flex min-h-[72px] items-center justify-between gap-4 px-4 py-2">
+<div class="flex items-center gap-4">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined text-3xl">play_circle</span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-base font-medium leading-normal text-text-light-title dark:text-text-dark-title line-clamp-1">Episode 7</p>
+<p class="text-sm font-normal leading-normal text-text-light-body dark:text-text-dark-body line-clamp-2">Duration: 21m 05s・Generated: Oct 19, 2023</p>
+</div>
+</div>
+<div class="shrink-0">
+<div class="flex size-7 items-center justify-center text-text-light-body dark:text-text-dark-body">
+<span class="material-symbols-outlined text-2xl">download</span>
+</div>
+</div>
+</div>
+<!-- ListItem 3 -->
+<div class="flex min-h-[72px] items-center justify-between gap-4 px-4 py-2">
+<div class="flex items-center gap-4">
+<div class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined text-3xl">play_circle</span>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-base font-medium leading-normal text-text-light-title dark:text-text-dark-title line-clamp-1">Episode 6</p>
+<p class="text-sm font-normal leading-normal text-text-light-body dark:text-text-dark-body line-clamp-2">Duration: 19m 48s・Generated: Oct 12, 2023</p>
+</div>
+</div>
+<div class="shrink-0">
+<div class="flex size-7 items-center justify-center text-text-light-body dark:text-text-dark-body">
+<span class="material-symbols-outlined text-2xl">download</span>
+</div>
+</div>
+</div>
+<!-- Empty State Example (commented out) -->
+<!-- 
+        <div class="flex flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+            <div class="flex size-24 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <span class="material-symbols-outlined !text-5xl">podcasts</span>
+            </div>
+            <p class="text-lg font-bold text-text-light-title dark:text-text-dark-title">No Episodes Yet</p>
+            <p class="max-w-xs text-text-light-body dark:text-text-dark-body">Tap the button below to generate your first episode!</p>
+        </div>
+        -->
+</div>
+<!-- Floating Action Button -->
+<div class="fixed bottom-6 right-6">
+<button class="flex h-16 w-16 cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full bg-primary text-white shadow-lg transition-all hover:bg-primary/90">
+<span class="material-symbols-outlined !text-3xl">auto_awesome</span>
+</button>
+</div>
+</div>
+</body></html>
