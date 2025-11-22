@@ -60,8 +60,12 @@ export class CronHandler {
     try {
       // 根据不同的 cron 表达式执行不同任务
       switch (cronExpression) {
-        case '30 14 * * *': // 每天阿德莱德时间14:30 (UTC 5:00)
-        case '30 0 * * *':  // 每天阿德莱德时间00:30 (UTC 15:00)
+        case '30 14 * * *': // 每天阿德莱德时间14:30 (UTC 5:00) - 新闻播客
+        case '30 0 * * *':  // 每天阿德莱德时间00:30 (UTC 15:00) - 新闻播客
+          results.push(await this._generateDailyNewsPodcast(services));
+          break;
+
+        case '0 * * * *': // 每小时 - 主题播客
           results.push(...(await this._generateSeriesEpisodes(services)));
           break;
 
