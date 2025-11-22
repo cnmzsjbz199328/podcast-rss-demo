@@ -64,15 +64,18 @@ export class TopicApiHandler {
   async handleGetTopics(request, services) {
     try {
       const url = new URL(request.url);
-      const status = url.searchParams.get('status');
+      const is_active = url.searchParams.get('is_active');
       const category = url.searchParams.get('category');
       const limit = parseInt(url.searchParams.get('limit') || '20', 10);
       const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
-      this.logger.info('Fetching topics', { status, category, limit, offset });
+      // 转换字符串参数为布尔值
+      const isActiveFilter = is_active === null ? undefined : is_active === 'true';
+
+      this.logger.info('Fetching topics', { is_active: isActiveFilter, category, limit, offset });
 
       const topics = await services.topicRepository.getTopics({
-        status,
+        is_active: isActiveFilter,
         category,
         limit,
         offset

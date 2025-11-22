@@ -88,24 +88,24 @@ export class TopicRepository {
   /**
    * 查询主题列表
    * @param {Object} filters - 过滤条件
-   * @param {string} [filters.status] - 状态过滤
+   * @param {boolean} [filters.is_active] - 激活状态过滤
    * @param {string} [filters.category] - 分类过滤
    * @param {number} [filters.limit=20] - 限制数量
    * @param {number} [filters.offset=0] - 偏移量
    * @returns {Promise<Array>} 主题列表
    */
   async getTopics(filters = {}) {
-    const { status, category, limit = 20, offset = 0 } = filters;
+    const { is_active, category, limit = 20, offset = 0 } = filters;
 
-    this.logger.info('Fetching topics', { status, category, limit, offset });
+    this.logger.info('Fetching topics', { is_active, category, limit, offset });
 
     try {
       let query = 'SELECT * FROM v_topics WHERE 1=1';
       const params = [];
 
-      if (status) {
-        query += ' AND status = ?';
-        params.push(status);
+      if (typeof is_active === 'boolean') {
+        query += ' AND is_active = ?';
+        params.push(is_active ? 1 : 0);
       }
 
       if (category) {
@@ -261,7 +261,7 @@ export class TopicRepository {
       // 查询活跃状态的主题，按创建时间排序，取第一个
       const result = await this.db.prepare(`
         SELECT id FROM topics
-        WHERE status = 'active'
+        WHERE is_active = 1
         ORDER BY created_at ASC
         LIMIT 1
       `).first();
@@ -337,9 +337,9 @@ export class TopicRepository {
     * @returns {Promise<Array>} 匹配的主题列表
     */
   async searchTopics(searchTerm, filters = {}) {
-    const { status, category, limit = 20, offset = 0 } = filters;
+    const { is_active, category, limit = 20, offset = 0 } = filters;
 
-    this.logger.info('Searching topics', { searchTerm, status, category, limit, offset });
+    this.logger.info('Searching topics', { searchTerm, is_active, category, limit, offset });
 
     try {
       let query = `
@@ -348,9 +348,9 @@ export class TopicRepository {
       `;
       const params = [`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`];
 
-      if (status) {
-        query += ' AND status = ?';
-        params.push(status);
+      if (typeof is_active === 'boolean') {
+        query += ' AND is_active = ?';
+        params.push(is_active ? 1 : 0);
       }
 
       if (category) {

@@ -11,7 +11,6 @@ SELECT
   description,
   keywords,
   category,
-  status,
   is_active,
   generation_interval_hours,
   last_generated_at,
