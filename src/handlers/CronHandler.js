@@ -66,6 +66,7 @@ export class CronHandler {
           break;
 
         case '0 * * * *': // 每小时 - 主题播客
+        case '*/2 * * * *': // 每2分钟 - 主题播客
           results.push(...(await this._generateSeriesEpisodes(services)));
           break;
 
