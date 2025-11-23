@@ -108,7 +108,8 @@ export class EpisodeApiHandler {
             duration: ep.duration,
             fileSize: 0, // 暂时使用默认值
             publishedAt: ep.publishedAt || ep.createdAt,
-            createdAt: ep.createdAt
+            createdAt: ep.createdAt,
+            transcriptUrl: ep.transcript || null
           })),
           pagination: {
             limit,
@@ -184,7 +185,8 @@ export class EpisodeApiHandler {
           publishedAt: episode.publishedAt,
           createdAt: episode.createdAt,
           ttsEventId: episode.ttsEventId,
-          ttsError: episode.ttsError || episode.tts_error
+          ttsError: episode.ttsError || episode.tts_error,
+          transcriptUrl: episode.scriptUrl || episode.transcriptUrl || episode.transcript || null
         }
       }), {
         headers: {

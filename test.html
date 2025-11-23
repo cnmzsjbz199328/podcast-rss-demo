@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Podcast RSS API Tester</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 2rem;
+      background: #f8f9fb;
+      color: #1d1d1f;
+    }
+    h1 {
+      margin-bottom: 0.25rem;
+    }
+    section {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+    input, select, textarea, button {
+      font: inherit;
+      margin-top: 0.25rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 0.75rem;
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 4px;
+      background: #2563eb;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      max-height: 320px;
+    }
+    .result {
+      margin-top: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Podcast RSS API Tester</h1>
+  <p>基于 API 文档的最简测试页，可快速验证常用端点是否正常工作。</p>
+
+  <section>
+    <h2>全局配置</h2>
+    <label for="baseUrl">API 基础 URL</label>
+    <input id="baseUrl" type="url" value="https://podcast-rss-demo.tj15982183241.workers.dev" />
+    <small>如需测试本地/其他环境，修改该 URL 即可。</small>
+  </section>
+
+  <section>
+    <h2>1. 生成 News 播客</h2>
+    <label for="newsStyle">风格</label>
+    <select id="newsStyle">
+      <option value="news-anchor">news-anchor</option>
+      <option value="topic-explainer">topic-explainer</option>
+    </select>
+
+    <label>
+      <input type="checkbox" id="useAsyncTts" /> 使用异步 TTS
+    </label>
+
+    <button id="btnGenerateNews">POST /generate</button>
+    <div class="result">
+      <pre id="generateNewsResult">等待请求...</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. 获取剧集列表</h2>
+    <label for="episodesLimit">limit</label>
+    <input id="episodesLimit" type="number" value="5" min="1" max="50" />
+
+    <label for="episodesOffset">offset</label>
+    <input id="episodesOffset" type="number" value="0" min="0" />
+
+    <label for="episodesStyle">style (可选)</label>
+    <select id="episodesStyle">
+      <option value="">全部</option>
+      <option value="news-anchor">news-anchor</option>
+      <option value="topic-explainer">topic-explainer</option>
+    </select>
+
+    <button id="btnFetchEpisodes">GET /episodes</button>
+    <div class="result">
+      <pre id="episodesResult">等待请求...</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. 获取单个剧集详情</h2>
+    <label for="episodeId">episodeId</label>
+    <input id="episodeId" type="text" placeholder="例如 news-1732291200000-x9sd2we3k" />
+    <button id="btnFetchEpisode">GET /episodes/{id}</button>
+    <div class="result">
+      <pre id="episodeResult">等待请求...</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>4. 主题列表 & 生成</h2>
+    <button id="btnFetchTopics">GET /topics</button>
+    <div class="result">
+      <pre id="topicsResult">等待请求...</pre>
+    </div>
+
+    <label for="topicId">topicId</label>
+    <input id="topicId" type="number" min="1" placeholder="请输入主题ID" />
+
+    <button id="btnTopicPodcasts">GET /topics/{id}/podcasts</button>
+    <button id="btnGenerateTopicNext">POST /topics/{id}/generate-next</button>
+    <div class="result">
+      <pre id="topicActionResult">等待请求...</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>5. 系统健康/统计</h2>
+    <button id="btnHealth">GET /health</button>
+    <button id="btnStats">GET /stats</button>
+    <div class="result">
+      <pre id="systemResult">等待请求...</pre>
+    </div>
+  </section>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function setLoading(button, isLoading) {
+      if (!button) return;
+      button.disabled = isLoading;
+      button.dataset.originalText ??= button.textContent;
+      button.textContent = isLoading ? '请求中…' : button.dataset.originalText;
+    }
+
+    async function callApi({ method = 'GET', path, searchParams = {}, body, target }) {
+      const baseUrl = $('baseUrl').value.replace(/\/$/, '');
+      const url = new URL(baseUrl + path);
+      Object.entries(searchParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          url.searchParams.set(key, value);
+        }
+      });
+
+      const options = { method, headers: {} };
+      if (body) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(body);
+      }
+
+      const button = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+      setLoading(button, true);
+
+      try {
+        const response = await fetch(url.toString(), options);
+        const text = await response.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (err) {
+          data = { raw: text };
+        }
+        $(target).textContent = JSON.stringify({ status: response.status, data }, null, 2);
+      } catch (error) {
+        $(target).textContent = JSON.stringify({ error: error.message }, null, 2);
+      } finally {
+        setLoading(button, false);
+      }
+    }
+
+    $('btnGenerateNews').addEventListener('click', () => {
+      callApi({
+        method: 'POST',
+        path: '/generate',
+        searchParams: {
+          style: $('newsStyle').value,
+          useAsyncTts: $('useAsyncTts').checked
+        },
+        target: 'generateNewsResult'
+      });
+    });
+
+    $('btnFetchEpisodes').addEventListener('click', () => {
+      callApi({
+        path: '/episodes',
+        searchParams: {
+          limit: $('episodesLimit').value,
+          offset: $('episodesOffset').value,
+          style: $('episodesStyle').value
+        },
+        target: 'episodesResult'
+      });
+    });
+
+    $('btnFetchEpisode').addEventListener('click', () => {
+      const id = $('episodeId').value.trim();
+      if (!id) {
+        $('episodeResult').textContent = '请输入 episodeId。';
+        return;
+      }
+      callApi({ path: `/episodes/${encodeURIComponent(id)}`, target: 'episodeResult' });
+    });
+
+    $('btnFetchTopics').addEventListener('click', () => {
+      callApi({ path: '/topics', target: 'topicsResult' });
+    });
+
+    $('btnTopicPodcasts').addEventListener('click', () => {
+      const topicId = $('topicId').value;
+      if (!topicId) {
+        $('topicActionResult').textContent = '请输入 topicId。';
+        return;
+      }
+      callApi({ path: `/topics/${topicId}/podcasts`, target: 'topicActionResult' });
+    });
+
+    $('btnGenerateTopicNext').addEventListener('click', () => {
+      const topicId = $('topicId').value;
+      if (!topicId) {
+        $('topicActionResult').textContent = '请输入 topicId。';
+        return;
+      }
+      callApi({ method: 'POST', path: `/topics/${topicId}/generate-next`, target: 'topicActionResult' });
+    });
+
+    $('btnHealth').addEventListener('click', () => {
+      callApi({ path: '/health', target: 'systemResult' });
+    });
+
+    $('btnStats').addEventListener('click', () => {
+      callApi({ path: '/stats', target: 'systemResult' });
+    });
+  </script>
+</body>
+</html>

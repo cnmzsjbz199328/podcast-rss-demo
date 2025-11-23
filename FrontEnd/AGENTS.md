@@ -27,6 +27,8 @@ src/
 ├── components/          # Reusable UI components
 │   ├── common/         # Generic components (Button, Card, etc.)
 │   ├── podcast/        # Podcast-specific components
+│   │   ├── TranscriptViewer.tsx    # Script display with time-sync highlight
+│   │   └── TranscriptViewer.css    # Transcript styles
 │   └── topic/          # Topic-specific components
 ├── pages/              # Route-level page components
 │   ├── Home/

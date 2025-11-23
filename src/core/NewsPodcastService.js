@@ -147,7 +147,7 @@ export class NewsPodcastService extends IPodcastService {
     this.logger.info('Fetching news podcast by ID', { episodeId: id });
 
     try {
-      const episode = await this.services.database.getEpisode(id);
+  const episode = await this.services.database.getEpisodeById(id);
 
       if (!episode) {
         throw new Error(`News podcast not found: ${id}`);

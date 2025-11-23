@@ -101,7 +101,7 @@ export class NewsPodcastPollHelper {
    * @returns {Promise<Object>} 轮询结果
    */
   async pollGeneration(episodeId) {
-    const episode = await this.services.database.getEpisode(episodeId);
+    const episode = await this.services.database.getEpisodeById(episodeId);
 
     if (!episode) {
       throw new Error(`News podcast not found: ${episodeId}`);

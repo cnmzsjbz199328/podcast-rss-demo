@@ -2,6 +2,14 @@
 
 **版本**: 2.0.0  
 **基础URL**: `https://podcast-rss-demo.tj15982183241.workers.dev`  
+
+> ℹ️ 返回的 `episodes[].scriptUrl` 字段直接对应 D1 中 `episodes.transcript`（保存脚本TXT的R2链接），同时适用于 `news-anchor` 与 `topic-explainer` 两种风格。
+
+---
+
+> ℹ️ 该列表端点沿用与 `/episodes` 相同的数据源，会为每条记录附带 `scriptUrl`，其值即数据库 `episodes.transcript` 中存储的脚本直链，便于前端统一渲染脚本内容。
+
+---
 **协议**: HTTPS  
 **内容类型**: JSON / XML (RSS)
 
@@ -31,7 +39,8 @@
 ### 能力审查摘要（2025-11-23）
 
 - ✅ **音频播放**: `POST /generate`（同步模式返回 `audioUrl`）、`GET /episodes`、`GET /topics/{id}/podcasts` 均会暴露音频直链，前端播放器可以直接使用。
-- ⚠️ **字幕/脚本**: 虽然后端在 `R2StorageService.storeFiles` 中把 `srt/vtt/json/script` 链接存入 D1（字段 `srt_url`、`vtt_url`、`json_url`、`script_url`），但当前 `PodcastHandler`、`EpisodeApiHandler`、`TopicApiHandler` 在响应里没有返回这些字段，因此前端暂时无法通过 API 获取字幕内容。
+- ✅ **脚本直链**: `R2StorageService.storeFiles` 生成的脚本链接会写入 `episodes.transcript`（作为脚本URL），因此 `GET /episodes`、`GET /episodes/{id}`、`GET /topics/{id}/podcasts` 等接口会统一返回 `scriptUrl` 字段，前端可以直接渲染脚本文字或下载TXT。
+- ⚠️ **字幕文件**: `srt/vtt/json` 链接仍只保存在 D1（`srt_url`/`vtt_url`/`json_url`），尚未在 API 响应中透出，如需字幕需扩展接口。
 - ⚠️ **元数据透出**: `episodes.metadata`（包含 script/voice/subtitle 统计信息）以及 `topic_podcasts` 中的 `keywords/abstract` 之外的统计数据没有在 API 层暴露，若前端需要更丰富的数据库信息，需要扩展响应或新增接口。
 - ✅ **基础数据库信息**: 列表、详情、统计类接口均直接查询 D1（`D1DatabaseService`、`TopicRepository`、`StatisticsRepository`），所以可以获得基本的标题、描述、音频 URL、时长、生成状态等信息。
 
@@ -124,7 +133,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=
 }
 ```
 
-> ℹ️ **字幕/脚本可用性**：同步响应中不会返回 `scriptUrl`、`srtUrl`、`vttUrl` 等字段，尽管这些链接已经在 `episodes` 表（`script_url` / `srt_url` / `vtt_url`）里存好。要在前端使用字幕，需要扩展 API（例如 `GET /episodes/{id}` 返回这些字段，或新增 `/episodes/{id}/subtitles`）。
+> ℹ️ **字幕/脚本可用性**：`POST /generate` 的同步响应仍不直接返回 `scriptUrl`/`srtUrl`/`vttUrl`。不过脚本URL已写入 `episodes.transcript` 并可通过 `GET /episodes` 或 `GET /episodes/{id}` 拿到；字幕链接仍需未来接口扩展（例如新增 `/episodes/{id}/subtitles`）。
 
 ---
 
@@ -162,6 +171,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes?style=news-anc
         "title": "BBC News Podcast - November 22, 2024",
         "description": "Latest news from BBC covering politics, technology...",
         "audioUrl": "https://pub-xxx.r2.dev/audio/episode-1732291200000.mp3",
+  "scriptUrl": "https://pub-xxx.r2.dev/scripts/episode-1732291200000.txt",
         "style": "news-anchor",
         "duration": 185,
         "fileSize": 0,
@@ -211,6 +221,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-173229
     "title": "BBC News Podcast - November 22, 2024",
     "description": "Latest news from BBC covering politics...",
     "audioUrl": "https://pub-xxx.r2.dev/audio/news-1732291200000-x9sd2we3k.mp3",
+  "scriptUrl": "https://pub-xxx.r2.dev/scripts/news-1732291200000-x9sd2we3k.txt",
     "style": "news-anchor",
     "duration": 185,
     "fileSize": 0,
@@ -222,7 +233,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-173229
 }
 ```
 
-> ⚠️ 当前详情接口仅返回基础字段；`scriptUrl`、`srtUrl`、`vttUrl`、`metadata` 等数据库列尚未透出。若要在前端展示字幕或脚本文本，需要扩展该接口或增加新的资源端点。
+> ℹ️ 详情接口现在会返回 `scriptUrl`（源自 `episodes.transcript`），方便前端直接获取脚本文本；`srtUrl`、`vttUrl`、`jsonUrl` 仍未透出，如需字幕需扩展该接口或新增专用端点。
 
 ---
 
@@ -575,6 +586,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/podcasts"
         "keywords": "CNN,卷积层,池化层",
         "abstract": "本集深入讲解卷积神经网络...",
         "audioUrl": "https://pub-xxx.r2.dev/audio/topic-podcast-1-ep6.mp3",
+        "scriptUrl": "https://pub-xxx.r2.dev/scripts/topic-podcast-1-ep6.txt",
         "duration": 195,
         "createdAt": "2024-11-22T14:00:00Z"
       }
@@ -1075,9 +1087,9 @@ interface Episode {
   id: string;                    // 唯一标识符
   title: string;                 // 标题
   description: string;           // 描述
-  script: string;                // 播客脚本
+  transcript?: string;           // （可选）内联脚本文本
   audioUrl: string;              // 音频URL
-  scriptUrl?: string;            // 脚本文件URL
+  scriptUrl?: string;            // 脚本文件URL（默认映射自 episodes.transcript）
   subtitles?: {                  // 字幕文件
     vtt: string;
     srt: string;
@@ -1094,6 +1106,8 @@ interface Episode {
   topicId?: number;              // 所属主题ID（主题播客）
   episodeNumber?: number;        // 集数（主题播客）
 }
+
+> 注：后端将 D1 表的 `transcript` 列用作脚本直链存储，因此多数接口仅返回 `scriptUrl`。如需内联文本，可在消费端下载该链接指向的 TXT 文件或在未来扩展API以直接透出全文。
 ```
 
 ### Topic (主题)

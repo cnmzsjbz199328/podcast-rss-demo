@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { podcastApi } from '@/services/podcastApi';
 import { episodeFormatters } from '@/utils/formatters';
+import TranscriptViewer from '@/components/podcast/TranscriptViewer';
 import type { Episode } from '@/types';
 
 const PodcastPlayer = () => {
@@ -14,7 +15,7 @@ const PodcastPlayer = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [showSubtitles, setShowSubtitles] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -219,8 +220,8 @@ const PodcastPlayer = () => {
           <span className="text-xs">定时</span>
         </button>
         <button
-          onClick={() => setShowSubtitles(!showSubtitles)}
-          className={`flex flex-col items-center justify-center gap-1 w-16 ${showSubtitles ? 'text-primary-light' : 'text-slate-300 dark:text-slate-400 hover:text-white'}`}
+          onClick={() => setShowTranscript(!showTranscript)}
+          className={`flex flex-col items-center justify-center gap-1 w-16 ${showTranscript ? 'text-primary-light' : 'text-slate-300 dark:text-slate-400 hover:text-white'}`}
         >
           <span
             className="material-symbols-outlined text-2xl"
@@ -228,15 +229,27 @@ const PodcastPlayer = () => {
               fontVariationSettings: "'FILL' 1"
             }}
           >
-            closed_caption
+            description
           </span>
-          <span className="text-xs">字幕</span>
+          <span className="text-xs">脚本</span>
         </button>
         <button className="flex flex-col items-center justify-center gap-1 text-slate-300 dark:text-slate-400 hover:text-white w-16">
           <span className="material-symbols-outlined text-2xl">share</span>
           <span className="text-xs">分享</span>
         </button>
       </div>
+
+      {/* Transcript Section */}
+      {showTranscript && episode?.scriptUrl && (
+        <div className="px-6 pb-8">
+          <h3 className="text-white text-sm font-semibold mb-4">播客脚本</h3>
+          <TranscriptViewer
+            scriptUrl={episode.scriptUrl}
+            currentTime={currentTime}
+            duration={duration}
+          />
+        </div>
+      )}
 
       {/* Hidden Audio Element */}
       <audio
