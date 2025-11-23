@@ -28,6 +28,13 @@
 - **News播客**: 基于BBC RSS源自动生成新闻播客
 - **主题播客**: 基于用户定义主题生成系列播客，支持智能延续
 
+### 能力审查摘要（2025-11-23）
+
+- ✅ **音频播放**: `POST /generate`（同步模式返回 `audioUrl`）、`GET /episodes`、`GET /topics/{id}/podcasts` 均会暴露音频直链，前端播放器可以直接使用。
+- ⚠️ **字幕/脚本**: 虽然后端在 `R2StorageService.storeFiles` 中把 `srt/vtt/json/script` 链接存入 D1（字段 `srt_url`、`vtt_url`、`json_url`、`script_url`），但当前 `PodcastHandler`、`EpisodeApiHandler`、`TopicApiHandler` 在响应里没有返回这些字段，因此前端暂时无法通过 API 获取字幕内容。
+- ⚠️ **元数据透出**: `episodes.metadata`（包含 script/voice/subtitle 统计信息）以及 `topic_podcasts` 中的 `keywords/abstract` 之外的统计数据没有在 API 层暴露，若前端需要更丰富的数据库信息，需要扩展响应或新增接口。
+- ✅ **基础数据库信息**: 列表、详情、统计类接口均直接查询 D1（`D1DatabaseService`、`TopicRepository`、`StatisticsRepository`），所以可以获得基本的标题、描述、音频 URL、时长、生成状态等信息。
+
 ### 支持的播客风格
 
 | 风格 | 代码 | 描述 | 适用场景 |
@@ -81,23 +88,18 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=
 curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=news-anchor&useAsyncTts=true"
 ```
 
-**响应示例（同步）**:
+**响应示例（同步）** *(来自 `PodcastHandler.handleGenerate` → `NewsPodcastHelper.formatPodcastResult`)*:
 ```json
 {
   "success": true,
-  "episodeId": "episode-1732291200000",
-  "title": "BBC News Podcast - November 22, 2024",
-  "audioUrl": "https://pub-xxx.r2.dev/audio/episode-1732291200000.mp3",
-  "scriptUrl": "https://pub-xxx.r2.dev/scripts/episode-1732291200000.txt",
-  "subtitles": {
-    "vtt": "https://pub-xxx.r2.dev/subtitles/episode-1732291200000.vtt",
-    "srt": "https://pub-xxx.r2.dev/subtitles/episode-1732291200000.srt",
-    "json": "https://pub-xxx.r2.dev/subtitles/episode-1732291200000.json"
-  },
-  "duration": 185,
-  "wordCount": 523,
-  "style": "news-anchor",
-  "createdAt": "2024-11-22T14:00:00Z"
+  "data": {
+    "episodeId": "news-1732291200000-x9sd2we3k",
+    "status": "completed",
+    "audioUrl": "https://pub-xxx.r2.dev/audio/news-1732291200000-x9sd2we3k.mp3",
+    "duration": 185,
+    "transcript": "Welcome to today's BBC news podcast...",
+    "createdAt": "2024-11-22T14:00:00.000Z"
+  }
 }
 ```
 
@@ -105,10 +107,11 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=
 ```json
 {
   "success": true,
-  "episodeId": "episode-1732291200000",
-  "eventId": "async-audio-event-123456",
-  "message": "Audio generation started. Use /episodes/{episodeId}/poll-audio?eventId={eventId} to check status",
-  "pollUrl": "/episodes/episode-1732291200000/poll-audio?eventId=async-audio-event-123456"
+  "data": {
+    "episodeId": "news-1732291200000-x9sd2we3k",
+    "status": "processing",
+    "ttsEventId": "async-audio-event-123456"
+  }
 }
 ```
 
@@ -120,6 +123,8 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=
   "details": "Network timeout"
 }
 ```
+
+> ℹ️ **字幕/脚本可用性**：同步响应中不会返回 `scriptUrl`、`srtUrl`、`vttUrl` 等字段，尽管这些链接已经在 `episodes` 表（`script_url` / `srt_url` / `vtt_url`）里存好。要在前端使用字幕，需要扩展 API（例如 `GET /episodes/{id}` 返回这些字段，或新增 `/episodes/{id}/subtitles`）。
 
 ---
 
@@ -197,34 +202,27 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes?style=news-anc
 curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-1732291200000"
 ```
 
-**响应示例**:
+**响应示例** *(来自 `EpisodeApiHandler.handleEpisodeDetail`)*:
 ```json
 {
   "success": true,
   "data": {
-    "episode": {
-      "id": "episode-1732291200000",
-      "title": "BBC News Podcast - November 22, 2024",
-      "description": "Latest news from BBC covering politics...",
-      "script": "Welcome to today's BBC news podcast...",
-      "audioUrl": "https://pub-xxx.r2.dev/audio/episode-1732291200000.mp3",
-      "scriptUrl": "https://pub-xxx.r2.dev/scripts/episode-1732291200000.txt",
-      "subtitles": {
-        "vtt": "https://pub-xxx.r2.dev/subtitles/episode-1732291200000.vtt",
-        "srt": "https://pub-xxx.r2.dev/subtitles/episode-1732291200000.srt",
-        "json": "https://pub-xxx.r2.dev/subtitles/episode-1732291200000.json"
-      },
-      "style": "news-anchor",
-      "duration": 185,
-      "wordCount": 523,
-      "publishedAt": "2024-11-22T14:00:00Z",
-      "createdAt": "2024-11-22T14:00:00Z",
-      "sourceUrl": "https://feeds.bbci.co.uk/news/rss.xml",
-      "keywords": ["politics", "technology", "economy"]
-    }
+    "id": "news-1732291200000-x9sd2we3k",
+    "title": "BBC News Podcast - November 22, 2024",
+    "description": "Latest news from BBC covering politics...",
+    "audioUrl": "https://pub-xxx.r2.dev/audio/news-1732291200000-x9sd2we3k.mp3",
+    "style": "news-anchor",
+    "duration": 185,
+    "fileSize": 0,
+    "publishedAt": "2024-11-22T14:00:00Z",
+    "createdAt": "2024-11-22T14:00:00Z",
+    "ttsEventId": null,
+    "ttsError": null
   }
 }
 ```
+
+> ⚠️ 当前详情接口仅返回基础字段；`scriptUrl`、`srtUrl`、`vttUrl`、`metadata` 等数据库列尚未透出。若要在前端展示字幕或脚本文本，需要扩展该接口或增加新的资源端点。
 
 ---
 
@@ -1426,6 +1424,20 @@ window.addEventListener('DOMContentLoaded', fetchEpisodes);
 2. **监控健康**: 定期调用 `GET /health` 检查服务状态
 3. **数据分析**: 调用 `GET /stats` 获取统计数据
 4. **批量处理**: 遍历主题调用 `POST /topics/{id}/generate-next`
+
+---
+
+## 🔧 后续改进建议（基于2025-11-23审查）
+
+| 优先级 | 建议 | 说明 |
+|--------|------|------|
+| P0 | 在 `GET /episodes/{id}` / `GET /topics/{id}/podcasts` 中返回 `scriptUrl`、`srtUrl`、`vttUrl`、`jsonUrl` | 这些字段已保存在 D1 `episodes`、`topic_podcasts` 表里，只需在 `EpisodeApiHandler` / `TopicApiHandler` 序列化时透出，前端即可使用字幕与脚本。 |
+| P0 | 为字幕提供专用端点（如 `GET /episodes/{id}/subtitles?format=vtt`） | 避免前端直接拼 R2 URL，可统一鉴权和格式选择。 |
+| P1 | 返回 `metadata` JSON（脚本分析、关键词、TTS信息） | `episodes.metadata` 已包含结构化信息，暴露后可用于前端标签、图表等。 |
+| P1 | Topic剧集详情端点 | 目前只有列表，若需要展示单集详情（含字幕/脚本），需要 `GET /topics/podcasts/{episodeId}`。 |
+| P2 | 数据分页总数 | `GET /topics` / `GET /topics/{id}/podcasts` 目前使用 `result.length` 作为 total，可通过 SQL COUNT 提供真实总量，方便前端分页。 |
+
+落实以上改动后，本API即可为前端提供“音频 + 字幕 + 完整元数据”的体验。
 
 ---
 

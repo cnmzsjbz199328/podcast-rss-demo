@@ -175,6 +175,7 @@ export class PodcastWorkflow {
   wordCount: results.generateScript.wordCount,
   duration: voice.duration || 0,
   fileSize: voice.fileSize || 0,
+  transcript: results.storeFiles?.scriptUrl || null,
   scriptUrl: results.storeFiles.scriptUrl,
   audioUrl: results.storeFiles.audioUrl,
   srtUrl: results.storeFiles.srtUrl,

@@ -121,13 +121,13 @@ export class EpisodeRepository {
         }
 
         // 字段名映射：snake_case -> camelCase
-        result.srtUrl = result.srt_url;
-        result.vttUrl = result.vtt_url;
-        result.jsonUrl = result.json_url;
-        result.audioUrl = result.audio_url;
-        result.audioKey = result.audio_key;
-        result.scriptUrl = result.script_url;
-        result.scriptKey = result.script_key;
+  result.srtUrl = result.srt_url;
+  result.vttUrl = result.vtt_url;
+  result.jsonUrl = result.json_url;
+  result.audioUrl = result.audio_url;
+  result.audioKey = result.audio_key;
+  result.scriptUrl = result.transcript || null;
+  result.scriptKey = result.scriptUrl ? result.scriptUrl.split('/').pop() : null;
         result.fileSize = result.file_size;
         result.createdAt = result.created_at;
         result.publishedAt = result.published_at;
@@ -179,13 +179,13 @@ export class EpisodeRepository {
         }
 
         // 字段名映射：snake_case -> camelCase
-        episode.srtUrl = episode.srt_url;
-        episode.vttUrl = episode.vtt_url;
-        episode.jsonUrl = episode.json_url;
-        episode.audioUrl = episode.audio_url;
-        episode.audioKey = episode.audio_key;
-        episode.scriptUrl = episode.script_url;
-        episode.scriptKey = episode.script_key;
+          episode.srtUrl = episode.srt_url;
+          episode.vttUrl = episode.vtt_url;
+          episode.jsonUrl = episode.json_url;
+          episode.audioUrl = episode.audio_url;
+          episode.audioKey = episode.audio_key;
+          episode.scriptUrl = episode.transcript || null;
+          episode.scriptKey = episode.scriptUrl ? episode.scriptUrl.split('/').pop() : null;
         episode.fileSize = episode.file_size;
         episode.createdAt = episode.created_at;
         episode.publishedAt = episode.published_at;
@@ -229,6 +229,14 @@ export class EpisodeRepository {
             episode.metadata = {};
           }
         }
+
+        episode.srtUrl = episode.srt_url;
+        episode.vttUrl = episode.vtt_url;
+        episode.jsonUrl = episode.json_url;
+        episode.audioUrl = episode.audio_url;
+        episode.audioKey = episode.audio_key;
+        episode.scriptUrl = episode.transcript || null;
+        episode.scriptKey = episode.scriptUrl ? episode.scriptUrl.split('/').pop() : null;
       });
 
       this.logger.debug('Episodes by style fetched', { style, count: episodes.length, limit, offset });
