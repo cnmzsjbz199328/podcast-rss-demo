@@ -36,20 +36,21 @@ News content:
   name: 'Professional News Broadcasting',
   scriptPrompt: `Please create a concise, continuous podcast script in ENGLISH of about 5 minutes, in a style similar to a professional news anchor. The script should be pure spoken text as one continuous paragraph without any line breaks, formatting marks, or special characters.
 
-Requirements:
-1. Write ENTIRELY in ENGLISH - do not use any Chinese characters or text
-2. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
-3. Use formal, objective language suitable for broadcast
-4. Include smooth transitions between different news items
-5. Start with a natural introduction and end with a conclusion
-6. Maintain professional news anchor tone throughout
-7. Do NOT include any line breaks, empty lines, or paragraph breaks
-8. Do NOT include any text in parentheses, brackets, or special formatting
-9. Do NOT include music cues or stage directions
-10. Write only the words that will be spoken aloud as one flowing narrative
+  Requirements:
+  1. Write ENTIRELY in ENGLISH - do not use any Chinese characters or text
+  2. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
+  3. Start with: "Welcome to Tom Podcasts. Today we're covering..."
+  4. Use formal, objective language suitable for broadcast
+  5. Include smooth transitions between different news items
+  6. End with a brief conclusion or closing statement
+  7. Maintain professional news anchor tone throughout
+  8. Do NOT include any line breaks, empty lines, or paragraph breaks
+  9. Do NOT include any text in parentheses, brackets, or special formatting
+  10. Do NOT include music cues or stage directions
+  11. Write only the words that will be spoken aloud as one flowing narrative
 
-News content:
-{news}`
+  News content:
+  {news}`
       },
   'emotional': {
   name: 'Emotional Storytelling Style',
@@ -71,20 +72,22 @@ News content:
    name: 'Topic Explainer Style',
    scriptPrompt: `Please create an educational podcast script in ENGLISH that explains and explores the given topic in depth for approximately 5 minutes. Create pure spoken text as one continuous paragraph without any formatting marks or stage directions.
 
-Requirements:
-1. Write ENTIRELY in ENGLISH - do not use any Chinese characters or text
-2. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
-3. Explain the topic clearly and comprehensively
-4. Use educational, informative language suitable for learning
-5. Include key facts, context, and insights about the topic
-6. Structure the explanation logically from introduction to conclusion
-7. Maintain an engaging and accessible tone for listeners
-8. Write only the words that will be spoken aloud
-9. Do NOT include any text in parentheses, brackets, or special formatting
-10. Focus on making complex topics understandable
+   Requirements:
+   1. Write ENTIRELY in ENGLISH - do not use any Chinese characters or text
+   2. Write as ONE CONTINUOUS PARAGRAPH with no line breaks
+   3. Start with: "Welcome to Tom Podcasts. Today's topic is..."
+   4. Explain the topic clearly and comprehensively
+   5. Use educational, informative language suitable for learning
+   6. Include key facts, context, and insights about the topic
+   7. Structure the explanation logically from introduction to conclusion
+   8. Maintain an engaging and accessible tone for listeners
+   9. End with a brief summary or takeaway
+   10. Write only the words that will be spoken aloud
+   11. Do NOT include any text in parentheses, brackets, or special formatting
+   12. Focus on making complex topics understandable
 
-Topic content:
-{news}`
+   Topic content:
+   {news}`
       },
    'topic-series': {
    name: 'Topic Series Generation',

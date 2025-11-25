@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { podcastApi } from '@/services/podcastApi';
 import { episodeFormatters } from '@/utils/formatters';
 import TranscriptViewer from '@/components/podcast/TranscriptViewer';
+import SubtitleViewer from '@/components/podcast/SubtitleViewer';
 import type { Episode } from '@/types';
 
 const PodcastPlayer = () => {
@@ -16,6 +17,8 @@ const PodcastPlayer = () => {
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showTranscript, setShowTranscript] = useState(true);
+  const [showSubtitles, setShowSubtitles] = useState(false);
+  const [subtitleUrl, setSubtitleUrl] = useState<string | undefined>();
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -25,7 +28,13 @@ const PodcastPlayer = () => {
       try {
         const response = await podcastApi.getEpisode(episodeId);
         if (response.success) {
-          setEpisode(response.data.episode);
+          setEpisode(response.data);
+          
+          // 尝试获取字幕
+          const subtitlesData = await podcastApi.getSubtitles(episodeId, 'vtt');
+          if (subtitlesData?.url) {
+            setSubtitleUrl(subtitlesData.url);
+          }
         } else {
           setError('获取播客详情失败');
         }
@@ -220,6 +229,23 @@ const PodcastPlayer = () => {
           <span className="text-xs">定时</span>
         </button>
         <button
+          onClick={() => setShowSubtitles(!showSubtitles)}
+          disabled={!subtitleUrl}
+          className={`flex flex-col items-center justify-center gap-1 w-16 disabled:opacity-50 disabled:cursor-not-allowed ${
+            showSubtitles ? 'text-primary-light' : 'text-slate-300 dark:text-slate-400 hover:text-white'
+          }`}
+        >
+          <span
+            className="material-symbols-outlined text-2xl"
+            style={{
+              fontVariationSettings: "'FILL' 1"
+            }}
+          >
+            closed_caption
+          </span>
+          <span className="text-xs">字幕</span>
+        </button>
+        <button
           onClick={() => setShowTranscript(!showTranscript)}
           className={`flex flex-col items-center justify-center gap-1 w-16 ${showTranscript ? 'text-primary-light' : 'text-slate-300 dark:text-slate-400 hover:text-white'}`}
         >
@@ -237,7 +263,24 @@ const PodcastPlayer = () => {
           <span className="material-symbols-outlined text-2xl">share</span>
           <span className="text-xs">分享</span>
         </button>
-      </div>
+        </div>
+
+      {/* Subtitle Section */}
+      {showSubtitles && subtitleUrl && (
+        <div className="px-6 pb-8">
+          <h3 className="text-white text-sm font-semibold mb-4">字幕</h3>
+          <SubtitleViewer
+            subtitleUrl={subtitleUrl}
+            format="vtt"
+            currentTime={currentTime}
+            onSeek={(time) => {
+              if (audioRef.current) {
+                audioRef.current.currentTime = time;
+              }
+            }}
+          />
+        </div>
+      )}
 
       {/* Transcript Section */}
       {showTranscript && episode?.scriptUrl && (

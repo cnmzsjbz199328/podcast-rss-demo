@@ -15,7 +15,9 @@ const CreateTopic = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [frequency, setFrequency] = useState('daily');
+  const [tagInput, setTagInput] = useState('');
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -46,7 +48,29 @@ const CreateTopic = () => {
     }));
   };
 
+  const handleAddTag = () => {
+    if (tagInput.trim() && formData.tags && formData.tags.length < 5) {
+      setFormData((prev) => ({
+        ...prev,
+        tags: [...(prev.tags || []), tagInput.trim()],
+      }));
+      setTagInput('');
+    }
+  };
 
+  const handleRemoveTag = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags?.filter((_, i) => i !== index) || [],
+    }));
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,12 +79,26 @@ const CreateTopic = () => {
       return;
     }
 
+    if (formData.title.length < 2) {
+      setError('标题至少需要2个字符');
+      return;
+    }
+
+    if (formData.title.length > 100) {
+      setError('标题不能超过100个字符');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+      setSuccess(null);
       const response = await topicApi.createTopic(formData);
-      if (response.success) {
-        navigate('/topics');
+      if (response.success && response.data?.topic) {
+        setSuccess(`成功创建主题 "${formData.title}"`);
+        setTimeout(() => {
+          navigate(`/topics/${response.data.topic.id}`);
+        }, 1000);
       } else {
         setError('创建主题失败');
       }
@@ -88,8 +126,15 @@ const CreateTopic = () => {
 
       <main className="flex-1 px-4 py-2">
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg m-4">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg m-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">error</span>
             {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 px-4 py-3 rounded-lg m-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">check_circle</span>
+            {success}
           </div>
         )}
 
@@ -161,7 +206,54 @@ const CreateTopic = () => {
             </div>
           </section>
 
-          {/* Section 3: 更新规则 */}
+          {/* Section 3: 标签 */}
+          <section className="mb-6">
+            <h2 className="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">
+              内容标签
+            </h2>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 rounded-lg border border-slate-300 bg-slate-100 p-3 text-base font-normal leading-normal text-slate-900 placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+                  placeholder="例如：AI、机器学习（最多5个标签）"
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={formData.tags && formData.tags.length >= 5}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  disabled={!tagInput.trim() || (formData.tags && formData.tags.length >= 5)}
+                  className="px-4 py-3 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <span className="material-symbols-outlined">add</span>
+                </button>
+              </div>
+              {formData.tags && formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.tags.map((tag, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary dark:bg-primary/20 dark:text-primary rounded-full text-sm"
+                    >
+                      <span>{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(idx)}
+                        className="hover:opacity-70 transition-opacity"
+                      >
+                        <span className="material-symbols-outlined text-base">close</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Section 4: 更新规则 */}
           <section className="mb-8">
             <h2 className="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">
               更新规则

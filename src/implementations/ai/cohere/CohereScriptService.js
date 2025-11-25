@@ -120,18 +120,22 @@ export class CohereScriptService extends IScriptService {
     // 格式化脚本
     this.logger.debug('Formatting generated script');
     const formattedScript = this.formatter.cleanAndFormatScript(result.text);
-    const stats = this.formatter.getScriptStats(formattedScript);
+    const scriptText = typeof formattedScript === 'object' && formattedScript?.content
+      ? formattedScript.content
+      : formattedScript;
+
+    const stats = this.formatter.getScriptStats(scriptText);
 
     this.logger.info('Script formatted', {
       originalLength: result.text.length,
-      formattedLength: formattedScript.length,
+      formattedLength: scriptText.length,
       wordCount: stats.wordCount,
       lineCount: stats.lineCount
     });
 
     // 验证脚本质量
     this.logger.debug('Validating script quality');
-    const validation = this.formatter.validateScript(formattedScript);
+  const validation = this.formatter.validateScript(scriptText);
     if (!validation.valid) {
       this.logger.error('Script validation failed', {
         reason: validation.reason,
@@ -162,7 +166,7 @@ export class CohereScriptService extends IScriptService {
       style,
       wordCount: stats.wordCount,
       tokens: result.usageMetadata?.totalTokens,
-      scriptPreview: formattedScript.substring(0, 100) + '...'
+      scriptPreview: scriptText.substring(0, 100) + '...'
     });
 
     return scriptResult;

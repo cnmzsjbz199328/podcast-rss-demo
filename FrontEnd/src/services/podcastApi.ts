@@ -1,11 +1,17 @@
 import { apiRequest } from './api'
 import type {
+  Episode,
   EpisodeListResponse,
   EpisodeDetailResponse,
   GenerateResponse,
   AsyncGenerateResponse,
   PollAudioResponse,
 } from '@/types'
+
+const normalizeEpisode = (episode: Episode): Episode => ({
+  ...episode,
+  scriptUrl: episode.scriptUrl ?? episode.transcriptUrl ?? undefined,
+})
 
 export const podcastApi = {
   // 获取播客列表
@@ -20,12 +26,25 @@ export const podcastApi = {
     if (params?.style) searchParams.set('style', params.style)
 
     const query = searchParams.toString()
-    return apiRequest<EpisodeListResponse>(`/episodes${query ? `?${query}` : ''}`)
+    const response = await apiRequest<EpisodeListResponse>(`/episodes${query ? `?${query}` : ''}`)
+
+    return {
+      ...response,
+      data: {
+        ...response.data,
+        episodes: response.data.episodes.map(normalizeEpisode),
+      },
+    }
   },
 
   // 获取单个播客详情
   async getEpisode(episodeId: string): Promise<EpisodeDetailResponse> {
-    return apiRequest<EpisodeDetailResponse>(`/episodes/${episodeId}`)
+    const response = await apiRequest<EpisodeDetailResponse>(`/episodes/${episodeId}`)
+
+    return {
+      ...response,
+      data: normalizeEpisode(response.data),
+    }
   },
 
   // 生成News播客（同步）
@@ -43,5 +62,23 @@ export const podcastApi = {
   // 轮询音频生成状态
   async pollAudio(episodeId: string, eventId: string): Promise<PollAudioResponse> {
     return apiRequest<PollAudioResponse>(`/episodes/${episodeId}/poll-audio?eventId=${eventId}`)
+  },
+
+  // 获取字幕
+  async getSubtitles(episodeId: string, format: 'vtt' | 'srt' | 'json' = 'vtt'): Promise<{ url: string } | null> {
+    try {
+      const response = await apiRequest<{ success: boolean; data?: { srtUrl?: string; vttUrl?: string; jsonUrl?: string } }>(
+        `/episodes/${episodeId}/subtitles?format=${format}`
+      );
+      
+      if (response.success && response.data) {
+        const urlKey = format === 'srt' ? 'srtUrl' : format === 'json' ? 'jsonUrl' : 'vttUrl';
+        const url = response.data[urlKey as keyof typeof response.data];
+        if (url) return { url: url as string };
+      }
+    } catch {
+      // 字幕可能不存在，静默失败
+    }
+    return null;
   },
 }

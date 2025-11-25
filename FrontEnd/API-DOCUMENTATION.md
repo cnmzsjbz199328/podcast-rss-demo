@@ -251,11 +251,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-173229
 |------|------|------|------|
 | `episodeId` | string | 是 | 剧集ID |
 
-**查询参数**:
-
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `eventId` | string | 是 | 异步事件ID |
+> ℹ️ 该接口只需 `episodeId` 路径参数，不再要求额外的 `eventId` 查询参数；处理器会直接根据剧集ID查询异步状态。
 
 **请求示例**:
 ```bash
@@ -321,8 +317,8 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-173229
 | `description` | string | 否 | - | 主题描述 |
 | `is_active` | boolean | 否 | `true` | 是否激活 |
 | `generation_interval_hours` | number | 否 | `24` | 生成间隔（小时） |
-| `category` | string | 否 | - | 分类 |
-| `tags` | string[] | 否 | - | 标签 |
+
+> ⚠️ `category`、`tags` 等扩展字段目前未在 `TopicApiHandler.handleCreateTopic` 中处理，如需支持需先扩展后端。
 
 **请求示例**:
 ```bash
@@ -367,7 +363,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics" \
 
 | 参数 | 类型 | 必需 | 默认值 | 描述 |
 |------|------|------|--------|------|
-| `status` | string | 否 | - | 状态过滤 (`active` / `inactive`) |
+| `is_active` | boolean | 否 | `null` | 激活状态过滤 (`true` / `false`)，不传则查询全部 |
 | `category` | string | 否 | - | 分类过滤 |
 | `limit` | number | 否 | `20` | 每页数量 |
 | `offset` | number | 否 | `0` | 偏移量 |
@@ -422,6 +418,14 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics?status=active&li
 | 参数 | 类型 | 必需 | 描述 |
 |------|------|------|------|
 | `topicId` | number | 是 | 主题ID |
+
+**查询参数**:
+
+| 参数 | 类型 | 必需 | 默认值 | 描述 |
+|------|------|------|--------|------|
+| `status` | string | 否 | - | 过滤剧集状态（如 `completed`、`processing`） |
+| `limit` | number | 否 | `10` | 每页数量（建议≤50） |
+| `offset` | number | 否 | `0` | 偏移量 |
 
 **请求示例**:
 ```bash
@@ -690,11 +694,7 @@ curl -X DELETE "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1"
 |------|------|------|------|
 | `episodeId` | string | 是 | 剧集ID |
 
-**查询参数**:
-
-| 参数 | 类型 | 必需 | 描述 |
-|------|------|------|------|
-| `eventId` | string | 是 | 异步事件ID |
+> ℹ️ 轮询主题播客状态同样只依赖 `episodeId`，无需 `eventId` 查询参数，服务端会根据数据库记录返回最新状态。
 
 **请求示例**:
 ```bash

@@ -49,7 +49,7 @@ export class TopicSeriesGenerator {
     const prompt = this._buildPrompt(topic, recentEpisodes, nextEpisodeNumber);
 
     // 6. 调用AI生成剧集内容
-    const episodeContent = await this._generateEpisodeContent(prompt, topic);
+  const episodeContent = await this._generateEpisodeContent(prompt, topic, nextEpisodeNumber);
 
     // 7. 返回剧集信息
     return {
@@ -184,7 +184,7 @@ Make it engaging and informative.`.trim();
    * 调用AI生成剧集内容
    * @private
    */
-  async _generateEpisodeContent(prompt, topic) {
+  async _generateEpisodeContent(prompt, topic, episodeNumber) {
     try {
       // 准备适合AI调用的数据格式
       const aiData = {
@@ -204,36 +204,44 @@ Make it engaging and informative.`.trim();
         'topic-series' // 使用新的 topic-series 风格
       );
 
+      const normalizedContent = this._extractContentText(result.content);
+
       // 解析JSON响应
       this.logger.info('AI response received', {
-      contentLength: result.content?.length || 0,
-      contentPreview: result.content?.substring(0, 200) + '...',
-      rawContent: result.content?.substring(0, 500), // 添加原始内容
-      // ✅ 检测是否包含metadata
+        contentLength: normalizedContent.length,
+        contentPreview: normalizedContent.substring(0, 200) + '...',
+        rawContent: normalizedContent.substring(0, 500),
+        // ✅ 检测是否包含metadata
         hasMetadata: typeof result.content === 'object' && result.content.metadata
       });
 
       // ✅ 如果ScriptFormatter已经提取了metadata，直接使用
       if (typeof result.content === 'object' && result.content.metadata) {
         const { content, metadata } = result.content;
-        
+
+        if (!metadata.title || !metadata.keywords || !metadata.abstract || !content) {
+          throw new Error('Metadata from ScriptFormatter missing required fields');
+        }
+
         this.logger.info('Using metadata from ScriptFormatter', {
           hasTitle: !!metadata.title,
-          hasKeywords: !!metadata.keywords,
+          hasKeywords: Array.isArray(metadata.keywords) ? metadata.keywords.length : 'invalid',
           hasAbstract: !!metadata.abstract,
           scriptLength: content?.length || 0
         });
 
         return {
-          title: metadata.title || this._generateFallbackTitle(topic, episodeNumber),
-          keywords: metadata.keywords || [],
-          abstract: metadata.abstract || '',
+          title: metadata.title,
+          keywords: Array.isArray(metadata.keywords)
+            ? metadata.keywords
+            : metadata.keywords.split(',').map(k => k.trim()).filter(Boolean),
+          abstract: metadata.abstract,
           script: content
         };
       }
 
       // 解析AI JSON响应
-      const contentString = typeof result.content === 'string' ? result.content : JSON.stringify(result.content);
+      const contentString = normalizedContent;
       const content = this._parseAIResponse(contentString);
 
       this.logger.info('Parsed content via _parseAIResponse', {
@@ -256,6 +264,29 @@ Make it engaging and informative.`.trim();
       });
       throw new Error(`Failed to generate episode content: ${error.message}`);
     }
+  }
+
+  _extractContentText(content) {
+    if (!content) return '';
+    if (typeof content === 'string') {
+      return content;
+    }
+
+    if (typeof content === 'object') {
+      if (typeof content.content === 'string') {
+        return content.content;
+      }
+      try {
+        return JSON.stringify(content);
+      } catch (error) {
+        this.logger.warn('Failed to stringify content object for logging', {
+          error: error.message
+        });
+        return '';
+      }
+    }
+
+    return String(content);
   }
 
   /**

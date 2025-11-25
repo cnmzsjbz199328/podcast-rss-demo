@@ -5,6 +5,7 @@ export interface Episode {
   script?: string
   audioUrl: string
   scriptUrl?: string
+  transcriptUrl?: string
   subtitles?: {
     vtt: string
     srt: string
@@ -43,9 +44,7 @@ export interface EpisodeListResponse {
 
 export interface EpisodeDetailResponse {
   success: boolean
-  data: {
-    episode: Episode
-  }
+  data: Episode
 }
 
 export interface GenerateResponse {
