@@ -68,7 +68,7 @@ export class TopicRepository {
 
     try {
       const result = await this.db.prepare(`
-        SELECT * FROM v_topics WHERE id = ?
+        SELECT * FROM topics WHERE id = ?
       `).bind(topicId).first();
 
       if (!result) {
@@ -100,7 +100,7 @@ export class TopicRepository {
     this.logger.info('Fetching topics', { is_active, category, limit, offset });
 
     try {
-      let query = 'SELECT * FROM v_topics WHERE 1=1';
+      let query = 'SELECT * FROM topics WHERE 1=1';
       const params = [];
 
       if (typeof is_active === 'boolean') {
@@ -117,7 +117,7 @@ export class TopicRepository {
       params.push(limit, offset);
 
       const result = await this.db.prepare(query).bind(...params).all();
-      const topics = result.results;
+      const topics = result.results || [];
 
       this.logger.info('Topics fetched successfully', { count: topics.length });
       return topics;
@@ -343,7 +343,7 @@ export class TopicRepository {
 
     try {
       let query = `
-        SELECT * FROM v_topics
+        SELECT * FROM topics
         WHERE (title LIKE ? OR description LIKE ? OR keywords LIKE ?)
       `;
       const params = [`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`];
@@ -362,7 +362,7 @@ export class TopicRepository {
       params.push(limit, offset);
 
       const result = await this.db.prepare(query).bind(...params).all();
-      const topics = result.results;
+      const topics = result.results || [];
 
       this.logger.info('Topics search completed', { searchTerm, count: topics.length });
       return topics;
@@ -409,4 +409,5 @@ export class TopicRepository {
       return false;
     }
   }
+
 }

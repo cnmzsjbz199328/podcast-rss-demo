@@ -2,8 +2,8 @@
  * Podcast处理器 - 处理Podcast生成相关业务逻辑
  */
 
-import { PodcastGenerator } from '../core/PodcastGenerator.js';
 import { Logger } from '../utils/logger.js';
+import { jsonResponse } from '../utils/http.js';
 
 export class PodcastHandler {
   constructor() {
@@ -44,14 +44,9 @@ export class PodcastHandler {
         useAsyncTts
   });
 
-  return new Response(JSON.stringify({
+  return jsonResponse({
     success: true,
         data: result
-  }), {
-  headers: {
-    'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-  }
   });
 
   } catch (error) {
@@ -60,16 +55,10 @@ export class PodcastHandler {
       stack: error.stack,
     type: error.constructor.name
   });
-  return new Response(JSON.stringify({
+  return jsonResponse({
   success: false,
     error: `${error.message} (${error.constructor.name})`
-  }), {
-  status: 500,
-  headers: {
-      'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
-  }
-  });
+  }, { status: 500 });
   }
   }
 

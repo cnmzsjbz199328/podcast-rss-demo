@@ -2,10 +2,15 @@
  * 主题API处理器 - 处理主题管理相关的API请求
  */
 import { Logger } from '../utils/logger.js';
+import { jsonResponse as corsJsonResponse } from '../utils/http.js';
 
 export class TopicApiHandler {
   constructor() {
     this.logger = new Logger('TopicApiHandler');
+  }
+
+  jsonResponse(body, status = 200) {
+    return corsJsonResponse(body, status, { 'Content-Type': 'application/json' });
   }
 
   /**
@@ -21,13 +26,10 @@ export class TopicApiHandler {
   } = await request.json();
 
   if (!title) {
-  return new Response(JSON.stringify({
+  return this.jsonResponse({
     success: false,
       error: 'Title is required'
-        }), {
-      status: 400,
-          headers: { 'Content-Type': 'application/json' }
-    });
+        }, 400);
   }
 
   this.logger.info('Creating new topic', { title, is_active, generation_interval_hours });
@@ -39,22 +41,17 @@ export class TopicApiHandler {
   generation_interval_hours
   });
 
-  return new Response(JSON.stringify({
+  return this.jsonResponse({
         success: true,
       data: { topicId }
-  }), {
-    headers: { 'Content-Type': 'application/json' }
   });
 
   } catch (error) {
   this.logger.error('Failed to create topic', error);
-  return new Response(JSON.stringify({
+  return this.jsonResponse({
     success: false,
       error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 
@@ -81,7 +78,7 @@ export class TopicApiHandler {
         offset
       });
 
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: true,
         data: {
           topics,
@@ -91,19 +88,14 @@ export class TopicApiHandler {
             total: topics.length // 简化处理，实际应该从数据库获取总数
           }
         }
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       });
 
     } catch (error) {
       this.logger.error('Failed to fetch topics', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 
@@ -115,13 +107,10 @@ export class TopicApiHandler {
       const topicId = parseInt(params[0], 10);
 
       if (!topicId || isNaN(topicId)) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Invalid topic ID'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 400);
       }
 
       this.logger.info('Fetching topic details', { topicId });
@@ -129,34 +118,26 @@ export class TopicApiHandler {
       const topic = await services.topicRepository.getTopic(topicId);
 
       if (!topic) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Topic not found'
-        }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 404);
       }
 
       // 获取主题统计信息
       const statistics = await services.topicRepository.getStatistics(topicId);
 
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: true,
         data: statistics
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       });
 
     } catch (error) {
       this.logger.error('Failed to fetch topic', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 
@@ -168,13 +149,10 @@ export class TopicApiHandler {
       const topicId = parseInt(params[0], 10);
 
       if (!topicId || isNaN(topicId)) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Invalid topic ID'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 400);
       }
 
       const updates = await request.json();
@@ -184,31 +162,23 @@ export class TopicApiHandler {
       const success = await services.topicRepository.update(topicId, updates);
 
       if (!success) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Topic not found or update failed'
-        }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 404);
       }
 
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: true,
         message: 'Topic updated successfully'
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       });
 
     } catch (error) {
       this.logger.error('Failed to update topic', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 
@@ -220,13 +190,10 @@ export class TopicApiHandler {
       const topicId = parseInt(params[0], 10);
 
       if (!topicId || isNaN(topicId)) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Invalid topic ID'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 400);
       }
 
       this.logger.info('Deleting topic', { topicId });
@@ -234,31 +201,23 @@ export class TopicApiHandler {
       const success = await services.topicRepository.delete(topicId);
 
       if (!success) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Topic not found or delete failed'
-        }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 404);
       }
 
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: true,
         message: 'Topic deleted successfully'
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       });
 
     } catch (error) {
       this.logger.error('Failed to delete topic', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 
@@ -270,13 +229,10 @@ export class TopicApiHandler {
       const topicId = parseInt(params[0], 10);
 
       if (!topicId || isNaN(topicId)) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Invalid topic ID'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 400);
       }
 
       const url = new URL(request.url);
@@ -300,22 +256,17 @@ export class TopicApiHandler {
         status: result.status
       });
 
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: true,
         data: result
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       });
 
     } catch (error) {
       this.logger.error('Failed to generate topic podcast', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 
@@ -327,13 +278,10 @@ export class TopicApiHandler {
       const topicId = parseInt(params[0], 10);
 
       if (!topicId || isNaN(topicId)) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Invalid topic ID'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 400);
       }
 
       const url = new URL(request.url);
@@ -351,7 +299,7 @@ export class TopicApiHandler {
         offset
       });
 
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: true,
         data: {
           podcasts: result,
@@ -361,19 +309,14 @@ export class TopicApiHandler {
             total: result.length // 简化处理
           }
         }
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       });
 
     } catch (error) {
       this.logger.error('Failed to fetch topic podcasts', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 
@@ -385,13 +328,10 @@ export class TopicApiHandler {
   const episodeId = params[0];
 
   if (!episodeId) {
-  return new Response(JSON.stringify({
+  return this.jsonResponse({
   success: false,
   error: 'Episode ID is required'
-  }), {
-  status: 400,
-  headers: { 'Content-Type': 'application/json' }
-  });
+  }, 400);
   }
 
   this.logger.info('Polling topic podcast generation status', { episodeId });
@@ -399,24 +339,19 @@ export class TopicApiHandler {
   const podcastService = services.topicPodcastService;
   const pollResult = await podcastService.pollGeneration(episodeId);
 
-  return new Response(JSON.stringify({
+  return this.jsonResponse({
   success: true,
   status: pollResult.status,
   podcast: pollResult.podcast,
   error: pollResult.error
-  }), {
-  headers: { 'Content-Type': 'application/json' }
   });
 
   } catch (error) {
   this.logger.error('Failed to poll topic podcast generation', error);
-  return new Response(JSON.stringify({
+  return this.jsonResponse({
   success: false,
   error: error.message
-  }), {
-  status: 500,
-  headers: { 'Content-Type': 'application/json' }
-  });
+  }, 500);
   }
   }
 
@@ -428,13 +363,10 @@ export class TopicApiHandler {
       const topicId = parseInt(params[0], 10);
 
       if (!topicId || isNaN(topicId)) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Invalid topic ID'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 400);
       }
 
       const url = new URL(request.url);
@@ -447,10 +379,10 @@ export class TopicApiHandler {
       const episodeInfo = await seriesGenerator.generateNextEpisode(topicId);
 
       if (!episodeInfo) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           message: 'Generation interval not reached yet'
-        }), { status: 200, headers: { 'Content-Type': 'application/json' }});
+        });
       }
 
       // 使用 TopicPodcastService 生成完整的播客
@@ -477,7 +409,7 @@ export class TopicApiHandler {
         episodeId: result.episodeId
       });
 
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: true,
         data: {
           topicId,
@@ -489,19 +421,14 @@ export class TopicApiHandler {
           status: result.status,
           duration: result.duration
         }
-      }), {
-        headers: { 'Content-Type': 'application/json' }
       });
 
     } catch (error) {
       this.logger.error('Failed to generate next episode', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 }

@@ -10,6 +10,7 @@ import { TestHandler } from './src/handlers/TestHandler.js';
 import { CronHandler } from './src/handlers/CronHandler.js';
 import { TopicApiHandler } from './src/handlers/TopicApiHandler.js';
 import { serviceInitializer } from './src/services/ServiceInitializer.js';
+import { ensureCors, jsonResponse, optionsResponse } from './src/utils/http.js';
 
 // 创建处理器实例
 const router = new Router();
@@ -55,23 +56,18 @@ router.register('POST', '/test/tts', (req, services) => testHandler.handleTestTt
 router.register('GET', '/debug/env', (req, env) => {
   // 仅在开发环境允许调试路由
   if (env.NODE_ENV !== 'development') {
-    return new Response(JSON.stringify({ error: 'Debug routes only available in development' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ error: 'Debug routes only available in development' }, { status: 403 });
   }
 
   const geminiValue = env.GEMINI_API_KEY;
   const hasGeminiKey = !!geminiValue && geminiValue.trim() !== '';
 
-  return new Response(JSON.stringify({
+  return jsonResponse({
     environment: {
       GEMINI_API_KEY: hasGeminiKey ? `***${geminiValue.length}chars***` : 'NOT_SET',
       NODE_ENV: env.NODE_ENV,
       BBC_RSS_URL: env.BBC_RSS_URL
     }
-  }), {
-    headers: { 'Content-Type': 'application/json' }
   });
 });
 router.register('GET', '/test/rss', (req, services) => testHandler.handleTestRss(req, services));
@@ -81,7 +77,7 @@ router.register('POST', '/test/script', (req, services) => testHandler.handleTes
 router.register('GET', '/', (req, services) => {
   const baseUrl = new URL(req.url).origin;
 
-  return new Response(JSON.stringify({
+  return jsonResponse({
     name: 'Podcast RSS API',
     version: '2.0.0',
     description: '由AI生成的播客服务，支持新闻播客和主题播客',
@@ -163,11 +159,6 @@ router.register('GET', '/', (req, services) => {
       news: ['news-anchor - 新闻主播风格'],
       topic: ['topic-explainer - 主题讲解风格']
     }
-  }), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    }
   });
 });
 
@@ -182,33 +173,27 @@ const services = serviceInitializer.getServices(env);
 
 // 处理CORS预检请求
 if (request.method === 'OPTIONS') {
-return new Response(null, {
-headers: {
-'Access-Control-Allow-Origin': '*',
-'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-'Access-Control-Allow-Headers': 'Content-Type'
-}
-});
+return optionsResponse();
 }
 
 
 
 // 使用路由器处理请求
-return await router.handle(request, services);
+const response = await router.handle(request, services);
+return ensureCors(response);
 
 } catch (error) {
 console.error('Worker request failed:', error);
 
-return new Response(JSON.stringify({
+return ensureCors(new Response(JSON.stringify({
 success: false,
 error: 'Internal server error'
 }), {
 status: 500,
 headers: {
-'Content-Type': 'application/json',
-'Access-Control-Allow-Origin': '*'
+'Content-Type': 'application/json'
 }
-});
+}));
 }
 },
 

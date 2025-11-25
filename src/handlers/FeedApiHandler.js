@@ -3,6 +3,7 @@
  */
 
 import { Logger } from '../utils/logger.js';
+import { ensureCors } from '../utils/http.js';
 
 export class FeedApiHandler {
   constructor() {
@@ -18,17 +19,16 @@ export class FeedApiHandler {
 
       const rssXml = await this._generateRssXml(services);
 
-      return new Response(rssXml, {
+      return ensureCors(new Response(rssXml, {
         headers: {
           'Content-Type': 'application/rss+xml; charset=utf-8',
-          'Cache-Control': 'max-age=300',
-          'Access-Control-Allow-Origin': '*'
+          'Cache-Control': 'max-age=300'
         }
-      });
+      }));
 
     } catch (error) {
       this.logger.error('RSS feed generation failed', error);
-      return new Response('Internal Server Error', { status: 500 });
+      return ensureCors(new Response('Internal Server Error', { status: 500 }));
     }
   }
 
@@ -98,17 +98,16 @@ export class FeedApiHandler {
   </body>
 </opml>`;
 
-      return new Response(opmlXml, {
+      return ensureCors(new Response(opmlXml, {
         headers: {
           'Content-Type': 'application/xml; charset=utf-8',
-          'Cache-Control': 'max-age=3600',
-          'Access-Control-Allow-Origin': '*'
+          'Cache-Control': 'max-age=3600'
         }
-      });
+      }));
 
     } catch (error) {
       this.logger.error('OPML export failed', error);
-      return new Response('Internal Server Error', { status: 500 });
+      return ensureCors(new Response('Internal Server Error', { status: 500 }));
     }
   }
 }

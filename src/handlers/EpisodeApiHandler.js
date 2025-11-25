@@ -3,10 +3,15 @@
  */
 
 import { Logger } from '../utils/logger.js';
+import { jsonResponse as corsJsonResponse } from '../utils/http.js';
 
 export class EpisodeApiHandler {
   constructor() {
     this.logger = new Logger('EpisodeApiHandler');
+  }
+
+  jsonResponse(body, status = 200) {
+    return corsJsonResponse(body, status);
   }
 
   /**
@@ -120,22 +125,14 @@ export class EpisodeApiHandler {
         }
       };
 
-      return new Response(JSON.stringify(response), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
+      return this.jsonResponse(response);
 
     } catch (error) {
       this.logger.error('Episodes fetch failed', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: 'Failed to fetch episodes'
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 
@@ -147,13 +144,10 @@ export class EpisodeApiHandler {
       const episodeId = params[0];
 
       if (!episodeId) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Episode ID is required'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 400);
       }
 
       this.logger.info('Fetching episode detail via NewsPodcastService', { episodeId });
@@ -163,16 +157,13 @@ export class EpisodeApiHandler {
       const episode = await podcastService.getPodcastById(episodeId);
 
       if (!episode) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Episode not found'
-        }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 404);
       }
 
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: true,
         data: {
           id: episode.episodeId,
@@ -188,22 +179,14 @@ export class EpisodeApiHandler {
           ttsError: episode.ttsError || episode.tts_error,
           transcriptUrl: episode.scriptUrl || episode.transcriptUrl || episode.transcript || null
         }
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
       });
 
     } catch (error) {
       this.logger.error('Episode detail fetch failed', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: 'Failed to fetch episode detail'
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 
@@ -215,13 +198,10 @@ export class EpisodeApiHandler {
       const episodeId = params[0];
 
       if (!episodeId) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: 'Episode ID is required'
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 400);
       }
 
       this.logger.info('Polling audio for episode via NewsPodcastService', { episodeId });
@@ -234,52 +214,39 @@ export class EpisodeApiHandler {
 
       // 根据轮询结果返回相应的响应
       if (pollResult.status === 'completed') {
-        return new Response(JSON.stringify({
-        success: true,
-        status: 'completed',
-          audioUrl: pollResult.podcast?.audioUrl
-          }), {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        } else if (pollResult.status === 'failed') {
-        return new Response(JSON.stringify({
-        success: false,
-        status: 'failed',
-          error: pollResult.error
-      }), {
-        status: 500,
-          headers: { 'Content-Type': 'application/json' }
-          });
-        } else {
-          // 仍在处理中
-          return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: true,
-        status: 'processing',
-        message: 'Audio generation in progress'
-      }), {
-          headers: { 'Content-Type': 'application/json' }
-      });
+          status: 'completed',
+          audioUrl: pollResult.podcast?.audioUrl
+        });
+      } else if (pollResult.status === 'failed') {
+        return this.jsonResponse({
+          success: false,
+          status: 'failed',
+          error: pollResult.error
+        }, 500);
+      } else {
+        // 仍在处理中
+        return this.jsonResponse({
+          success: true,
+          status: 'processing',
+          message: 'Audio generation in progress'
+        });
       }
 
       } catch (error) {
-        return new Response(JSON.stringify({
+        return this.jsonResponse({
           success: false,
           error: error.message
-        }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        }, 404);
       }
 
     } catch (error) {
       this.logger.error('Audio polling failed', error);
-      return new Response(JSON.stringify({
+      return this.jsonResponse({
         success: false,
         error: 'Audio polling failed: ' + error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 500);
     }
   }
 }

@@ -3,6 +3,7 @@
  */
 
 import { Logger } from '../utils/logger.js';
+import { jsonResponse } from '../utils/http.js';
 
 export class SystemApiHandler {
   constructor() {
@@ -33,23 +34,21 @@ export class SystemApiHandler {
         typeof s === 'string' ? s === 'healthy' : true
       );
 
-      return new Response(JSON.stringify(health), {
+      return jsonResponse(health, {
         status: isHealthy ? 200 : 503,
         headers: {
-          'Content-Type': 'application/json',
           'Cache-Control': 'no-cache'
         }
       });
 
     } catch (error) {
       this.logger.error('Health check failed', error);
-      return new Response(JSON.stringify({
+      return jsonResponse({
         status: 'error',
         timestamp: new Date().toISOString(),
         error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
+      }, {
+        status: 500
       });
     }
   }
@@ -79,24 +78,22 @@ export class SystemApiHandler {
         }
       };
 
-      return new Response(JSON.stringify({
+      return jsonResponse({
         success: true,
         data: systemStats
-      }), {
+      }, {
         headers: {
-          'Content-Type': 'application/json',
           'Cache-Control': 'max-age=60'
         }
       });
 
     } catch (error) {
       this.logger.error('System stats failed', error);
-      return new Response(JSON.stringify({
+      return jsonResponse({
         success: false,
         error: 'Failed to get system stats'
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
+      }, {
+        status: 500
       });
     }
   }
@@ -143,21 +140,15 @@ export class SystemApiHandler {
         styles: ['guo-de-gang - 郭德纲风格', 'news-anchor - News主播风格', 'emotional - 情感化风格']
       };
 
-      return new Response(JSON.stringify(apiInfo), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
+      return jsonResponse(apiInfo);
 
     } catch (error) {
       this.logger.error('API info failed', error);
-      return new Response(JSON.stringify({
+      return jsonResponse({
         success: false,
         error: 'Failed to get API info'
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
+      }, {
+        status: 500
       });
     }
   }

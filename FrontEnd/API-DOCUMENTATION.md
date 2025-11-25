@@ -71,6 +71,8 @@ Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
 Access-Control-Allow-Headers: Content-Type
 ```
 
+> ℹ️ 自 2025-11 起，CORS 由 Worker 入口和 `jsonResponse/ensureCors` 工具统一管理，所有端点（包括 `/` 与 `/debug/env`）都会自动附加以上响应头，并对 `OPTIONS` 预检请求返回快速 204 响应，无需为单个处理器再设置手动 Header。
+
 ---
 
 ## News播客 API
@@ -147,7 +149,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=
 
 | 参数 | 类型 | 必需 | 默认值 | 描述 |
 |------|------|------|--------|------|
-| `limit` | number | 否 | `20` | 每页数量（1-100） |
+| `limit` | number | 否 | `20` | 每页数量（建议≤100，未强制限制） |
 | `offset` | number | 否 | `0` | 偏移量 |
 | `style` | string | 否 | - | 风格过滤 (`news-anchor` / `topic-explainer`) |
 
@@ -171,7 +173,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes?style=news-anc
         "title": "BBC News Podcast - November 22, 2024",
         "description": "Latest news from BBC covering politics, technology...",
         "audioUrl": "https://pub-xxx.r2.dev/audio/episode-1732291200000.mp3",
-  "scriptUrl": "https://pub-xxx.r2.dev/scripts/episode-1732291200000.txt",
+        "transcriptUrl": "https://pub-xxx.r2.dev/scripts/episode-1732291200000.txt",
         "style": "news-anchor",
         "duration": 185,
         "fileSize": 0,
@@ -221,7 +223,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-173229
     "title": "BBC News Podcast - November 22, 2024",
     "description": "Latest news from BBC covering politics...",
     "audioUrl": "https://pub-xxx.r2.dev/audio/news-1732291200000-x9sd2we3k.mp3",
-  "scriptUrl": "https://pub-xxx.r2.dev/scripts/news-1732291200000-x9sd2we3k.txt",
+    "transcriptUrl": "https://pub-xxx.r2.dev/scripts/news-1732291200000-x9sd2we3k.txt",
     "style": "news-anchor",
     "duration": 185,
     "fileSize": 0,

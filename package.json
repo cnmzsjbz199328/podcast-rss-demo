@@ -8,7 +8,7 @@
     "dev": "wrangler dev",
     "dev:local": "wrangler dev --local",
     "test": "node tests/e2e/test-production-e2e.js",
-  "test:unit": "node --test tests/unit/newsPodcastService.test.js tests/unit/episodeApiHandler.test.js",
+  "test:unit": "node --test tests/unit/newsPodcastService.test.js tests/unit/episodeApiHandler.test.js tests/unit/topicRepository.test.js",
     "test:integration": "echo 'Integration tests: Run individual test files in tests/integration/'",
     "test:e2e": "node tests/e2e/test-production-e2e.js",
     "test:production": "node tests/e2e/test-production-e2e.js",
