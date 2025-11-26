@@ -4,6 +4,7 @@ import { podcastApi } from '@/services/podcastApi';
 import { episodeFormatters } from '@/utils/formatters';
 import { useAudioController } from '@/hooks/useAudioController';
 import TranscriptViewer from '@/components/podcast/TranscriptViewer';
+import ScriptCard from '@/components/podcast/ScriptCard';
 import PlaybackControls from '@/components/podcast/PlaybackControls';
 import SleepTimerButton from '@/components/podcast/SleepTimerButton';
 import type { Episode } from '@/types';
@@ -20,7 +21,7 @@ const PodcastPlayer = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [showTranscript, setShowTranscript] = useState(true);
+  const [isTranscriptExpanded, setTranscriptExpanded] = useState(false);
 
   // 使用音频控制器 hook
   const audioController = useAudioController(audioRef, {
@@ -133,15 +134,27 @@ const PodcastPlayer = () => {
         </button>
       </div>
 
-      {/* Cover Image */}
-      <div className="flex w-full grow px-6 py-8">
-        <div className="w-full gap-1 overflow-hidden bg-transparent aspect-square flex rounded-xl">
+      {/* Cover Image with immersive Script Card overlay */}
+      <div className="px-6 pt-6 pb-4">
+        <div className="relative aspect-square w-full overflow-hidden rounded-xl">
           <div
-            className="w-full bg-center bg-no-repeat bg-cover aspect-auto flex-1 rounded-lg"
+            className="absolute inset-0 bg-center bg-no-repeat bg-cover"
             style={{
               backgroundImage: `url('${episode.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLLimdLg5EGtNuZglsvyjmPPCFWXf1d1SwzaWk9ODNxbKt3wC9vTSSknitAgeW6r6EDXuKfHNdIkjQvgfJ9g8Aw7QABhjOCOu8743xXTX13oX63cb_cNad7GmMgyY2A7A1QNYqu2TRiS3bZEnJp_3tFzONPI3Km-F70PFOGz2870zFBNLHERTjMPGA7QmgguPd-zuaxaEmlbyYwEeaFqVNHj_9enZrR7FA6w3A8DKx29bx5T3IGL-fm4gvGQpvTVMb3w2g26c2C0g'}')`
             }}
           />
+          {episode.scriptUrl && !isTranscriptExpanded && (
+            <div className="pointer-events-none absolute inset-x-4 bottom-4">
+              <div className="pointer-events-auto">
+                <ScriptCard
+                  scriptUrl={episode.scriptUrl}
+                  currentTime={currentTime}
+                  duration={duration}
+                  visibleLines={3}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -201,8 +214,11 @@ const PodcastPlayer = () => {
       <div className="flex items-center justify-between px-6 py-6">
         <SleepTimerButton onTimerChange={handleSleepTimerChange} />
         <button
-          onClick={() => setShowTranscript(!showTranscript)}
-          className={`flex flex-col items-center justify-center gap-1 w-16 ${showTranscript ? 'text-primary-light' : 'text-slate-300 dark:text-slate-400 hover:text-white'}`}
+          onClick={() => setTranscriptExpanded((prev) => !prev)}
+          disabled={!episode?.scriptUrl}
+          className={`flex flex-col items-center justify-center gap-1 w-16 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+            isTranscriptExpanded ? 'text-primary-light' : 'text-slate-300 dark:text-slate-400 hover:text-white'
+          }`}
         >
           <span
             className="material-symbols-outlined text-2xl"
@@ -212,7 +228,7 @@ const PodcastPlayer = () => {
           >
             description
           </span>
-          <span className="text-xs">transcript</span>
+          <span className="text-xs">{isTranscriptExpanded ? '收起脚本' : '展开脚本'}</span>
         </button>
         <button className="flex flex-col items-center justify-center gap-1 text-slate-300 dark:text-slate-400 hover:text-white w-16">
           <span className="material-symbols-outlined text-2xl">share</span>
@@ -220,10 +236,18 @@ const PodcastPlayer = () => {
         </button>
       </div>
 
-      {/* Transcript Section */}
-      {showTranscript && episode?.scriptUrl && (
+      {/* Full Transcript Section - Expandable */}
+      {isTranscriptExpanded && episode?.scriptUrl && (
         <div className="px-6 pb-8">
-          <h3 className="text-white text-sm font-semibold mb-4">podcast transcript</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white text-sm font-semibold">完整脚本</h3>
+            <button
+              className="text-xs text-slate-300 hover:text-white"
+              onClick={() => setTranscriptExpanded(false)}
+            >
+              收起
+            </button>
+          </div>
           <TranscriptViewer
             scriptUrl={episode.scriptUrl}
             currentTime={currentTime}

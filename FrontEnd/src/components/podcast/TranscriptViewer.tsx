@@ -12,12 +12,19 @@ export const TranscriptViewer = ({
   currentTime,
   duration,
 }: TranscriptViewerProps) => {
-  const { scriptText, segments, activeSegmentIndex, loading, error, segmentRefs } =
-    useTranscriptSync({
-      scriptUrl,
-      currentTime,
-      duration,
-    });
+  const {
+    scriptText,
+    segments,
+    activeSegmentIndex,
+    loading,
+    error,
+    segmentRefs,
+    registerContainer,
+  } = useTranscriptSync({
+    scriptUrl,
+    currentTime,
+    duration,
+  });
 
   if (!scriptUrl) {
     return null;
@@ -25,7 +32,7 @@ export const TranscriptViewer = ({
 
   if (loading) {
     return (
-      <div className="transcript-viewer">
+      <div className="transcript-viewer" ref={registerContainer}>
         <div className="transcript-loading">
           <p className="text-slate-400">加载脚本中...</p>
         </div>
@@ -54,7 +61,7 @@ export const TranscriptViewer = ({
   }
 
   return (
-    <div className="transcript-viewer">
+    <div className="transcript-viewer" ref={registerContainer}>
       <div className="transcript-content">
         {segments.map((segment, index) => (
           <span
@@ -64,9 +71,9 @@ export const TranscriptViewer = ({
                 segmentRefs.current[index] = el as HTMLSpanElement;
               }
             }}
-            className={`transcript-segment ${
-              index === activeSegmentIndex ? 'active' : ''
-            } ${index < activeSegmentIndex ? 'passed' : ''}`}
+            className={`transcript-segment ${index === activeSegmentIndex ? 'active' : ''} ${
+              index < activeSegmentIndex ? 'passed' : ''
+            }`}
             data-index={index}
             data-time={segment.time}
           >

@@ -1,0 +1,58 @@
+
+.script-card {
+  width: 80%;
+  margin: 0 auto;
+  background: rgba(15, 23, 42, 0.45);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.script-card-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 100%;
+}
+
+.script-card-line {
+  position: relative;
+  padding: 2px 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: rgba(203, 213, 225, 0.85);
+  transition: color 0.12s ease;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.script-card-line.passed {
+  color: rgba(148, 163, 184, 0.6);
+}
+
+.script-card-line.active {
+  color: rgb(191, 219, 254);
+  font-weight: 600;
+}
+
+
+/* 深色模式调整 */
+@media (prefers-color-scheme: dark) {
+  .script-card {
+    background: rgba(10, 14, 22, 0.55);
+  }
+
+  .script-card-line {
+    color: rgba(203, 213, 225, 0.9);
+  }
+
+  .script-card-line.passed {
+    color: rgba(148, 163, 184, 0.65);
+  }
+
+  .script-card-line.active {
+    color: rgb(191, 219, 254);
+  }
+}

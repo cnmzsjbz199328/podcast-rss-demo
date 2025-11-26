@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 
 interface ScriptSegment {
   time: number;
+  endTime: number;
   text: string;
   startIndex: number;
   endIndex: number;
@@ -12,6 +13,44 @@ interface UseTranscriptSyncOptions {
   currentTime: number;
   duration: number;
 }
+
+const MAX_SEGMENT_CHARS = 180;
+
+const chunkSentence = (sentence: string): string[] => {
+  if (sentence.length <= MAX_SEGMENT_CHARS) return [sentence];
+  const chunks: string[] = [];
+  let index = 0;
+  while (index < sentence.length) {
+    chunks.push(sentence.slice(index, index + MAX_SEGMENT_CHARS));
+    index += MAX_SEGMENT_CHARS;
+  }
+  return chunks;
+};
+
+const splitIntoSentences = (text: string): string[] => {
+  const cleaned = text.replace(/\r/g, '').trim();
+  if (!cleaned) return [];
+
+  const blocks = cleaned.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+  const sentences: string[] = [];
+
+  blocks.forEach((block) => {
+    const matches = block.match(/[^。！？.!?\n]+[。！？.!?]+|[^。！？.!?\n]+/g);
+    if (matches) {
+      matches.forEach((sentence) => {
+        chunkSentence(sentence.trim()).forEach((chunk) => {
+          if (chunk) sentences.push(chunk);
+        });
+      });
+    } else {
+      chunkSentence(block).forEach((chunk) => {
+        if (chunk) sentences.push(chunk);
+      });
+    }
+  });
+
+  return sentences;
+};
 
 export const useTranscriptSync = ({
   scriptUrl,
@@ -24,10 +63,19 @@ export const useTranscriptSync = ({
   const [error, setError] = useState<string | null>(null);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(-1);
   const segmentRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // 获取脚本
+  const registerContainer = useCallback((node: HTMLDivElement | null) => {
+    containerRef.current = node;
+  }, []);
+
   useEffect(() => {
-    if (!scriptUrl) return;
+    if (!scriptUrl) {
+      setScriptText('');
+      setSegments([]);
+      segmentRefs.current = [];
+      return;
+    }
 
     const fetchScript = async () => {
       try {
@@ -37,7 +85,7 @@ export const useTranscriptSync = ({
         if (!response.ok) throw new Error('Failed to fetch transcript');
         const text = await response.text();
         setScriptText(text);
-        parseSegments(text, duration);
+        segmentRefs.current = [];
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load transcript');
         setScriptText('');
@@ -47,71 +95,89 @@ export const useTranscriptSync = ({
     };
 
     fetchScript();
-  }, [scriptUrl, duration]);
+  }, [scriptUrl]);
 
-  // 分段逻辑：按句子分割，按字符长度加权分配时间
   const parseSegments = useCallback((text: string, totalDuration: number) => {
-    if (!text || totalDuration <= 0) {
-      setSegments([{ time: 0, text, startIndex: 0, endIndex: text.length }]);
+    if (!text.trim()) {
+      setSegments([]);
       return;
     }
 
-    // 按句子分割
-    const sentences = text.match(/[^。！？\n]+[。！？]|[^。！？\n]+$/g) || [text];
+    const sentences = splitIntoSentences(text);
+    if (sentences.length === 0) {
+      setSegments([]);
+      return;
+    }
 
-    // 计算总字符数
     const totalChars = sentences.reduce((sum, s) => sum + s.length, 0);
     if (totalChars === 0) {
-      setSegments([{ time: 0, text, startIndex: 0, endIndex: text.length }]);
+      setSegments([{ time: 0, endTime: totalDuration, text, startIndex: 0, endIndex: text.length }]);
       return;
     }
 
-    // 根据字符长度加权分配时间
     const newSegments: ScriptSegment[] = [];
-    let currentTime = 0;
-    let currentIndex = 0;
+    let cursorTime = 0;
+    let cursorIndex = 0;
 
-    sentences.forEach((sentence) => {
+    sentences.forEach((sentence, idx) => {
       const charRatio = sentence.length / totalChars;
-      const segmentDuration = charRatio * totalDuration;
+      const segmentDuration = totalDuration > 0 ? charRatio * totalDuration : 0;
+      const segmentStart = cursorTime;
+      const isLast = idx === sentences.length - 1;
+      const segmentEnd = isLast ? (totalDuration || segmentStart) : segmentStart + segmentDuration;
 
       newSegments.push({
-        time: currentTime,
+        time: segmentStart,
+        endTime: segmentEnd,
         text: sentence.trim(),
-        startIndex: currentIndex,
-        endIndex: currentIndex + sentence.length,
+        startIndex: cursorIndex,
+        endIndex: cursorIndex + sentence.length,
       });
 
-      currentTime += segmentDuration;
-      currentIndex += sentence.length;
+      cursorTime = segmentEnd;
+      cursorIndex += sentence.length;
     });
+
+    if (totalDuration > 0 && newSegments.length > 0) {
+      newSegments[newSegments.length - 1].endTime = totalDuration;
+    }
 
     setSegments(newSegments);
   }, []);
 
-  // 计算当前活跃段落
+  useEffect(() => {
+    if (!scriptText) {
+      setSegments([]);
+      return;
+    }
+    parseSegments(scriptText, duration);
+  }, [scriptText, duration, parseSegments]);
+
   const activeIndex = useMemo(() => {
     return segments.findIndex(
-      (seg, idx) =>
-        currentTime >= seg.time &&
-        (idx === segments.length - 1 || currentTime < segments[idx + 1].time)
+      (seg) => currentTime >= seg.time && (seg.endTime ? currentTime < seg.endTime : true)
     );
   }, [currentTime, segments]);
 
-  // 更新状态
   useEffect(() => {
     setActiveSegmentIndex(activeIndex);
   }, [activeIndex]);
 
-  // 自动滚动到活跃段落
   useEffect(() => {
-    if (activeSegmentIndex >= 0 && segmentRefs.current[activeSegmentIndex]) {
-      const element = segmentRefs.current[activeSegmentIndex];
-      element?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }
+    if (activeSegmentIndex < 0) return;
+    const element = segmentRefs.current[activeSegmentIndex];
+    const container = containerRef.current;
+    if (!element || !container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    const offset =
+      elementRect.top - containerRect.top - containerRect.height / 2 + elementRect.height / 2;
+
+    container.scrollTo({
+      top: container.scrollTop + offset,
+      behavior: 'smooth',
+    });
   }, [activeSegmentIndex]);
 
   return {
@@ -121,5 +187,6 @@ export const useTranscriptSync = ({
     loading,
     error,
     segmentRefs,
+    registerContainer,
   };
 };
