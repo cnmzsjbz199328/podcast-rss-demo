@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import './ActionButtonBar.css';
 
 interface SleepTimerButtonProps {
   onTimerChange: (minutes: number | null) => void;
@@ -74,10 +75,8 @@ export const SleepTimerButton = ({ onTimerChange }: SleepTimerButtonProps) => {
   return (
     <button
       onClick={handleTimerClick}
-      className={`flex flex-col items-center justify-center gap-1 w-16 transition-colors ${
-        isActive
-          ? 'text-primary-light'
-          : 'text-slate-300 dark:text-slate-400 hover:text-white'
+      className={`action-button ${
+        isActive ? 'text-primary-light' : ''
       }`}
       title={TIMER_LABELS[String(timer)] || '定时'}
     >

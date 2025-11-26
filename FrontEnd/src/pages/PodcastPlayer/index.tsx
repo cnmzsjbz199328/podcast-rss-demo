@@ -3,10 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { podcastApi } from '@/services/podcastApi';
 import { episodeFormatters } from '@/utils/formatters';
 import { useAudioController } from '@/hooks/useAudioController';
-import TranscriptViewer from '@/components/podcast/TranscriptViewer';
 import ScriptCard from '@/components/podcast/ScriptCard';
 import PlaybackControls from '@/components/podcast/PlaybackControls';
-import SleepTimerButton from '@/components/podcast/SleepTimerButton';
+import ActionButtonBar from '@/components/podcast/ActionButtonBar';
 import type { Episode } from '@/types';
 
 const PodcastPlayer = () => {
@@ -134,7 +133,7 @@ const PodcastPlayer = () => {
         </button>
       </div>
 
-      {/* Cover Image with immersive Script Card overlay */}
+      {/* Cover Image with Script Card overlay */}
       <div className="px-6 pt-6 pb-4">
         <div className="relative aspect-square w-full overflow-hidden rounded-xl">
           <div
@@ -143,7 +142,7 @@ const PodcastPlayer = () => {
               backgroundImage: `url('${episode.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLLimdLg5EGtNuZglsvyjmPPCFWXf1d1SwzaWk9ODNxbKt3wC9vTSSknitAgeW6r6EDXuKfHNdIkjQvgfJ9g8Aw7QABhjOCOu8743xXTX13oX63cb_cNad7GmMgyY2A7A1QNYqu2TRiS3bZEnJp_3tFzONPI3Km-F70PFOGz2870zFBNLHERTjMPGA7QmgguPd-zuaxaEmlbyYwEeaFqVNHj_9enZrR7FA6w3A8DKx29bx5T3IGL-fm4gvGQpvTVMb3w2g26c2C0g'}')`
             }}
           />
-          {episode.scriptUrl && !isTranscriptExpanded && (
+          {episode.scriptUrl && isTranscriptExpanded && (
             <div className="pointer-events-none absolute inset-0 p-4">
               <div className="pointer-events-auto h-full w-full">
                 <ScriptCard
@@ -203,58 +202,20 @@ const PodcastPlayer = () => {
       {/* Playback Controls */}
       <PlaybackControls
         isPlaying={isPlaying}
-        playbackRate={playbackRate}
         onPlayPause={handlePlayPause}
         onSkipBackward={handleSkipBackward}
         onSkipForward={handleSkipForward}
-        onPlaybackRateChange={handlePlaybackRateChange}
       />
 
       {/* Action Button Bar */}
-      <div className="flex items-center justify-between px-6 py-6">
-        <SleepTimerButton onTimerChange={handleSleepTimerChange} />
-        <button
-          onClick={() => setTranscriptExpanded((prev) => !prev)}
-          disabled={!episode?.scriptUrl}
-          className={`flex flex-col items-center justify-center gap-1 w-16 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
-            isTranscriptExpanded ? 'text-primary-light' : 'text-slate-300 dark:text-slate-400 hover:text-white'
-          }`}
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{
-              fontVariationSettings: "'FILL' 1"
-            }}
-          >
-            description
-          </span>
-          <span className="text-xs">{isTranscriptExpanded ? '收起脚本' : '展开脚本'}</span>
-        </button>
-        <button className="flex flex-col items-center justify-center gap-1 text-slate-300 dark:text-slate-400 hover:text-white w-16">
-          <span className="material-symbols-outlined text-2xl">share</span>
-          <span className="text-xs">share</span>
-        </button>
-      </div>
-
-      {/* Full Transcript Section - Expandable */}
-      {isTranscriptExpanded && episode?.scriptUrl && (
-        <div className="px-6 pb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white text-sm font-semibold">完整脚本</h3>
-            <button
-              className="text-xs text-slate-300 hover:text-white"
-              onClick={() => setTranscriptExpanded(false)}
-            >
-              收起
-            </button>
-          </div>
-          <TranscriptViewer
-            scriptUrl={episode.scriptUrl}
-            currentTime={currentTime}
-            duration={duration}
-          />
-        </div>
-      )}
+      <ActionButtonBar
+        playbackRate={playbackRate}
+        isTranscriptExpanded={isTranscriptExpanded}
+        hasScriptUrl={!!episode?.scriptUrl}
+        onPlaybackRateChange={handlePlaybackRateChange}
+        onTimerChange={handleSleepTimerChange}
+        onTranscriptToggle={() => setTranscriptExpanded((prev) => !prev)}
+      />
 
       {/* Hidden Audio Element */}
       <audio
