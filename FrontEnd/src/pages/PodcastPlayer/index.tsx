@@ -144,8 +144,8 @@ const PodcastPlayer = () => {
             }}
           />
           {episode.scriptUrl && !isTranscriptExpanded && (
-            <div className="pointer-events-none absolute inset-x-4 bottom-4">
-              <div className="pointer-events-auto">
+            <div className="pointer-events-none absolute inset-0 p-4">
+              <div className="pointer-events-auto h-full w-full">
                 <ScriptCard
                   scriptUrl={episode.scriptUrl}
                   currentTime={currentTime}
