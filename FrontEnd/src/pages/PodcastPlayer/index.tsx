@@ -2,13 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { podcastApi } from '@/services/podcastApi';
 import { episodeFormatters } from '@/utils/formatters';
+import { useAudioController } from '@/hooks/useAudioController';
 import TranscriptViewer from '@/components/podcast/TranscriptViewer';
-import SubtitleViewer from '@/components/podcast/SubtitleViewer';
+import PlaybackControls from '@/components/podcast/PlaybackControls';
+import SleepTimerButton from '@/components/podcast/SleepTimerButton';
 import type { Episode } from '@/types';
 
 const PodcastPlayer = () => {
   const { episodeId } = useParams<{ episodeId: string }>();
   const navigate = useNavigate();
+  const audioRef = useRef<HTMLAudioElement>(null);
+  
   const [episode, setEpisode] = useState<Episode | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,10 +21,15 @@ const PodcastPlayer = () => {
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showTranscript, setShowTranscript] = useState(true);
-  const [showSubtitles, setShowSubtitles] = useState(false);
-  const [subtitleUrl, setSubtitleUrl] = useState<string | undefined>();
-  const audioRef = useRef<HTMLAudioElement>(null);
 
+  // 使用音频控制器 hook
+  const audioController = useAudioController(audioRef, {
+    onTimeUpdate: setCurrentTime,
+    onDurationChange: setDuration,
+    onEnded: () => setIsPlaying(false),
+  });
+
+  // 获取剧集数据
   useEffect(() => {
     if (!episodeId) return;
 
@@ -29,12 +38,6 @@ const PodcastPlayer = () => {
         const response = await podcastApi.getEpisode(episodeId);
         if (response.success) {
           setEpisode(response.data);
-          
-          // 尝试获取字幕
-          const subtitlesData = await podcastApi.getSubtitles(episodeId, 'vtt');
-          if (subtitlesData?.url) {
-            setSubtitleUrl(subtitlesData.url);
-          }
         } else {
           setError('获取播客详情失败');
         }
@@ -48,42 +51,43 @@ const PodcastPlayer = () => {
     fetchEpisode();
   }, [episodeId]);
 
-  const handlePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+  // 播放/暂停
+  const handlePlayPause = async () => {
+    if (isPlaying) {
+      audioController.pause();
+      setIsPlaying(false);
+    } else {
+      await audioController.play();
+      setIsPlaying(true);
     }
   };
 
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
+  // 进度条跳转
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = parseFloat(e.target.value);
     setCurrentTime(time);
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-    }
+    audioController.seekTo(time);
   };
 
+  // 播放速率变更
   const handlePlaybackRateChange = (rate: number) => {
     setPlaybackRate(rate);
-    if (audioRef.current) {
-      audioRef.current.playbackRate = rate;
-    }
+    audioController.setPlaybackRate(rate);
+  };
+
+  // 定时器变更
+  const handleSleepTimerChange = (minutes: number | null) => {
+    audioController.setSleepTimer(minutes);
+  };
+
+  // 前进30秒
+  const handleSkipForward = () => {
+    audioController.skipForward(30);
+  };
+
+  // 后退10秒
+  const handleSkipBackward = () => {
+    audioController.skipBackward(10);
   };
 
   if (loading) {
@@ -184,67 +188,18 @@ const PodcastPlayer = () => {
       </div>
 
       {/* Playback Controls */}
-      <div className="flex items-center justify-center gap-8 px-6 py-4">
-        <button className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 w-14 bg-transparent text-white/80 dark:text-white/80 gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
-          <span className="material-symbols-outlined text-3xl">replay_10</span>
-        </button>
-        <button
-          onClick={handlePlayPause}
-          className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-20 w-20 bg-primary-light text-white gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 shadow-lg shadow-primary-light/30 hover:bg-primary-light/90 transition-colors"
-        >
-          <span
-            className="material-symbols-outlined text-5xl"
-            style={{
-              fontVariationSettings: "'FILL' 1"
-            }}
-          >
-            {isPlaying ? 'pause' : 'play_arrow'}
-          </span>
-        </button>
-        <button className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 w-14 bg-transparent text-white/80 dark:text-white/80 gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
-          <span className="material-symbols-outlined text-3xl">forward_30</span>
-        </button>
-      </div>
+      <PlaybackControls
+        isPlaying={isPlaying}
+        playbackRate={playbackRate}
+        onPlayPause={handlePlayPause}
+        onSkipBackward={handleSkipBackward}
+        onSkipForward={handleSkipForward}
+        onPlaybackRateChange={handlePlaybackRateChange}
+      />
 
       {/* Action Button Bar */}
       <div className="flex items-center justify-between px-6 py-6">
-        <div className="flex flex-col items-center justify-center gap-1 text-slate-300 dark:text-slate-400 hover:text-white w-16 cursor-pointer relative group">
-          <span className="material-symbols-outlined text-2xl">speed</span>
-          <span className="text-xs">{playbackRate}x</span>
-          {/* Playback rate menu */}
-          <div className="hidden group-hover:flex absolute bottom-full mb-2 bg-slate-800 rounded-lg p-2 flex-col gap-1 z-20">
-            {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
-              <button
-                key={rate}
-                onClick={() => handlePlaybackRateChange(rate)}
-                className={`px-3 py-1 text-sm rounded ${playbackRate === rate ? 'bg-primary-light text-white' : 'text-slate-300 hover:text-white'}`}
-              >
-                {rate}x
-              </button>
-            ))}
-          </div>
-        </div>
-        <button className="flex flex-col items-center justify-center gap-1 text-slate-300 dark:text-slate-400 hover:text-white w-16">
-          <span className="material-symbols-outlined text-2xl">dark_mode</span>
-          <span className="text-xs">定时</span>
-        </button>
-        <button
-          onClick={() => setShowSubtitles(!showSubtitles)}
-          disabled={!subtitleUrl}
-          className={`flex flex-col items-center justify-center gap-1 w-16 disabled:opacity-50 disabled:cursor-not-allowed ${
-            showSubtitles ? 'text-primary-light' : 'text-slate-300 dark:text-slate-400 hover:text-white'
-          }`}
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{
-              fontVariationSettings: "'FILL' 1"
-            }}
-          >
-            closed_caption
-          </span>
-          <span className="text-xs">字幕</span>
-        </button>
+        <SleepTimerButton onTimerChange={handleSleepTimerChange} />
         <button
           onClick={() => setShowTranscript(!showTranscript)}
           className={`flex flex-col items-center justify-center gap-1 w-16 ${showTranscript ? 'text-primary-light' : 'text-slate-300 dark:text-slate-400 hover:text-white'}`}
@@ -257,35 +212,18 @@ const PodcastPlayer = () => {
           >
             description
           </span>
-          <span className="text-xs">脚本</span>
+          <span className="text-xs">transcript</span>
         </button>
         <button className="flex flex-col items-center justify-center gap-1 text-slate-300 dark:text-slate-400 hover:text-white w-16">
           <span className="material-symbols-outlined text-2xl">share</span>
-          <span className="text-xs">分享</span>
+          <span className="text-xs">share</span>
         </button>
-        </div>
-
-      {/* Subtitle Section */}
-      {showSubtitles && subtitleUrl && (
-        <div className="px-6 pb-8">
-          <h3 className="text-white text-sm font-semibold mb-4">字幕</h3>
-          <SubtitleViewer
-            subtitleUrl={subtitleUrl}
-            format="vtt"
-            currentTime={currentTime}
-            onSeek={(time) => {
-              if (audioRef.current) {
-                audioRef.current.currentTime = time;
-              }
-            }}
-          />
-        </div>
-      )}
+      </div>
 
       {/* Transcript Section */}
       {showTranscript && episode?.scriptUrl && (
         <div className="px-6 pb-8">
-          <h3 className="text-white text-sm font-semibold mb-4">播客脚本</h3>
+          <h3 className="text-white text-sm font-semibold mb-4">podcast transcript</h3>
           <TranscriptViewer
             scriptUrl={episode.scriptUrl}
             currentTime={currentTime}
@@ -298,8 +236,6 @@ const PodcastPlayer = () => {
       <audio
         ref={audioRef}
         src={episode.audioUrl}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => setIsPlaying(false)}
       />
     </div>

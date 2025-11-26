@@ -27,12 +27,21 @@ src/
 ├── components/          # Reusable UI components
 │   ├── common/         # Generic components (Button, Card, etc.)
 │   ├── podcast/        # Podcast-specific components
-│   │   ├── TranscriptViewer.tsx    # Script display with time-sync highlight
-│   │   └── TranscriptViewer.css    # Transcript styles
+│   │   ├── PlaybackControls.tsx     # 播放/暂停/快进快退按钮 (~70行)
+│   │   ├── SleepTimerButton.tsx     # 定时按钮组件 (~60行)
+│   │   ├── SubtitleViewer.tsx       # 字幕显示组件 (~100行)
+│   │   ├── SubtitleViewer.css       # 字幕样式
+│   │   ├── TranscriptViewer.tsx     # 脚本显示组件 (~70行)
+│   │   └── TranscriptViewer.css     # 脚本样式
 │   └── topic/          # Topic-specific components
+├── hooks/              # Custom React hooks (新增)
+│   ├── useAudioController.ts  # 音频控制逻辑 (~130行)
+│   ├── useTranscriptSync.ts   # 脚本时间同步 (~150行)
+│   ├── useSubtitleSync.ts     # 字幕时间同步 (~140行)
+│   └── index.ts               # Hook导出
 ├── pages/              # Route-level page components
 │   ├── Home/
-│   ├── PodcastPlayer/
+│   ├── PodcastPlayer/ (~290行)  # 主播放页面
 │   ├── TopicList/
 │   ├── TopicDetail/
 │   └── CreateTopic/
@@ -58,6 +67,28 @@ src/
     └── icons/
 ```
 
+## 核心功能实现 (v1.0.0)
+
+### 字幕高亮显示 ✅
+- **Hook**: `useSubtitleSync` - 字幕时间同步和高亮逻辑
+- **支持格式**: VTT、SRT、JSON
+- **特性**: 自动滚动、实时高亮、虚拟滚动优化
+
+### 定时按钮 ✅
+- **组件**: `SleepTimerButton` - 定时功能UI
+- **Hook**: `useAudioController.setSleepTimer()` - 定时逻辑
+- **选项**: null, 5min, 10min, 15min, 30min, 45min, 60min
+
+### 前进后退按钮 ✅
+- **组件**: `PlaybackControls` - 播放控制UI
+- **Hook**: `useAudioController.skipForward()` / `skipBackward()`
+- **功能**: 后退10秒、前进30秒、边界保护
+
+### 脚本同步 ✅
+- **Hook**: `useTranscriptSync` - 脚本时间同步
+- **算法**: 按字符长度加权分配时间
+- **特性**: 自动分段、实时高亮、自动滚动
+
 ## Code Style Guidelines
 - **Imports**: Use absolute imports with `@/` alias for src directory
 - **Conventions**: camelCase for variables/functions, PascalCase for components/classes
@@ -68,9 +99,9 @@ src/
 - **Best Practices**:
   - High cohesion (single responsibility per module)
   - Low coupling (clear interfaces between layers)
-  - Files ≤ 200 lines (split large components)
-  - Layered structure (Presentation → Application → Infrastructure)
-  - Functional components with hooks
-  - Custom hooks for shared logic
-  - Service layer for API calls
-  - Type-safe API responses
+  - Files ≤ 200 lines (split large components) ✅ 已实现
+  - Layered structure (Presentation → Application → Infrastructure) ✅ 已实现
+  - Functional components with hooks ✅ 已实现
+  - Custom hooks for shared logic ✅ 已实现
+  - Service layer for API calls ✅ 已实现
+  - Type-safe API responses ✅ 已实现
