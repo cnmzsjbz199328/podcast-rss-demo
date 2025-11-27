@@ -121,8 +121,13 @@ Topic: ${topic.description}
 
 Write a 600-word podcast script that introduces this topic. Make it conversational and engaging, like a professional podcast host speaking to listeners.
 
+Important:
+- Do NOT include any music or sound effect cues (such as "(Intro Music fades in and out)").
+- Do NOT use placeholders like "[Your Name]" or generic host introductions. If a host is needed, use a natural introduction without mentioning the host's name.
+- The script must be ready for direct voice synthesis, with no extraneous instructions or cues.
+
 Structure:
-- Start with an engaging introduction
+- Start with an engaging introduction (without music or host name placeholders)
 - Explain the main topic clearly
 - Provide practical examples or insights
 - End with a summary
@@ -135,7 +140,7 @@ Return your response in this exact JSON format:
   "script": "The complete 600-word podcast script here"
 }
 
-Make sure the script is informative and entertaining.`.trim();
+Make sure the script is informative, entertaining, and suitable for direct speech synthesis.`.trim();
   }
 
   /**
@@ -162,8 +167,13 @@ Avoid repeating these topics: ${usedKeywords}
 
 Write a 600-word podcast script that explores a new aspect of this topic. Make it conversational and build on previous episodes while introducing fresh insights.
 
+Important:
+- Do NOT include any music or sound effect cues (such as "(Intro Music fades in and out)").
+- Do NOT use placeholders like "[Your Name]" or generic host introductions. If a host is needed, use a natural introduction without mentioning the host's name.
+- The script must be ready for direct voice synthesis, with no extraneous instructions or cues.
+
 Structure:
-- Reference previous episodes briefly
+- Reference previous episodes briefly (without music or host name placeholders)
 - Introduce a new angle or sub-topic
 - Provide detailed explanation with examples
 - Connect back to the main theme
@@ -177,7 +187,7 @@ Return your response in this exact JSON format:
   "script": "The complete 600-word podcast script here"
 }
 
-Make it engaging and informative.`.trim();
+Make it engaging, informative, and suitable for direct speech synthesis.`.trim();
   }
 
   /**

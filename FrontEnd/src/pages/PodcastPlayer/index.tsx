@@ -113,29 +113,26 @@ const PodcastPlayer = () => {
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden bg-background-light dark:bg-background-dark">
       {/* Top App Bar */}
-      <div className="flex items-center bg-transparent p-4 pb-2 justify-between">
+      <div className="flex items-center justify-between p-4 pb-2">
         <button
-          className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white/80 dark:text-white/80 gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors"
+          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-transparent hover:bg-white/10 transition-colors"
           onClick={() => navigate(-1)}
+          aria-label="返回"
         >
           <span className="material-symbols-outlined text-white">expand_more</span>
         </button>
-        <div className="flex flex-col items-center">
-          <p className="text-xs font-normal leading-normal text-slate-300 dark:text-slate-400">
-            正在播放
-          </p>
-          <h2 className="text-white text-base font-bold leading-tight tracking-[-0.015em]">
-            {episode.title}
-          </h2>
-        </div>
-        <button className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 w-10 bg-transparent text-white/80 dark:text-white/80 gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0 hover:bg-white/10 transition-colors">
+
+        <button
+          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-transparent hover:bg-white/10 transition-colors"
+          aria-label="更多选项"
+        >
           <span className="material-symbols-outlined text-white">more_vert</span>
         </button>
       </div>
 
       {/* Cover Image with Script Card overlay */}
-      <div className="px-6 pt-6 pb-4">
-        <div className="relative aspect-square w-full overflow-hidden rounded-xl">
+      <div className="px-6 pt-4 pb-2">
+        <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '3 / 2' }}>
           <div
             className="absolute inset-0 bg-center bg-no-repeat bg-cover"
             style={{
