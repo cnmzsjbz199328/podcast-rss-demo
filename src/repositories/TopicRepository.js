@@ -234,7 +234,8 @@ export class TopicRepository {
           description: result.description,
           keywords: result.keywords,
           category: result.category,
-          status: result.status,
+          is_active: result.is_active === 1,
+          generation_interval_hours: result.generation_interval_hours,
           createdAt: result.created_at,
           updatedAt: result.updated_at
         },

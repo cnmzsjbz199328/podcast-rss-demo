@@ -317,8 +317,8 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-173229
 | `description` | string | 否 | - | 主题描述 |
 | `is_active` | boolean | 否 | `true` | 是否激活 |
 | `generation_interval_hours` | number | 否 | `24` | 生成间隔（小时） |
-
-> ⚠️ `category`、`tags` 等扩展字段目前未在 `TopicApiHandler.handleCreateTopic` 中处理，如需支持需先扩展后端。
+| `category` | string | 否 | `general` | 内容分类 |
+| `tags` | string[] | 否 | `[]` | 标签列表 |
 
 **请求示例**:
 ```bash
@@ -328,7 +328,9 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics" \
     "title": "人工智能基础",
     "description": "从零开始学习AI",
     "is_active": true,
-    "generation_interval_hours": 24
+    "generation_interval_hours": 24,
+    "category": "technology",
+    "tags": ["AI", "机器学习"]
   }'
 ```
 
@@ -337,16 +339,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics" \
 {
   "success": true,
   "data": {
-    "topic": {
-      "id": 1,
-      "title": "人工智能基础",
-      "description": "从零开始学习AI",
-      "is_active": true,
-      "generation_interval_hours": 24,
-      "episode_count": 0,
-      "created_at": "2024-11-22T14:00:00Z",
-      "last_generated_at": null
-    }
+    "topicId": 1
   }
 }
 ```
