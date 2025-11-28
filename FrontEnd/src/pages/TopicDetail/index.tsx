@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { topicApi } from '@/services/topicApi';
 import { topicFormatters, statsFormatters } from '@/utils/formatters';
-import { CATEGORY_OPTIONS, GENERATION_INTERVALS } from '@/utils/constants';
+import { CATEGORY_OPTIONS, DEFAULT_GENERATION_INTERVAL_HOURS, FORM_VALIDATION } from '@/utils/constants';
 import Button from '@/components/common/Button';
 import type { Topic, TopicStats } from '@/types';
 
@@ -14,6 +14,15 @@ const TopicDetail = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [generating, setGenerating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
+    const [editValues, setEditValues] = useState<{
+        is_active: boolean;
+        generation_interval_hours: number;
+    }>({
+        is_active: true,
+    generation_interval_hours: DEFAULT_GENERATION_INTERVAL_HOURS,
+    });
 
     useEffect(() => {
         if (!topicId) return;
@@ -24,6 +33,10 @@ const TopicDetail = () => {
                 if (response.success) {
                     setTopic(response.data.topic);
                     setStats(response.data.stats);
+                    setEditValues({
+                        is_active: response.data.topic.is_active,
+                        generation_interval_hours: response.data.topic.generation_interval_hours,
+                    });
                 } else {
                     setError('获取主题详情失败');
                 }
@@ -54,6 +67,68 @@ const TopicDetail = () => {
             setError(err instanceof Error ? err.message : '生成失败');
         } finally {
             setGenerating(false);
+        }
+    };
+
+    const handleChangeActiveStatus = (value: boolean) => {
+        setEditValues((prev) => ({
+            ...prev,
+            is_active: value,
+        }));
+        setHasChanges(true);
+    };
+
+    const clampGenerationInterval = (value: number) => {
+        if (Number.isNaN(value)) {
+            return DEFAULT_GENERATION_INTERVAL_HOURS;
+        }
+        return Math.min(
+            FORM_VALIDATION.GENERATION_INTERVAL.MAX,
+            Math.max(FORM_VALIDATION.GENERATION_INTERVAL.MIN, value)
+        );
+    };
+
+    const handleGenerationIntervalInput = (value: number) => {
+        setEditValues((prev) => ({
+            ...prev,
+            generation_interval_hours: clampGenerationInterval(value),
+        }));
+        setHasChanges(true);
+    };
+
+    const handleSaveChanges = async () => {
+        if (!topicId || !topic || !hasChanges) return;
+
+        try {
+            setIsSaving(true);
+            setError(null);
+            const response = await topicApi.updateTopic(parseInt(topicId), {
+                is_active: editValues.is_active,
+                generation_interval_hours: editValues.generation_interval_hours,
+            });
+
+            // 判断保存是否成功（API返回success: true即为成功）
+            if (response.success) {
+                // 无论API返回什么，直接用editValues更新本地状态
+                // （因为已经成功保存到数据库）
+                setTopic((prev) =>
+                    prev
+                        ? {
+                              ...prev,
+                              is_active: editValues.is_active,
+                              generation_interval_hours:
+                                  editValues.generation_interval_hours,
+                          }
+                        : null
+                );
+                setHasChanges(false);
+            } else {
+                setError('保存失败，请稍后重试');
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : '保存失败');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -88,11 +163,7 @@ const TopicDetail = () => {
                 <h2 className="flex-1 text-center text-lg font-bold leading-tight tracking-[-0.015em] text-slate-900 dark:text-white">
                     {topic.title}
                 </h2>
-                <div className="flex w-10 items-center justify-center">
-                    <button className="flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-transparent text-slate-900 dark:text-white hover:bg-white/10 transition-colors">
-                        <span className="material-symbols-outlined text-2xl">more_vert</span>
-                    </button>
-                </div>
+                <div className="flex w-10 items-center justify-center" />
             </div>
 
             <div className="flex flex-col gap-4">
@@ -103,7 +174,10 @@ const TopicDetail = () => {
                             <div
                                 className="aspect-square w-32 shrink-0 rounded-lg bg-cover bg-center bg-no-repeat"
                                 style={{
-                                    backgroundImage: `url('${topic.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuA-yEMgFZPUZZe7fWEMdOAMOy3y9yS3BLBjVGoFcviBBZItsS0wYYbUnX2zARX1GJ82Oqgpl31lCbG-ldq6GFj8Z9KnZNn5ZWBHJNuiVG0aaERlUyTNwlxsuTbFAPGc36kbTrFBeQ7t2o7PdG1H8PM1rVuiDJtb0LmSauEGQ6UOA4-SOstyvppRa-AghKhvPd4s2YN65BAj0qyCpY48K4bKozYNdm1EOfvMXK7ekUfqzD25Q7KRMGXray5o35qm4WxR7XRCeERswcI'}')`
+                                    backgroundImage: `url('${
+                                        topic.imageUrl ||
+                                        'https://lh3.googleusercontent.com/aida-public/AB6AXuA-yEMgFZPUZZe7fWEMdOAMOy3y9yS3BLBjVGoFcviBBZItsS0wYYbUnX2zARX1GJ82Oqgpl31lCbG-ldq6GFj8Z9KnZNn5ZWBHJNuiVG0aaERlUyTNwlxsuTbFAPGc36kbTrFBeQ7t2o7PdG1H8PM1rVuiDJtb0LmSauEGQ6UOA4-SOstyvppRa-AghKhvPd4s2YN65BAj0qyCpY48K4bKozYNdm1EOfvMXK7ekUfqzD25Q7KRMGXray5o35qm4WxR7XRCeERswcI'
+                                    }')`,
                                 }}
                             />
                             <div className="flex flex-col">
@@ -118,55 +192,70 @@ const TopicDetail = () => {
                     </div>
                 </div>
 
-                {/* Metadata */}
+                {/* Metadata - Editable Section */}
                 <div className="px-4 space-y-3">
-                    {/* Active Status & Generation Interval */}
-                    <div className="flex gap-3">
-                        {topic.is_active && (
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
-                                <span className="w-2 h-2 bg-green-600 dark:bg-green-400 rounded-full" />
-                                激活中
+                    <div className="grid gap-3 md:grid-cols-3">
+                        <div className="flex items-center justify-between rounded-lg bg-white/60 px-4 py-3 dark:bg-slate-800/40">
+                            <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">
+                                    {editValues.is_active ? 'toggle_on' : 'toggle_off'}
+                                </span>
+                                status
                             </div>
-                        )}
-                        {topic.generation_interval_hours && (
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-full text-sm font-medium">
-                                <span className="material-symbols-outlined text-base">schedule</span>
-                                {Object.values(GENERATION_INTERVALS).find((interval) => interval.value === topic.generation_interval_hours)?.label ||
-                                    `每 ${topic.generation_interval_hours} 小时`}
+                            <label className="relative inline-flex cursor-pointer items-center">
+                                <input
+                                    checked={editValues.is_active}
+                                    onChange={(e) => handleChangeActiveStatus(e.target.checked)}
+                                    className="peer sr-only"
+                                    type="checkbox"
+                                />
+                                <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-600/50 dark:bg-slate-700" />
+                            </label>
+                        </div>
+
+                        <div className="flex items-center justify-between rounded-lg bg-white/60 px-4 py-3 dark:bg-slate-800/40">
+                            <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">schedule</span>
+                                generation interval
                             </div>
-                        )}
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    min={FORM_VALIDATION.GENERATION_INTERVAL.MIN}
+                                    max={FORM_VALIDATION.GENERATION_INTERVAL.MAX}
+                                    step={1}
+                                    value={editValues.generation_interval_hours}
+                                    onChange={(e) => handleGenerationIntervalInput(parseInt(e.target.value, 10))}
+                                    className="w-16 rounded-lg bg-white p-2.5 text-base font-medium text-slate-900 text-center focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:text-white"
+                                />
+                                <span className="text-sm text-slate-500 dark:text-slate-400">hours</span>
+                            </div>
+                        </div>
+
+                        <div className="rounded-lg bg-white/60 px-4 py-3 dark:bg-slate-800/40 flex">
+                            <p className="mt-2 text-base font-semibold text-slate-900 dark:text-white">
+                                {CATEGORY_OPTIONS.find((c) => c.value === topic.category)?.label || topic.category}
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Category & Tags */}
-                    {(topic.category || topic.tags?.length) && (
-                        <div className="flex flex-col gap-2">
-                            {topic.category && (
-                                <div className="flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">label</span>
-                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        {CATEGORY_OPTIONS.find((c) => c.value === topic.category)?.label || topic.category}
-                                    </span>
-                                </div>
-                            )}
-                            {topic.tags && topic.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    {topic.tags.map((tag, idx) => (
-                                        <span
-                                            key={idx}
-                                            className="inline-block px-2.5 py-1 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary text-xs font-medium rounded-full"
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
+                    {topic.tags && topic.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {topic.tags.map((tag, idx) => (
+                                <span
+                                    key={idx}
+                                    className="inline-block px-2.5 py-1 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary text-xs font-medium rounded-full"
+                                >
+                                    {tag}
+                                </span>
+                            ))}
                         </div>
                     )}
                 </div>
 
                 {/* Stats */}
                 <div className="flex flex-wrap gap-4 px-4">
-                    <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg border border-slate-200 bg-white p-4 dark:border-border-dark dark:bg-card-dark">
+                    <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg bg-white/60 p-4 dark:bg-slate-800/40">
                         <p className="text-base font-medium leading-normal text-slate-600 dark:text-secondary-text-dark">
                             生成剧集
                         </p>
@@ -174,7 +263,7 @@ const TopicDetail = () => {
                             {topic.episode_count}集
                         </p>
                     </div>
-                    <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg border border-slate-200 bg-white p-4 dark:border-border-dark dark:bg-card-dark">
+                    <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg bg-white/60 p-4 dark:bg-slate-800/40">
                         <p className="text-base font-medium leading-normal text-slate-600 dark:text-secondary-text-dark">
                             总时长
                         </p>
@@ -234,8 +323,18 @@ const TopicDetail = () => {
                 )}
             </div>
 
-            {/* Floating Action Button */}
-            <div className="fixed bottom-6 right-6">
+            {/* Action Buttons */}
+            <div className="fixed bottom-6 right-6 flex flex-col-reverse gap-3">
+                {hasChanges && (
+                    <button
+                        onClick={handleSaveChanges}
+                        disabled={isSaving}
+                        className="flex h-14 min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/30 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-background-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        <span className="material-symbols-outlined">save</span>
+                        <span className="text-sm font-bold">{isSaving ? '保存中...' : '保存'}</span>
+                    </button>
+                )}
                 <Button
                     onClick={handleGenerateNext}
                     disabled={generating}

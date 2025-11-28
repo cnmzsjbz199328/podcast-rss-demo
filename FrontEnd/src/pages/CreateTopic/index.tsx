@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { topicApi } from '@/services/topicApi';
-import { CATEGORY_OPTIONS, GENERATION_INTERVALS, FORM_VALIDATION } from '@/utils/constants';
+import { CATEGORY_OPTIONS, FORM_VALIDATION, DEFAULT_GENERATION_INTERVAL_HOURS } from '@/utils/constants';
 import type { CreateTopicRequest } from '@/types';
 
 interface FormErrors {
@@ -25,7 +25,7 @@ const CreateTopic = () => {
         title: '',
         description: '',
         is_active: true,
-        generation_interval_hours: 24,
+    generation_interval_hours: DEFAULT_GENERATION_INTERVAL_HOURS,
         category: 'general',
         tags: [],
     });
@@ -33,7 +33,6 @@ const CreateTopic = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [frequency, setFrequency] = useState('daily');
     const [tagInput, setTagInput] = useState('');
 
     /**
@@ -84,7 +83,7 @@ const CreateTopic = () => {
                 ...prev,
                 [name]:
                     name === 'generation_interval_hours'
-                        ? parseInt(value) || 24
+                        ? parseInt(value) || DEFAULT_GENERATION_INTERVAL_HOURS
                         : value,
             }));
             // 清除该字段的错误
@@ -104,21 +103,6 @@ const CreateTopic = () => {
             is_active: e.target.checked,
         }));
     }, []);
-
-    const handleFrequencyChange = useCallback((freq: 'daily' | 'weekly' | 'monthly') => {
-        setFrequency(freq);
-        const hours = freq === 'daily' ? 24 : freq === 'weekly' ? 168 : 720;
-        setFormData((prev) => ({
-            ...prev,
-            generation_interval_hours: hours,
-        }));
-        if (formErrors.generation_interval_hours) {
-            setFormErrors((prev) => ({
-                ...prev,
-                generation_interval_hours: undefined,
-            }));
-        }
-    }, [formErrors]);
 
     const handleAddTag = useCallback(() => {
         const newTag = tagInput.trim();
@@ -306,14 +290,63 @@ const CreateTopic = () => {
                         <h2 className="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">
                             生成设置
                         </h2>
-                        <div className="space-y-4">
-                            <label className="flex flex-col">
-                                <p className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal pb-2">
-                                    内容分类
+                        <div className="grid gap-3 md:grid-cols-3">
+                            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/60">
+                                <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                                    <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">toggle_off</span>
+                                    status
+                                </div>
+                                <label className="relative inline-flex cursor-pointer items-center">
+                                    <input
+                                        checked={formData.is_active}
+                                        onChange={handleCheckboxChange}
+                                        className="peer sr-only"
+                                        type="checkbox"
+                                    />
+                                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-600/50 dark:bg-slate-700 dark:border-slate-600" />
+                                </label>
+                            </div>
+
+                            <div className="rounded-xl border border-slate-200 bg-white/90 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/40">
+                                <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                                    <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">schedule</span>
+                                generation_interval
+                                </div>
+                                <div className="mt-2 flex items-center gap-2">
+                                    <input
+                                        className={`w-full rounded-lg border bg-slate-50 p-2.5 text-base font-medium text-slate-900 focus:border-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-800 dark:text-white ${formErrors.generation_interval_hours
+                                                ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/50'
+                                                : 'border-slate-300'
+                                            }`}
+                                        type="number"
+                                        min={FORM_VALIDATION.GENERATION_INTERVAL.MIN}
+                                        max={FORM_VALIDATION.GENERATION_INTERVAL.MAX}
+                                        step={1}
+                                        name="generation_interval_hours"
+                                        value={formData.generation_interval_hours}
+                                        onChange={handleInputChange}
+                                    />
+                                    <span className="text-sm text-slate-500 dark:text-slate-400">小时</span>
+                                </div>
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    默认 {DEFAULT_GENERATION_INTERVAL_HOURS} 小时，可自定义 {FORM_VALIDATION.GENERATION_INTERVAL.MIN}-{FORM_VALIDATION.GENERATION_INTERVAL.MAX} 小时
                                 </p>
-                                <div className="relative">
+                                {formErrors.generation_interval_hours && (
+                                    <div className="mt-1 text-red-600 dark:text-red-400 text-sm flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-base">error</span>
+                                        {formErrors.generation_interval_hours}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="rounded-xl border border-slate-200 bg-white/90 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/40">
+                                <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+                                    <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">label</span>
+                                    内容分类
+                                </div>
+                                <div className="relative mt-2">
                                     <select
-                                        className="form-select w-full appearance-none rounded-lg border-slate-300 bg-slate-100 p-3 text-base text-slate-900 focus:border-primary focus:ring-primary dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                        className="w-full appearance-none rounded-lg border-slate-300 bg-slate-50 p-2.5 text-base text-slate-900 focus:border-primary focus:ring-primary dark:border-slate-600 dark:bg-slate-800 dark:text-white"
                                         name="category"
                                         value={formData.category}
                                         onChange={handleInputChange}
@@ -328,7 +361,7 @@ const CreateTopic = () => {
                                         expand_more
                                     </span>
                                 </div>
-                            </label>
+                            </div>
                         </div>
                     </section>
 
@@ -388,78 +421,6 @@ const CreateTopic = () => {
                         </div>
                     </section>
 
-                    {/* Section 4: 更新规则 */}
-                    <section className="mb-8">
-                        <h2 className="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">
-                            更新规则
-                        </h2>
-                        <div className="space-y-4">
-                            <div className="flex flex-col">
-                                <p className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal pb-3">
-                                    生成频率
-                                </p>
-                                {formErrors.generation_interval_hours && (
-                                    <div className="text-red-600 dark:text-red-400 text-sm flex items-center gap-1 mb-2">
-                                        <span className="material-symbols-outlined text-base">error</span>
-                                        {formErrors.generation_interval_hours}
-                                    </div>
-                                )}
-                                <div className="grid grid-cols-3 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleFrequencyChange('daily')}
-                                        className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${frequency === 'daily'
-                                                ? 'bg-primary/20 text-primary ring-1 ring-primary dark:bg-primary/20 dark:text-primary dark:ring-primary'
-                                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
-                                            }`}
-                                    >
-                                        {GENERATION_INTERVALS.DAILY.label}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleFrequencyChange('weekly')}
-                                        className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${frequency === 'weekly'
-                                                ? 'bg-primary/20 text-primary ring-1 ring-primary dark:bg-primary/20 dark:text-primary dark:ring-primary'
-                                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
-                                            }`}
-                                    >
-                                        {GENERATION_INTERVALS.WEEKLY.label}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleFrequencyChange('monthly')}
-                                        className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${frequency === 'monthly'
-                                                ? 'bg-primary/20 text-primary ring-1 ring-primary dark:bg-primary/20 dark:text-primary dark:ring-primary'
-                                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
-                                            }`}
-                                    >
-                                        {GENERATION_INTERVALS.MONTHLY.label}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between rounded-lg bg-slate-100 p-3 dark:bg-slate-800">
-                                <p className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal flex items-center">
-                                    生成后自动发布
-                                    <span
-                                        className="material-symbols-outlined ml-1.5 text-base text-slate-400 dark:text-slate-500 cursor-help"
-                                        title="开启后，新生成的播客会自动添加到播放列表"
-                                    >
-                                        info
-                                    </span>
-                                </p>
-                                <label className="relative inline-flex cursor-pointer items-center">
-                                    <input
-                                        checked={formData.is_active}
-                                        onChange={handleCheckboxChange}
-                                        className="peer sr-only"
-                                        type="checkbox"
-                                    />
-                                    <div className="peer h-6 w-11 rounded-full bg-slate-300 after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-600/50 dark:bg-slate-700 dark:border-slate-600" />
-                                </label>
-                            </div>
-                        </div>
-                    </section>
                 </form>
             </main>
 

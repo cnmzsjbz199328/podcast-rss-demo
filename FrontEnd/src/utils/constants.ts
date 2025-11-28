@@ -29,27 +29,18 @@ export const SUBTITLE_FORMATS = {
  * 对应后端 topics.category 字段
  */
 export const TOPIC_CATEGORIES = {
-  TECHNOLOGY: { value: 'technology', label: '技术' },
-  SCIENCE: { value: 'science', label: '科学' },
-  BUSINESS: { value: 'business', label: '商业' },
-  EDUCATION: { value: 'education', label: '教育' },
-  LIFESTYLE: { value: 'lifestyle', label: '生活' },
-  GENERAL: { value: 'general', label: '综合' },
+  TECHNOLOGY: { value: 'technology', label: 'technology' },
+  SCIENCE: { value: 'science', label: 'science' },
+  BUSINESS: { value: 'business', label: 'business' },
+  EDUCATION: { value: 'education', label: 'education' },
+  LIFESTYLE: { value: 'lifestyle', label: 'lifestyle' },
+  GENERAL: { value: 'general', label: 'general' },
 } as const
 
 export const CATEGORY_OPTIONS = Object.values(TOPIC_CATEGORIES)
 
-/**
- * 生成间隔预设
- * 对应后端 topics.generation_interval_hours 字段
- */
-export const GENERATION_INTERVALS = {
-  DAILY: { value: 24, label: '每天', hours: 24 },
-  WEEKLY: { value: 168, label: '每周', hours: 168 },
-  MONTHLY: { value: 720, label: '每月', hours: 720 },
-} as const
-
-export const GENERATION_INTERVAL_OPTIONS = Object.values(GENERATION_INTERVALS)
+/** 默认生成间隔（小时） */
+export const DEFAULT_GENERATION_INTERVAL_HOURS = 24;
 
 /**
  * 表单验证规则
