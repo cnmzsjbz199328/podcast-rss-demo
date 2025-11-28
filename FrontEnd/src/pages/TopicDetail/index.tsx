@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { topicApi } from '@/services/topicApi';
-import { topicFormatters, statsFormatters } from '@/utils/formatters';
+import { topicFormatters } from '@/utils/formatters';
 import { CATEGORY_OPTIONS, DEFAULT_GENERATION_INTERVAL_HOURS, FORM_VALIDATION } from '@/utils/constants';
 import Button from '@/components/common/Button';
 import type { Topic, TopicStats } from '@/types';
@@ -17,25 +17,51 @@ const TopicDetail = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
     const [editValues, setEditValues] = useState<{
-        is_active: boolean;
-        generation_interval_hours: number;
-    }>({
-        is_active: true,
-    generation_interval_hours: DEFAULT_GENERATION_INTERVAL_HOURS,
-    });
+         is_active: boolean;
+         generation_interval_hours: number;
+     }>({
+         is_active: true,
+     generation_interval_hours: DEFAULT_GENERATION_INTERVAL_HOURS,
+     });
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
     useEffect(() => {
         if (!topicId) return;
 
         const fetchTopic = async () => {
             try {
-                const response = await topicApi.getTopic(parseInt(topicId));
-                if (response.success) {
-                    setTopic(response.data.topic);
-                    setStats(response.data.stats);
+                const [topicResponse, podcastResponse] = await Promise.all([
+                    topicApi.getTopic(parseInt(topicId)),
+                    topicApi.getTopicPodcasts(parseInt(topicId))
+                ]);
+
+                if (topicResponse.success) {
+                    setTopic(topicResponse.data.topic);
+                    
+                    // Merge stats with full podcast list
+                    const stats = topicResponse.data.stats || {
+                        totalEpisodes: 0,
+                        totalDuration: 0,
+                        avgDuration: 0,
+                        totalWordCount: 0,
+                        avgWordCount: 0,
+                        recentEpisodes: []
+                    };
+                    
+                    if (podcastResponse.success && podcastResponse.data?.podcasts) {
+                        stats.recentEpisodes = podcastResponse.data.podcasts.map((p: any) => ({
+                            episodeNumber: p.metadata?.episodeNumber || 1,
+                            episodeId: p.episodeId,
+                            title: p.title,
+                            keywords: p.keywords || '',
+                            createdAt: p.createdAt
+                        }));
+                    }
+                    setStats(stats);
+                    
                     setEditValues({
-                        is_active: response.data.topic.is_active,
-                        generation_interval_hours: response.data.topic.generation_interval_hours,
+                        is_active: topicResponse.data.topic.is_active,
+                        generation_interval_hours: topicResponse.data.topic.generation_interval_hours,
                     });
                 } else {
                     setError('获取主题详情失败');
@@ -57,10 +83,32 @@ const TopicDetail = () => {
             setGenerating(true);
             const response = await topicApi.generateNextTopicEpisode(parseInt(topicId));
             if (response.success) {
-                const topicResponse = await topicApi.getTopic(parseInt(topicId));
+                const [topicResponse, podcastResponse] = await Promise.all([
+                    topicApi.getTopic(parseInt(topicId)),
+                    topicApi.getTopicPodcasts(parseInt(topicId))
+                ]);
+                
                 if (topicResponse.success) {
                     setTopic(topicResponse.data.topic);
-                    setStats(topicResponse.data.stats);
+                    const stats = topicResponse.data.stats || {
+                        totalEpisodes: 0,
+                        totalDuration: 0,
+                        avgDuration: 0,
+                        totalWordCount: 0,
+                        avgWordCount: 0,
+                        recentEpisodes: []
+                    };
+                    
+                    if (podcastResponse.success && podcastResponse.data?.podcasts) {
+                        stats.recentEpisodes = podcastResponse.data.podcasts.map((p: any) => ({
+                            episodeNumber: p.metadata?.episodeNumber || 1,
+                            episodeId: p.episodeId,
+                            title: p.title,
+                            keywords: p.keywords || '',
+                            createdAt: p.createdAt
+                        }));
+                    }
+                    setStats(stats);
                 }
             }
         } catch (err) {
@@ -254,8 +302,8 @@ const TopicDetail = () => {
                 </div>
 
                 {/* Stats */}
-                <div className="flex flex-wrap gap-4 px-4">
-                    <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg bg-white/60 p-4 dark:bg-slate-800/40">
+                <div className="px-4">
+                    <div className="flex min-w-[158px] flex-col gap-2 rounded-lg bg-white/60 p-4 dark:bg-slate-800/40 w-fit">
                         <p className="text-base font-medium leading-normal text-slate-600 dark:text-secondary-text-dark">
                             生成剧集
                         </p>
@@ -263,26 +311,33 @@ const TopicDetail = () => {
                             {topic.episode_count}集
                         </p>
                     </div>
-                    <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg bg-white/60 p-4 dark:bg-slate-800/40">
-                        <p className="text-base font-medium leading-normal text-slate-600 dark:text-secondary-text-dark">
-                            总时长
-                        </p>
-                        <p className="text-2xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
-                            {stats ? statsFormatters.totalDuration(stats.totalDuration) : '-'}
-                        </p>
-                    </div>
                 </div>
 
-                {/* SectionHeader */}
-                <h3 className="px-4 pb-2 pt-4 text-lg font-bold leading-tight tracking-[-0.015em] text-slate-900 dark:text-white">
-                    最新剧集
-                </h3>
+                {/* SectionHeader with Sort Control */}
+                <div className="px-4 pb-2 pt-4 flex items-center justify-between">
+                    <h3 className="text-lg font-bold leading-tight tracking-[-0.015em] text-slate-900 dark:text-white">
+                        所有剧集
+                    </h3>
+                    <button
+                        onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/40 rounded-lg transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-base">
+                            {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                        {sortOrder === 'asc' ? '时间正序' : '时间倒序'}
+                    </button>
+                </div>
 
                 {/* Episode List */}
                 {stats && stats.recentEpisodes.length > 0 ? (
-                    stats.recentEpisodes.slice(0, 5).map((episode) => (
+                    [...stats.recentEpisodes].sort((a, b) => {
+                        const dateA = new Date(a.createdAt).getTime();
+                        const dateB = new Date(b.createdAt).getTime();
+                        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+                    }).map((episode) => (
                         <Link
-                            key={episode.episodeNumber}
+                            key={episode.episodeId}
                             to={`/podcast/${episode.episodeId}`}
                             className="flex min-h-[72px] items-center justify-between gap-4 px-4 py-2 hover:bg-white/5 rounded-lg transition-colors"
                         >
@@ -293,11 +348,11 @@ const TopicDetail = () => {
                                     </span>
                                 </div>
                                 <div className="flex flex-col justify-center">
-                                    <p className="text-base font-medium leading-normal text-slate-900 dark:text-white line-clamp-1">
-                                        第 {episode.episodeNumber} 集
+                                    <p className="text-base font-medium leading-normal text-slate-900 dark:text-white line-clamp-2">
+                                        {episode.title}
                                     </p>
-                                    <p className="text-sm font-normal leading-normal text-slate-600 dark:text-secondary-text-dark line-clamp-2">
-                                        创建于 {topicFormatters.createdAt(episode.createdAt)}
+                                    <p className="text-xs font-normal leading-normal text-slate-500 dark:text-slate-400 mt-1">
+                                        第 {episode.episodeNumber} 集 • {topicFormatters.createdAt(episode.createdAt)}
                                     </p>
                                 </div>
                             </div>
