@@ -21,33 +21,35 @@ export class TopicRepository {
    * @returns {Promise<number>} 新创建的主题ID
    */
   async create(topicData) {
-  const {
-  title,
-  description = '',
-  is_active = true,
-  generation_interval_hours = 24
-  } = topicData;
+    const {
+      title,
+      description = '',
+      is_active = true,
+      generation_interval_hours = 24,
+      category = 'general',
+      keywords = ''
+    } = topicData;
 
-  const createdAt = new Date().toISOString();
-  const updatedAt = createdAt;
+    const createdAt = new Date().toISOString();
+    const updatedAt = createdAt;
 
-  this.logger.info('Creating new topic', { title, is_active });
+    this.logger.info('Creating new topic', { title, is_active, category });
 
-  try {
-  const result = await this.db.prepare(`
-  INSERT INTO topics (
-    title, description, is_active, generation_interval_hours, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?)
+    try {
+      const result = await this.db.prepare(`
+        INSERT INTO topics (
+          title, description, is_active, generation_interval_hours, category, keywords, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         title,
         description,
-        is_active,
+        is_active ? 1 : 0,
         generation_interval_hours,
+        category,
+        keywords,
         createdAt,
         updatedAt
-      ).run();
-
-      const topicId = result.meta.last_row_id;
+      ).run();      const topicId = result.meta.last_row_id;
       this.logger.info('Topic created successfully', { topicId, title });
 
       return topicId;

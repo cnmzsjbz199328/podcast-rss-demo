@@ -54,6 +54,9 @@ const Home = () => {
             type="search"
           />
         </div>
+        <Link to="/topics" className="flex items-center justify-center hover:opacity-80 transition-opacity" aria-label="我的主题">
+          <span className="material-symbols-outlined text-white text-2xl">podcasts</span>
+        </Link>
         <button className="flex items-center justify-center">
           <img
             className="size-10 rounded-full"

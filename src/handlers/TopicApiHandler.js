@@ -18,30 +18,35 @@ export class TopicApiHandler {
   */
   async handleCreateTopic(request, services) {
   try {
-  const {
-        title,
-    description,
-  is_active = true,
-  generation_interval_hours = 24
-  } = await request.json();
+    const {
+      title,
+      description,
+      is_active = true,
+      generation_interval_hours = 24,
+      category,
+      tags
+    } = await request.json();
 
-  if (!title) {
-  return this.jsonResponse({
-    success: false,
-      error: 'Title is required'
-        }, 400);
-  }
+    if (!title) {
+      return this.jsonResponse({
+        success: false,
+        error: 'Title is required'
+      }, 400);
+    }
 
-  this.logger.info('Creating new topic', { title, is_active, generation_interval_hours });
+    // 转换 tags 数组为 keywords 字符串
+    const keywords = Array.isArray(tags) ? tags.join(', ') : (tags || '');
 
-  const topicId = await services.topicRepository.create({
-        title,
-    description,
-  is_active,
-  generation_interval_hours
-  });
+    this.logger.info('Creating new topic', { title, is_active, generation_interval_hours, category });
 
-  return this.jsonResponse({
+    const topicId = await services.topicRepository.create({
+      title,
+      description,
+      is_active,
+      generation_interval_hours,
+      category,
+      keywords
+    });  return this.jsonResponse({
         success: true,
       data: { topicId }
   });
