@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { topicApi } from '@/services/topicApi';
-import { topicFormatters } from '@/utils/formatters';
 import { CATEGORY_OPTIONS } from '@/utils/constants';
 import type { TopicWithStats } from '@/types';
 
@@ -161,7 +160,7 @@ const TopicList = () => {
                             <Link
                                 key={topic.id}
                                 to={`/topics/${topic.id}`}
-                                className="flex cursor-pointer items-start gap-4 rounded-xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:bg-slate-800/50"
+                                className="flex cursor-pointer items-center gap-4 rounded-xl bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:bg-slate-800/50"
                             >
                                 <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-primary/20">
                                     <span className="material-symbols-outlined text-4xl text-primary">
@@ -174,34 +173,19 @@ const TopicList = () => {
                                 </div>
                                 <div className="flex-1 overflow-hidden">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <h3 className="truncate text-base font-bold text-slate-900 dark:text-white">
-                                            {topic.title}
-                                        </h3>
-                                        {topic.is_active && (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full whitespace-nowrap flex-shrink-0">
-                                                <span className="w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full" />
-                                                激活
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="mt-1 truncate text-sm text-slate-600 dark:text-slate-400">
-                                        {topic.description}
-                                    </p>
-                                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                        {topic.category && (
-                                            <>
-                                                <span className="material-symbols-outlined text-sm">label</span>
-                                                <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-700 dark:text-slate-300">
-                                                    {CATEGORY_OPTIONS.find((c) => c.value === topic.category)?.label || topic.category}
-                                                </span>
-                                                <span className="text-slate-300 dark:text-slate-600">•</span>
-                                            </>
-                                        )}
-                                        <span className="material-symbols-outlined text-sm">mic_external_on</span>
-                                        <span>
-                                            {topicFormatters.episodeCount(topic.episode_count)}
-                                        </span>
-                                    </div>
+                                         <h3 className="truncate text-base font-bold text-slate-900 dark:text-white flex-1">
+                                             {topic.title}
+                                         </h3>
+                                         {topic.is_active && (
+                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full whitespace-nowrap flex-shrink-0">
+                                                 <span className="w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full" />
+                                                 激活
+                                             </span>
+                                         )}
+                                     </div>
+                                     <p className="mt-1 truncate text-sm text-slate-600 dark:text-slate-400">
+                                         {topic.description}
+                                     </p>
                                 </div>
                                 <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 flex-shrink-0">
                                     chevron_right
