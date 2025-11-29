@@ -22,7 +22,6 @@ export interface TopicStats {
     episodeNumber: number
     episodeId: string
     title: string
-    keywords: string
     createdAt: string
   }[]
 }
@@ -99,18 +98,15 @@ export interface GenerateNextTopicResponse {
 export interface TopicPodcastsResponse {
   success: boolean
   data: {
-    topicId: number
-    topicTitle: string
     podcasts: {
       episodeId: string
-      episodeNumber: number
       title: string
-      keywords: string
-      abstract: string
-      audioUrl: string
-      duration: number
       createdAt: string
     }[]
-    total: number
+    pagination: {
+      limit: number
+      offset: number
+      total: number
+    }
   }
 }

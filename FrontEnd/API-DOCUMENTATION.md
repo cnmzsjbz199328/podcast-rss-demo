@@ -557,7 +557,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/genera
 
 **端点**: `GET /topics/{topicId}/podcasts`
 
-**描述**: 获取指定主题的所有播客剧集。
+**描述**: 获取指定主题的播客剧集列表，支持分页、状态过滤。返回准确的总记录数。
 
 **路径参数**:
 
@@ -565,39 +565,137 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/genera
 |------|------|------|------|
 | `topicId` | number | 是 | 主题ID |
 
+**查询参数**:
+
+| 参数 | 类型 | 必需 | 默认值 | 描述 |
+|------|------|------|--------|------|
+| `status` | string | 否 | - | 剧集状态过滤（`completed`、`processing`、`failed`） |
+| `limit` | number | 否 | `10` | 每页数量 |
+| `offset` | number | 否 | `0` | 偏移量 |
+
 **请求示例**:
 ```bash
+# 获取主题1的播客列表（默认10条）
 curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/podcasts"
+
+# 仅获取已完成的播客，限制5条
+curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/podcasts?status=completed&limit=5"
+
+# 分页查询第二页（第11-20条）
+curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/podcasts?limit=10&offset=10"
 ```
 
-**响应示例**:
+**响应示例** *(包含准确的总数统计)*:
 ```json
 {
   "success": true,
   "data": {
-    "topicId": 1,
-    "topicTitle": "人工智能基础",
     "podcasts": [
       {
-        "episodeId": "topic-podcast-1-ep6",
-        "episodeNumber": 6,
-        "title": "卷积神经网络详解",
-        "keywords": "CNN,卷积层,池化层",
-        "abstract": "本集深入讲解卷积神经网络...",
-        "audioUrl": "https://pub-xxx.r2.dev/audio/topic-podcast-1-ep6.mp3",
-        "scriptUrl": "https://pub-xxx.r2.dev/scripts/topic-podcast-1-ep6.txt",
-        "duration": 195,
-        "createdAt": "2024-11-22T14:00:00Z"
+        "episodeId": "topic-podcast-1-ep1",
+        "episodeNumber": 1,
+        "title": "人工智能概览",
+        "keywords": "AI,机器学习,深度学习",
+        "abstract": "本集讨论人工智能的基本概念...",
+        "audioUrl": "https://pub-xxx.r2.dev/audio/topic-podcast-1-ep1.mp3",
+        "scriptUrl": "https://pub-xxx.r2.dev/scripts/topic-podcast-1-ep1.txt",
+        "duration": 210,
+        "status": "completed",
+        "createdAt": "2024-11-20T10:00:00Z"
+      },
+      {
+        "episodeId": "topic-podcast-1-ep2",
+        "episodeNumber": 2,
+        "title": "机器学习基础",
+        "keywords": "监督学习,无监督学习",
+        "abstract": "深入讲解机器学习的核心算法...",
+        "audioUrl": "https://pub-xxx.r2.dev/audio/topic-podcast-1-ep2.mp3",
+        "scriptUrl": "https://pub-xxx.r2.dev/scripts/topic-podcast-1-ep2.txt",
+        "duration": 225,
+        "status": "completed",
+        "createdAt": "2024-11-21T10:00:00Z"
       }
     ],
-    "total": 6
+    "pagination": {
+      "limit": 10,
+      "offset": 0,
+      "total": 43
+    }
+  }
+}
+```
+
+**分页说明**:
+- `limit`: 本次请求返回的记录数（最多）
+- `offset`: 开始偏移量（0表示从第1条开始）
+- `total`: 数据库中符合条件的 **实际总记录数**（不受limit影响）
+
+**分页计算示例**（基于 `total=43`）:
+- 第1页: `offset=0, limit=10` → 返回第1-10条，total=43
+- 第2页: `offset=10, limit=10` → 返回第11-20条，total=43
+- 第3页: `offset=20, limit=10` → 返回第21-30条，total=43
+- 第4页: `offset=30, limit=10` → 返回第31-40条，total=43
+- 第5页: `offset=40, limit=10` → 返回第41-43条，total=43（仅3条）
+
+**状态过滤时** (例如 `?status=completed`):
+```json
+{
+  "pagination": {
+    "limit": 5,
+    "offset": 0,
+    "total": 41
+  }
+}
+```
+> 注：当添加状态过滤时，`total` 表示仅符合该状态的记录数
+
+---
+
+### 7. 获取主题播客详情
+
+**端点**: `GET /topics/podcasts/{episodeId}`
+
+**描述**: 获取单个主题播客的完整详情，包含脚本、关键词等所有信息。
+
+**路径参数**:
+
+| 参数 | 类型 | 必需 | 描述 |
+|------|------|------|------|
+| `episodeId` | string | 是 | 播客ID |
+
+**请求示例**:
+```bash
+curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/podcasts/topic-podcast-1-ep1"
+```
+
+**响应示例** *(完整信息，用于详情页)*:
+```json
+{
+  "success": true,
+  "data": {
+    "episodeId": "topic-podcast-1-ep1",
+    "episodeNumber": 1,
+    "title": "人工智能概览",
+    "keywords": "AI,机器学习,深度学习,神经网络",
+    "abstract": "本集讨论人工智能的基本概念、发展历史、应用领域以及未来发展方向。从符号主义到深度学习...",
+    "status": "completed",
+    "audioUrl": "https://pub-xxx.r2.dev/audio/topic-podcast-1-ep1.mp3",
+    "duration": 210,
+    "createdAt": "2024-11-20T10:00:00Z",
+    "updatedAt": "2024-11-22T15:30:00Z",
+    "metadata": {
+      "topicId": 1,
+      "episodeNumber": 1,
+      "topicTitle": "人工智能基础",
+      "topicCategory": "technology"
+    }
   }
 }
 ```
 
 ---
 
-### 7. 更新主题
+### 8. 更新主题
 
 **端点**: `PUT /topics/{topicId}`
 
@@ -1444,7 +1542,7 @@ window.addEventListener('DOMContentLoaded', fetchEpisodes);
 | P0 | 为字幕提供专用端点（如 `GET /episodes/{id}/subtitles?format=vtt`） | 避免前端直接拼 R2 URL，可统一鉴权和格式选择。 |
 | P1 | 返回 `metadata` JSON（脚本分析、关键词、TTS信息） | `episodes.metadata` 已包含结构化信息，暴露后可用于前端标签、图表等。 |
 | P1 | Topic剧集详情端点 | 目前只有列表，若需要展示单集详情（含字幕/脚本），需要 `GET /topics/podcasts/{episodeId}`。 |
-| P2 | 数据分页总数 | `GET /topics` / `GET /topics/{id}/podcasts` 目前使用 `result.length` 作为 total，可通过 SQL COUNT 提供真实总量，方便前端分页。 |
+| P2 | ~~数据分页总数~~ **✅ 已完成** | `GET /topics` / `GET /topics/{id}/podcasts` 现已正确返回数据库中符合条件的实际总记录数，支持准确分页。 |
 
 落实以上改动后，本API即可为前端提供“音频 + 字幕 + 完整元数据”的体验。
 
@@ -1482,6 +1580,21 @@ window.addEventListener('DOMContentLoaded', fetchEpisodes);
 
 ---
 
-**文档版本**: 1.0.0  
-**最后更新**: 2024-11-22  
+**文档版本**: 1.1.0  
+**最后更新**: 2025-11-29  
 **API版本**: 2.0.0
+
+---
+
+## 更新日志
+
+### v1.1.0 (2025-11-29)
+- ✅ **修复**: `GET /topics/{topicId}/podcasts` 分页总数计算
+  - 之前: 使用 `result.length`（返回的记录数）
+  - 现在: 使用 SQL COUNT 查询数据库中符合条件的实际总数
+  - 影响: 前端现在可以准确计算分页页数和导航
+- ✅ **增强**: 完整的分页示例和文档说明
+- ✅ **测试**: 已验证多种分页和状态过滤场景
+
+### v1.0.0 (2024-11-22)
+- 初始版本发布

@@ -49,13 +49,17 @@ const TopicDetail = () => {
                     };
                     
                     if (podcastResponse.success && podcastResponse.data?.podcasts) {
-                        stats.recentEpisodes = podcastResponse.data.podcasts.map((p: any) => ({
-                            episodeNumber: p.metadata?.episodeNumber || 1,
+                        // 按创建时间排序，然后分配剧集编号
+                        const sortedPodcasts = [...podcastResponse.data.podcasts].sort((a: any, b: any) => 
+                            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                        );
+                        stats.recentEpisodes = sortedPodcasts.map((p: any, index: number) => ({
+                            episodeNumber: index + 1,
                             episodeId: p.episodeId,
                             title: p.title,
-                            keywords: p.keywords || '',
                             createdAt: p.createdAt
                         }));
+                        stats.totalEpisodes = podcastResponse.data.pagination.total || sortedPodcasts.length;
                     }
                     setStats(stats);
                     
@@ -100,14 +104,18 @@ const TopicDetail = () => {
                     };
                     
                     if (podcastResponse.success && podcastResponse.data?.podcasts) {
-                        stats.recentEpisodes = podcastResponse.data.podcasts.map((p: any) => ({
-                            episodeNumber: p.metadata?.episodeNumber || 1,
-                            episodeId: p.episodeId,
-                            title: p.title,
-                            keywords: p.keywords || '',
-                            createdAt: p.createdAt
-                        }));
-                    }
+                         // 按创建时间排序，然后分配剧集编号
+                         const sortedPodcasts = [...podcastResponse.data.podcasts].sort((a: any, b: any) => 
+                             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                         );
+                         stats.recentEpisodes = sortedPodcasts.map((p: any, index: number) => ({
+                             episodeNumber: index + 1,
+                             episodeId: p.episodeId,
+                             title: p.title,
+                             createdAt: p.createdAt
+                         }));
+                         stats.totalEpisodes = podcastResponse.data.pagination.total || sortedPodcasts.length;
+                      }
                     setStats(stats);
                 }
             }
@@ -301,22 +309,10 @@ const TopicDetail = () => {
                     )}
                 </div>
 
-                {/* Stats */}
-                <div className="px-4">
-                    <div className="flex min-w-[158px] flex-col gap-2 rounded-lg bg-white/60 p-4 dark:bg-slate-800/40 w-fit">
-                        <p className="text-base font-medium leading-normal text-slate-600 dark:text-secondary-text-dark">
-                            生成剧集
-                        </p>
-                        <p className="text-2xl font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
-                            {topic.episode_count}集
-                        </p>
-                    </div>
-                </div>
-
                 {/* SectionHeader with Sort Control */}
-                <div className="px-4 pb-2 pt-4 flex items-center justify-between">
+                <div className="px-4 pb-2 pt-6 flex items-center justify-between">
                     <h3 className="text-lg font-bold leading-tight tracking-[-0.015em] text-slate-900 dark:text-white">
-                        所有剧集
+                        所有剧集<span className="text-base font-medium text-slate-600 dark:text-slate-400">（{stats?.totalEpisodes || topic.episode_count} 集）</span>
                     </h3>
                     <button
                         onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
