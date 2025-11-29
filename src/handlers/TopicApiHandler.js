@@ -76,12 +76,18 @@ export class TopicApiHandler {
 
       this.logger.info('Fetching topics', { is_active: isActiveFilter, category, limit, offset });
 
-      const topics = await services.topicRepository.getTopics({
+      const topicsData = await services.topicRepository.getTopics({
         is_active: isActiveFilter,
         category,
         limit,
         offset
       });
+
+      // 精简返回数据：仅返回 id 和 title
+      const topics = topicsData.map(t => ({
+        id: t.id,
+        title: t.title
+      }));
 
       return this.jsonResponse({
         success: true,
@@ -90,7 +96,7 @@ export class TopicApiHandler {
           pagination: {
             limit,
             offset,
-            total: topics.length // 简化处理，实际应该从数据库获取总数
+            total: topics.length
           }
         }
       });
@@ -276,8 +282,8 @@ export class TopicApiHandler {
   }
 
   /**
-   * 获取主题播客列表
-   */
+    * 获取主题播客列表（精简版本）
+    */
   async handleGetTopicPodcasts(request, services, params) {
     try {
       const topicId = parseInt(params[0], 10);
@@ -291,7 +297,7 @@ export class TopicApiHandler {
 
       const url = new URL(request.url);
       const status = url.searchParams.get('status');
-      const limit = parseInt(url.searchParams.get('limit') || '10', 10);
+      const limit = parseInt(url.searchParams.get('limit') || '1000', 10);
       const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
       this.logger.info('Fetching topic podcasts', { topicId, status, limit, offset });
@@ -301,17 +307,37 @@ export class TopicApiHandler {
         topicId,
         status,
         limit,
-        offset
+        offset,
+        withTotal: true
       });
+
+      // 处理返回值（可能是数组或包含总数的对象）
+      let podcasts = [];
+      let total = 0;
+
+      if (Array.isArray(result)) {
+        podcasts = result;
+        total = result.length;
+      } else if (result && typeof result === 'object' && result.podcasts) {
+        podcasts = result.podcasts;
+        total = result.total;
+      }
+
+      // 精简返回数据：返回 episodeId、title 和 createdAt
+      const simplifiedPodcasts = podcasts.map(p => ({
+        episodeId: p.episodeId,
+        title: p.title,
+        createdAt: p.createdAt
+      }));
 
       return this.jsonResponse({
         success: true,
         data: {
-          podcasts: result,
+          podcasts: simplifiedPodcasts,
           pagination: {
             limit,
             offset,
-            total: result.length // 简化处理
+            total
           }
         }
       });

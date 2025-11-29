@@ -147,16 +147,16 @@ export class TopicPodcastService extends IPodcastService {
   }
 
   /**
-   * 查询主题播客列表
-   * @param {Object} filters - 过滤条件
-   * @param {string} [filters.topicId] - 主题ID（必需）
-   * @param {string} [filters.status] - 状态过滤
-   * @param {number} [filters.limit=10] - 限制数量
-   * @param {number} [filters.offset=0] - 偏移量
-   * @returns {Promise<PodcastInfo[]>} 播客列表
-   */
-  async getPodcasts(filters = {}) {
-    const { topicId, status, limit = 10, offset = 0 } = filters;
+    * 查询主题播客列表
+    * @param {Object} filters - 过滤条件
+    * @param {string} [filters.topicId] - 主题ID（必需）
+    * @param {string} [filters.status] - 状态过滤
+    * @param {number} [filters.limit=1000] - 限制数量
+    * @param {number} [filters.offset=0] - 偏移量
+    * @returns {Promise<PodcastInfo[]>} 播客列表
+    */
+   async getPodcasts(filters = {}) {
+     const { topicId, status, limit = 1000, offset = 0 } = filters;
 
     if (!topicId) {
       throw new Error('topicId is required for topic podcast queries');
