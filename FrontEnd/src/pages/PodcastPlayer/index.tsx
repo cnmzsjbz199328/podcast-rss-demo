@@ -20,7 +20,7 @@ const PodcastPlayer = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [isTranscriptExpanded, setTranscriptExpanded] = useState(false);
+  const [isTranscriptExpanded, setTranscriptExpanded] = useState(true);
 
   // 使用音频控制器 hook
   const audioController = useAudioController(audioRef, {
@@ -111,115 +111,107 @@ const PodcastPlayer = () => {
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden bg-background-light dark:bg-background-dark">
-      {/* Top App Bar */}
-      <div className="flex items-center justify-between p-4 pb-2">
-        <button
-          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-transparent hover:bg-white/10 transition-colors"
-          onClick={() => navigate(-1)}
-          aria-label="返回"
-        >
-          <span className="material-symbols-outlined text-white">expand_more</span>
-        </button>
-
-        <button
-          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-transparent hover:bg-white/10 transition-colors"
-          aria-label="更多选项"
-        >
-          <span className="material-symbols-outlined text-white">more_vert</span>
-        </button>
-      </div>
-
-      {/* Cover Image with Script Card overlay */}
-      <div className="px-6 pt-4 pb-2">
-        <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '3 / 2' }}>
-          <div
-            className="absolute inset-0 bg-center bg-no-repeat bg-cover"
-            style={{
-              backgroundImage: `url('${episode.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLLimdLg5EGtNuZglsvyjmPPCFWXf1d1SwzaWk9ODNxbKt3wC9vTSSknitAgeW6r6EDXuKfHNdIkjQvgfJ9g8Aw7QABhjOCOu8743xXTX13oX63cb_cNad7GmMgyY2A7A1QNYqu2TRiS3bZEnJp_3tFzONPI3Km-F70PFOGz2870zFBNLHERTjMPGA7QmgguPd-zuaxaEmlbyYwEeaFqVNHj_9enZrR7FA6w3A8DKx29bx5T3IGL-fm4gvGQpvTVMb3w2g26c2C0g'}')`
-            }}
-          />
-          {episode.scriptUrl && isTranscriptExpanded && (
-            <div className="pointer-events-none absolute inset-0 p-4">
-              <div className="pointer-events-auto h-full w-full">
-                <ScriptCard
-                  scriptUrl={episode.scriptUrl}
-                  currentTime={currentTime}
-                  duration={duration}
-                  visibleLines={3}
-                />
-              </div>
-            </div>
-          )}
+    <div className="flex items-center justify-center w-full min-h-screen bg-background-light dark:bg-background-dark">
+      <div className="relative flex h-auto w-full max-w-sm flex-col group/design-root overflow-x-hidden bg-background-light dark:bg-background-dark">
+        {/* Top App Bar */}
+        <div className="flex items-center justify-start px-2 py-1">
+          <button
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-transparent hover:bg-white/10 transition-colors"
+            onClick={() => navigate(-1)}
+            aria-label="返回"
+          >
+            <span className="material-symbols-outlined text-lg text-white">expand_more</span>
+          </button>
         </div>
-      </div>
 
-      {/* Episode Info Area */}
-      <div className="px-6 py-4">
-        <h1 className="text-white tracking-tight text-[24px] font-bold leading-tight text-left line-clamp-2">
-          {episode.title}
-        </h1>
-        <p className="text-slate-300 dark:text-slate-400 text-sm font-normal leading-normal pt-2">
-          {episode.topicTitle || '播客'}
-        </p>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="flex flex-col gap-2 p-6">
-        <div className="relative group/progress">
-          <div className="rounded-full bg-slate-300/30 dark:bg-slate-700 h-2">
+        {/* Cover Image with Script Card overlay */}
+        <div className="px-4 py-1 flex justify-center">
+          <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '1 / 1' }}>
             <div
-              className="h-2 rounded-full bg-primary-light transition-all"
-              style={{ width: `${progressPercent}%` }}
+              className="absolute inset-0 bg-center bg-no-repeat bg-cover"
+              style={{
+                backgroundImage: `url('${episode.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLLimdLg5EGtNuZglsvyjmPPCFWXf1d1SwzaWk9ODNxbKt3wC9vTSSknitAgeW6r6EDXuKfHNdIkjQvgfJ9g8Aw7QABhjOCOu8743xXTX13oX63cb_cNad7GmMgyY2A7A1QNYqu2TRiS3bZEnJp_3tFzONPI3Km-F70PFOGz2870zFBNLHERTjMPGA7QmgguPd-zuaxaEmlbyYwEeaFqVNHj_9enZrR7FA6w3A8DKx29bx5T3IGL-fm4gvGQpvTVMb3w2g26c2C0g'}`
+              }}
+            />
+            {episode.scriptUrl && isTranscriptExpanded && (
+              <div className="pointer-events-none absolute inset-0 p-4">
+                <div className="pointer-events-auto h-full w-full">
+                  <ScriptCard
+                    scriptUrl={episode.scriptUrl}
+                    currentTime={currentTime}
+                    duration={duration}
+                    visibleLines={3}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Episode Info Area */}
+        <div className="px-4 py-2">
+          <h1 className="text-white tracking-tight text-[20px] font-bold leading-tight text-left line-clamp-2">
+            {episode.title}
+          </h1>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="flex flex-col gap-2 px-4 py-2">
+          <div className="relative group/progress">
+            <div className="rounded-full bg-slate-300/30 dark:bg-slate-700 h-2">
+              <div
+                className="h-2 rounded-full bg-primary-light transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <input
+              type="range"
+              min="0"
+              max={duration || 0}
+              value={currentTime}
+              onChange={handleSeek}
+              className="absolute top-1/2 -translate-y-1/2 w-full h-2 cursor-pointer opacity-0 z-10"
+            />
+            <div
+              className="absolute h-4 w-4 bg-white rounded-full -top-1 transform -translate-x-1/2 opacity-0 group-hover/progress:opacity-100 transition-opacity"
+              style={{ left: `${progressPercent}%` }}
             />
           </div>
-          <input
-            type="range"
-            min="0"
-            max={duration || 0}
-            value={currentTime}
-            onChange={handleSeek}
-            className="absolute top-1/2 -translate-y-1/2 w-full h-2 cursor-pointer opacity-0 z-10"
-          />
-          <div
-            className="absolute h-4 w-4 bg-white rounded-full -top-1 transform -translate-x-1/2 opacity-0 group-hover/progress:opacity-100 transition-opacity"
-            style={{ left: `${progressPercent}%` }}
-          />
+          <div className="flex justify-between">
+            <p className="text-slate-300 dark:text-slate-400 text-xs font-normal leading-normal">
+              {episodeFormatters.duration(Math.floor(currentTime))}
+            </p>
+            <p className="text-slate-300 dark:text-slate-400 text-xs font-normal leading-normal">
+              {episodeFormatters.duration(Math.floor(duration))}
+            </p>
+          </div>
         </div>
-        <div className="flex justify-between">
-          <p className="text-slate-300 dark:text-slate-400 text-xs font-normal leading-normal">
-            {episodeFormatters.duration(Math.floor(currentTime))}
-          </p>
-          <p className="text-slate-300 dark:text-slate-400 text-xs font-normal leading-normal">
-            {episodeFormatters.duration(Math.floor(duration))}
-          </p>
-        </div>
+
+        {/* Playback Controls */}
+        <PlaybackControls
+          isPlaying={isPlaying}
+          onPlayPause={handlePlayPause}
+          onSkipBackward={handleSkipBackward}
+          onSkipForward={handleSkipForward}
+        />
+
+        {/* Action Button Bar */}
+        <ActionButtonBar
+          playbackRate={playbackRate}
+          isTranscriptExpanded={isTranscriptExpanded}
+          hasScriptUrl={!!episode?.scriptUrl}
+          onPlaybackRateChange={handlePlaybackRateChange}
+          onTimerChange={handleSleepTimerChange}
+          onTranscriptToggle={() => setTranscriptExpanded((prev) => !prev)}
+        />
+
+        {/* Hidden Audio Element */}
+        <audio
+          ref={audioRef}
+          src={episode.audioUrl}
+          onEnded={() => setIsPlaying(false)}
+        />
       </div>
-
-      {/* Playback Controls */}
-      <PlaybackControls
-        isPlaying={isPlaying}
-        onPlayPause={handlePlayPause}
-        onSkipBackward={handleSkipBackward}
-        onSkipForward={handleSkipForward}
-      />
-
-      {/* Action Button Bar */}
-      <ActionButtonBar
-        playbackRate={playbackRate}
-        isTranscriptExpanded={isTranscriptExpanded}
-        hasScriptUrl={!!episode?.scriptUrl}
-        onPlaybackRateChange={handlePlaybackRateChange}
-        onTimerChange={handleSleepTimerChange}
-        onTranscriptToggle={() => setTranscriptExpanded((prev) => !prev)}
-      />
-
-      {/* Hidden Audio Element */}
-      <audio
-        ref={audioRef}
-        src={episode.audioUrl}
-        onEnded={() => setIsPlaying(false)}
-      />
     </div>
   );
 };
