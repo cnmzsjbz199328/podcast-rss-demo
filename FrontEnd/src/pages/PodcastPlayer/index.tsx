@@ -125,8 +125,8 @@ const PodcastPlayer = () => {
         </div>
 
         {/* Cover Image with Script Card overlay */}
-        <div className="px-4 py-1 flex justify-center">
-          <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '1 / 1' }}>
+        <div className="px-3 py-0.5 flex justify-center">
+          <div className="relative w-full overflow-hidden rounded-lg" style={{ aspectRatio: '1 / 1' }}>
             <div
               className="absolute inset-0 bg-center bg-no-repeat bg-cover"
               style={{
@@ -134,7 +134,7 @@ const PodcastPlayer = () => {
               }}
             />
             {episode.scriptUrl && isTranscriptExpanded && (
-              <div className="pointer-events-none absolute inset-0 p-4">
+              <div className="pointer-events-none absolute inset-0 p-2">
                 <div className="pointer-events-auto h-full w-full">
                   <ScriptCard
                     scriptUrl={episode.scriptUrl}
@@ -149,14 +149,14 @@ const PodcastPlayer = () => {
         </div>
 
         {/* Episode Info Area */}
-        <div className="px-4 py-2">
-          <h1 className="text-white tracking-tight text-[20px] font-bold leading-tight text-left line-clamp-2">
+        <div className="px-4 py-1">
+          <h1 className="text-white tracking-tight text-base font-bold leading-snug text-left line-clamp-2">
             {episode.title}
           </h1>
         </div>
 
         {/* Progress Bar */}
-        <div className="flex flex-col gap-2 px-4 py-2">
+        <div className="flex flex-col gap-1 px-4 py-1">
           <div className="relative group/progress">
             <div className="rounded-full bg-slate-300/30 dark:bg-slate-700 h-2">
               <div

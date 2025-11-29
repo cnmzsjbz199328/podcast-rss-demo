@@ -145,31 +145,6 @@ const Home = () => {
                     ))}
                 </div>
             </main>
-
-            {/* Mini Player (Persistent) */}
-            <footer className="fixed bottom-0 left-0 right-0 z-10 p-2">
-                <div className="flex h-16 items-center gap-3 rounded-lg bg-surface-dark/90 p-2 pr-4 text-white backdrop-blur-md">
-                    <img
-                        className="size-12 shrink-0 rounded-md object-cover"
-                        alt="Current playing"
-                        src={
-                            latestEpisodes[0]?.imageUrl ||
-                            'https://lh3.googleusercontent.com/aida-public/AB6AXuBmkt9s0Ap8jim98WjTHEYZXD1OpOO9JJN185GSvX3xFxjFeQ3qljFscFFgvvQ9RxN3kZrM3-rnRsaLuw_OFa4DFz_vNiJlcb_ZEc3r1B5-Vb2_4tf42Jrl-tL7aYMlGgQvO5v3MdJXvoXHNx4EiPnNRX2hmfo5lU8VcMdvzTQhZLMDe_QPlcxuloWOw_twozLG2Q8DyNZCNTNTC2NLLPTZeV39T36gX_OpqxB-1Q-E_9O6Wm433IMMxt8fiSmpBLQJO1nGDFas84w'
-                        }
-                    />
-                    <div className="flex-1 overflow-hidden">
-                        <p className="truncate text-sm font-bold">
-                            {latestEpisodes[0]?.title || 'AI 播客'}
-                        </p>
-                        <p className="truncate text-xs text-secondary-text-dark">
-                            {latestEpisodes[0]?.description || '加载中...'}
-                        </p>
-                    </div>
-                    <button className="flex items-center justify-center hover:opacity-80 transition-opacity">
-                        <span className="material-symbols-outlined !text-4xl">play_circle</span>
-                    </button>
-                </div>
-            </footer>
         </div>
     );
 };
