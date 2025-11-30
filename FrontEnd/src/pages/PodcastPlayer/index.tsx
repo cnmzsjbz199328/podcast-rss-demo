@@ -115,13 +115,20 @@ const PodcastPlayer = () => {
     <div className="flex items-center justify-center w-full min-h-screen bg-background-light dark:bg-background-dark">
       <div className="relative flex h-auto w-full max-w-sm flex-col group/design-root overflow-x-hidden bg-background-light dark:bg-background-dark">
         {/* Top App Bar */}
-        <div className="flex items-center justify-start px-2 py-1">
+        <div className="flex items-center justify-between px-2 py-1">
           <button
             className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-transparent hover:bg-white/10 transition-colors"
             onClick={() => navigate(-1)}
             aria-label="返回"
           >
             <span className="material-symbols-outlined text-lg text-white">expand_more</span>
+          </button>
+          <button
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-transparent hover:bg-white/10 transition-colors"
+            onClick={() => navigate('/')}
+            aria-label="返回主页"
+          >
+            <span className="material-symbols-outlined text-lg text-white">home</span>
           </button>
         </div>
 
