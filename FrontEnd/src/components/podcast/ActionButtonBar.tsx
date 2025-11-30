@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import './ActionButtonBar.css';
 import SleepTimerButton from './SleepTimerButton';
 
@@ -20,6 +21,24 @@ export const ActionButtonBar = ({
   onTimerChange,
   onTranscriptToggle,
 }: ActionButtonBarProps) => {
+  const [shareTooltip, setShareTooltip] = useState('share');
+
+  const handleShare = async () => {
+    try {
+      // 复制当前页面链接
+      const url = window.location.href;
+      await navigator.clipboard.writeText(url);
+      
+      // 显示反馈
+      setShareTooltip('copied');
+      setTimeout(() => setShareTooltip('share'), 2000);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+      setShareTooltip('failed');
+      setTimeout(() => setShareTooltip('share'), 2000);
+    }
+  };
+
   return (
     <div className="flex items-center justify-end gap-6 px-4 py-3">
       {/* Playback Speed */}
@@ -66,9 +85,15 @@ export const ActionButtonBar = ({
       </button>
 
       {/* Share */}
-      <button className="action-button">
-        <span className="material-symbols-outlined text-xl">share</span>
-        <span className="text-xs leading-tight">share</span>
+      <button 
+        onClick={handleShare}
+        className="action-button"
+        title={shareTooltip === 'copied' ? 'Copied!' : shareTooltip === 'failed' ? 'Copy failed' : 'Copy link'}
+      >
+        <span className="material-symbols-outlined text-xl">
+          {shareTooltip === 'copied' ? 'check_circle' : 'share'}
+        </span>
+        <span className="text-xs leading-tight">{shareTooltip}</span>
       </button>
     </div>
   );
