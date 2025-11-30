@@ -68,19 +68,15 @@ export interface CreateTopicRequest {
   generation_interval_hours?: number
   category?: string
   /**
-   * 内容关键词（对应数据库中的 keywords 字段）
-   * @remarks
-   * - 前端表单使用 tags[] 数组收集用户输入
-   * - 提交时转换为 keywords 字符串（逗号分隔）
-   * - 后端存储到数据库 keywords 字段
-   * - 完全与数据库对齐
-   * @example 'AI, 机器学习, 深度学习'
-   */
+    * 内容关键词（对应数据库中的 keywords 字段）
+    * @remarks
+    * - 用户在表单中直接输入，逗号分隔
+    * - 直接发送到后端
+    * - 后端存储到数据库 keywords 字段
+    * - 完全与数据库对齐，无需转换
+    * @example 'AI, 机器学习, 深度学习'
+    */
   keywords?: string
-  /**
-   * @deprecated 内部使用tags[]收集用户输入，但提交时转换为keywords字符串发送
-   */
-  tags?: string[]
 }
 
 export interface CreateTopicResponse {

@@ -17,25 +17,22 @@ export class TopicApiHandler {
   * 创建新主题
   */
   async handleCreateTopic(request, services) {
-  try {
-    const {
-      title,
-      description,
-      is_active = true,
-      generation_interval_hours = 24,
-      category,
-      tags
-    } = await request.json();
+   try {
+     const {
+       title,
+       description,
+       is_active = true,
+       generation_interval_hours = 24,
+       category,
+       keywords
+     } = await request.json();
 
-    if (!title) {
-      return this.jsonResponse({
-        success: false,
-        error: 'Title is required'
-      }, 400);
-    }
-
-    // 转换 tags 数组为 keywords 字符串
-    const keywords = Array.isArray(tags) ? tags.join(', ') : (tags || '');
+     if (!title) {
+       return this.jsonResponse({
+         success: false,
+         error: 'Title is required'
+       }, 400);
+     }
 
     this.logger.info('Creating new topic', { title, is_active, generation_interval_hours, category });
 

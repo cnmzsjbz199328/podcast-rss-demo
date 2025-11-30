@@ -7,7 +7,7 @@ import type { CreateTopicRequest } from '@/types';
 interface FormErrors {
     title?: string
     description?: string
-    tags?: string
+    keywords?: string
     generation_interval_hours?: string
 }
 
@@ -15,19 +15,19 @@ interface FormErrors {
  * CreateTopic 组件 - 主题播客创建表单
  * 
  * 字段映射说明：
- * - 前端表单：使用 tags[] 数组收集用户输入（显示为"内容标签"）
- * - 前端提交：转换为 keywords 字符串（逗号分隔）
+ * - 前端表单：使用 keywords 字符串收集用户输入（逗号分隔）
+ * - 前端提交：直接发送 keywords 字符串
  * - 后端存储：直接存储到数据库 keywords 字段
  * - 数据库：keywords TEXT 字段
- * - 完全与数据库对齐，无需后端转换
+ * - 完全与数据库对齐，无需任何转换
  * 
  * 功能特性：
  * - 支持所有字段：title, description, category, keywords, is_active, generation_interval_hours
- * - 完整的输入校验（标题长度、标签数量、生成间隔等）
+ * - 完整的输入校验（标题长度、生成间隔等）
  * - 实时错误提示和成功反馈
  * - 防止重复提交（按钮禁用状态 + Loading动画）
  * - 提交后自动导航到话题详情页
- * - 前端在提交时自动转换 tags[] → keywords 字符串
+ * - 直接字段映射，无需数据转换
  */
 const CreateTopic = () => {
     const navigate = useNavigate();
@@ -37,17 +37,16 @@ const CreateTopic = () => {
         is_active: true,
     generation_interval_hours: DEFAULT_GENERATION_INTERVAL_HOURS,
         category: 'general',
-        tags: [],
+        keywords: '',
     });
     const [formErrors, setFormErrors] = useState<FormErrors>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [tagInput, setTagInput] = useState('');
 
     /**
      * 验证表单数据的完整性
-     * 检查 title, description, tags, generation_interval_hours 的有效性
+     * 检查 title, description, keywords, generation_interval_hours 的有效性
      */
     const validateForm = useCallback((): boolean => {
         const errors: FormErrors = {};
@@ -114,61 +113,7 @@ const CreateTopic = () => {
         }));
     }, []);
 
-    const handleAddTag = useCallback(() => {
-        const newTag = tagInput.trim();
-        if (!newTag) return;
 
-        if (newTag.length > FORM_VALIDATION.TAGS.MAX_LENGTH) {
-            setFormErrors((prev) => ({
-                ...prev,
-                tags: `单个标签长度不能超过 ${FORM_VALIDATION.TAGS.MAX_LENGTH} 个字符`,
-            }));
-            return;
-        }
-
-        if (formData.tags && formData.tags.length >= FORM_VALIDATION.TAGS.MAX_COUNT) {
-            setFormErrors((prev) => ({
-                ...prev,
-                tags: `标签数量不能超过 ${FORM_VALIDATION.TAGS.MAX_COUNT} 个`,
-            }));
-            return;
-        }
-
-        if (formData.tags?.includes(newTag)) {
-            setFormErrors((prev) => ({
-                ...prev,
-                tags: '该标签已存在',
-            }));
-            return;
-        }
-
-        setFormData((prev) => ({
-            ...prev,
-            tags: [...(prev.tags || []), newTag],
-        }));
-        setTagInput('');
-        setFormErrors((prev) => ({
-            ...prev,
-            tags: undefined,
-        }));
-    }, [tagInput, formData.tags]);
-
-    const handleRemoveTag = useCallback((index: number) => {
-        setFormData((prev) => ({
-            ...prev,
-            tags: prev.tags?.filter((_, i) => i !== index) || [],
-        }));
-    }, []);
-
-    const handleKeyPress = useCallback(
-        (e: React.KeyboardEvent) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddTag();
-            }
-        },
-        [handleAddTag]
-    );
 
     const handleSubmit = useCallback(
         async (e: React.FormEvent) => {
@@ -182,16 +127,7 @@ const CreateTopic = () => {
                 setError(null);
                 setSuccess(null);
                 
-                // 转换formData：tags数组 → keywords字符串（与数据库对齐）
-                const requestData = {
-                    ...formData,
-                    // 将tags数组转换为逗号分隔的keywords字符串
-                    keywords: formData.tags?.length ? formData.tags.join(', ') : undefined,
-                    // 删除tags字段，改用keywords字段名
-                    tags: undefined,
-                } as any;
-                
-                const response = await topicApi.createTopic(requestData);
+                const response = await topicApi.createTopic(formData);
                 // 后端返回格式：{ success: true, data: { topicId: number } }
                 if (response.success && response.data?.topicId) {
                     setSuccess(`成功创建主题 "${formData.title}"`);
@@ -387,59 +323,42 @@ const CreateTopic = () => {
                         </div>
                     </section>
 
-                    {/* Section 3: 标签 */}
+                    {/* Section 3: 内容关键词 */}
                     <section className="mb-6">
                         <h2 className="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">
-                            内容标签
+                            内容关键词
                         </h2>
                         <div className="space-y-3">
-                            <div className="flex gap-2">
-                                <input
-                                    className={`flex-1 rounded-lg border bg-slate-100 p-3 text-base font-normal leading-normal text-slate-900 placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 ${formErrors.tags
+                            <label className="flex flex-col">
+                                <div className="flex items-center justify-between pb-2">
+                                    <p className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal">
+                                        关键词（逗号分隔）
+                                    </p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        {(formData.keywords?.length || 0)}/200
+                                    </p>
+                                </div>
+                                <textarea
+                                    className={`w-full rounded-lg border bg-slate-100 p-3 text-base font-normal leading-normal text-slate-900 placeholder:text-slate-400 focus:ring-1 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 min-h-20 resize-none ${formErrors.keywords
                                             ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/50'
                                             : 'border-slate-300 focus:border-primary focus:ring-primary'
                                         }`}
-                                    placeholder={`例如：AI、机器学习（最多${FORM_VALIDATION.TAGS.MAX_COUNT}个标签）`}
-                                    type="text"
-                                    value={tagInput}
-                                    onChange={(e) => setTagInput(e.target.value)}
-                                    onKeyPress={handleKeyPress}
-                                    disabled={formData.tags && formData.tags.length >= FORM_VALIDATION.TAGS.MAX_COUNT}
+                                    placeholder="例如：AI, 机器学习, 深度学习, 自然语言处理"
+                                    name="keywords"
+                                    value={formData.keywords || ''}
+                                    onChange={handleInputChange}
+                                    maxLength={200}
                                 />
-                                <button
-                                    type="button"
-                                    onClick={handleAddTag}
-                                    disabled={!tagInput.trim() || (formData.tags && formData.tags.length >= FORM_VALIDATION.TAGS.MAX_COUNT)}
-                                    className="px-4 py-3 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <span className="material-symbols-outlined">add</span>
-                                </button>
-                            </div>
-                            {formErrors.tags && (
-                                <div className="text-red-600 dark:text-red-400 text-sm flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-base">error</span>
-                                    {formErrors.tags}
-                                </div>
-                            )}
-                            {formData.tags && formData.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.tags.map((tag, idx) => (
-                                        <div
-                                            key={idx}
-                                            className="flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary dark:bg-primary/20 dark:text-primary rounded-full text-sm"
-                                        >
-                                            <span>{tag}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveTag(idx)}
-                                                className="hover:opacity-70 transition-opacity"
-                                            >
-                                                <span className="material-symbols-outlined text-base">close</span>
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                                {formErrors.keywords && (
+                                    <div className="text-red-600 dark:text-red-400 text-sm flex items-center gap-1 mt-1">
+                                        <span className="material-symbols-outlined text-base">error</span>
+                                        {formErrors.keywords}
+                                    </div>
+                                )}
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    用逗号分隔多个关键词，用于描述播客内容的主要话题
+                                </p>
+                            </label>
                         </div>
                     </section>
 
