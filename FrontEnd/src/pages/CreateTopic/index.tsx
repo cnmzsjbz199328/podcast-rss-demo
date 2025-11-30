@@ -129,10 +129,10 @@ const CreateTopic = () => {
                 
                 const response = await topicApi.createTopic(formData);
                 // 后端返回格式：{ success: true, data: { topicId: number } }
-                if (response.success && response.data?.topicId) {
+                if (response.success && response.data && response.data.topicId) {
                     setSuccess(`成功创建主题 "${formData.title}"`);
                     setTimeout(() => {
-                        navigate(`/topics/${response.data.topicId}`);
+                        navigate(`/topics/${response.data!.topicId}`);
                     }, 1500);
                 } else {
                     const errorMsg = response.error || '创建主题失败，请稍后重试';
