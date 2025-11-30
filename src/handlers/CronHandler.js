@@ -325,12 +325,6 @@ export class CronHandler {
         }
       }
 
-      // 3. 如果没有激活主题，生成新闻播客
-      if (activeTopics.length === 0) {
-        this.logger.info('No active topics found, generating news podcast');
-        results.push(await this._generateDailyNewsPodcast(services));
-      }
-
       return results;
 
     } catch (error) {
