@@ -1,4 +1,4 @@
-import { POLLING_INTERVAL, MAX_POLL_ATTEMPTS } from './constants'
+import { POLLING_INTERVAL, MAX_POLL_ATTEMPTS, DEFAULT_COVER_IMAGES } from './constants'
 
 export function formatDuration(seconds: number): string {
   const hours = Math.floor(seconds / 3600)
@@ -83,4 +83,23 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
       setTimeout(() => inThrottle = false, limit)
     }
   }
+}
+
+/**
+ * 获取随机封面图片
+ * @param seed 用于生成确定性随机数的种子（如episode.id），默认使用真随机
+ * @returns 返回DEFAULT_COVER_IMAGES中的一个
+ */
+export function getRandomCoverImage(seed?: string | number): string {
+  if (seed !== undefined) {
+    // 基于种子生成确定性随机数
+    const hash = String(seed).split('').reduce((acc, char) => {
+      return ((acc << 5) - acc) + char.charCodeAt(0)
+    }, 0)
+    const index = Math.abs(hash) % DEFAULT_COVER_IMAGES.length
+    return DEFAULT_COVER_IMAGES[index]
+  }
+  
+  // 真随机
+  return DEFAULT_COVER_IMAGES[Math.floor(Math.random() * DEFAULT_COVER_IMAGES.length)]
 }

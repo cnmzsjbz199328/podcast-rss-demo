@@ -43,7 +43,17 @@ export const topicApi = {
     return apiRequest<TopicDetailResponse>(`/topics/${topicId}`)
   },
 
-  // 创建主题
+  /**
+   * 创建主题
+   * @param data - 主题数据，包含 keywords 字符串（前端已转换）
+   * @returns 返回创建成功的主题信息（仅包含 topicId）
+   * @remarks 
+   * 前端表单流程：
+   * - 用户输入：tags[] 数组
+   * - 提交时转换：tags.join(', ') → keywords 字符串
+   * - 后端收到：keywords 字符串
+   * - 直接存储：存储到数据库 keywords 字段
+   */
   async createTopic(data: CreateTopicRequest): Promise<CreateTopicResponse> {
     return apiRequest<CreateTopicResponse>('/topics', {
       method: 'POST',

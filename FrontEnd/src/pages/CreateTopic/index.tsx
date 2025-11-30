@@ -13,11 +13,21 @@ interface FormErrors {
 
 /**
  * CreateTopic 组件 - 主题播客创建表单
+ * 
+ * 字段映射说明：
+ * - 前端表单：使用 tags[] 数组收集用户输入（显示为"内容标签"）
+ * - 前端提交：转换为 keywords 字符串（逗号分隔）
+ * - 后端存储：直接存储到数据库 keywords 字段
+ * - 数据库：keywords TEXT 字段
+ * - 完全与数据库对齐，无需后端转换
+ * 
  * 功能特性：
- * - 支持所有字段：title, description, category, tags, is_active, generation_interval_hours
+ * - 支持所有字段：title, description, category, keywords, is_active, generation_interval_hours
  * - 完整的输入校验（标题长度、标签数量、生成间隔等）
  * - 实时错误提示和成功反馈
- * - 防止重复提交（按钮禁用状态）
+ * - 防止重复提交（按钮禁用状态 + Loading动画）
+ * - 提交后自动导航到话题详情页
+ * - 前端在提交时自动转换 tags[] → keywords 字符串
  */
 const CreateTopic = () => {
     const navigate = useNavigate();
@@ -171,14 +181,26 @@ const CreateTopic = () => {
                 setLoading(true);
                 setError(null);
                 setSuccess(null);
-                const response = await topicApi.createTopic(formData);
-                if (response.success && response.data?.topic) {
+                
+                // 转换formData：tags数组 → keywords字符串（与数据库对齐）
+                const requestData = {
+                    ...formData,
+                    // 将tags数组转换为逗号分隔的keywords字符串
+                    keywords: formData.tags?.length ? formData.tags.join(', ') : undefined,
+                    // 删除tags字段，改用keywords字段名
+                    tags: undefined,
+                } as any;
+                
+                const response = await topicApi.createTopic(requestData);
+                // 后端返回格式：{ success: true, data: { topicId: number } }
+                if (response.success && response.data?.topicId) {
                     setSuccess(`成功创建主题 "${formData.title}"`);
                     setTimeout(() => {
-                        navigate(`/topics/${response.data.topic.id}`);
+                        navigate(`/topics/${response.data.topicId}`);
                     }, 1500);
                 } else {
-                    setError('创建主题失败，请稍后重试');
+                    const errorMsg = response.error || '创建主题失败，请稍后重试';
+                    setError(errorMsg);
                 }
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : '创建失败，请检查网络连接';
@@ -431,7 +453,14 @@ const CreateTopic = () => {
                     disabled={loading}
                     className="w-full flex h-14 cursor-pointer items-center justify-center rounded-xl bg-primary px-5 text-base font-bold text-white shadow-lg shadow-primary/30 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                    {loading ? '创建中...' : '完成并创建'}
+                    <div className="flex items-center justify-center gap-2">
+                        {loading && (
+                            <span className="inline-block animate-spin">
+                                <span className="material-symbols-outlined text-xl">sync</span>
+                            </span>
+                        )}
+                        <span>{loading ? '正在创建...' : '完成并创建'}</span>
+                    </div>
                 </button>
             </footer>
         </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { topicApi } from '@/services/topicApi';
 import { topicFormatters } from '@/utils/formatters';
+import { getRandomCoverImage } from '@/utils/helpers';
 import { CATEGORY_OPTIONS, DEFAULT_GENERATION_INTERVAL_HOURS, FORM_VALIDATION } from '@/utils/constants';
 import Button from '@/components/common/Button';
 import type { Topic, TopicStats } from '@/types';
@@ -232,7 +233,7 @@ const TopicDetail = () => {
                                 style={{
                                     backgroundImage: `url('${
                                         topic.imageUrl ||
-                                        'https://lh3.googleusercontent.com/aida-public/AB6AXuA-yEMgFZPUZZe7fWEMdOAMOy3y9yS3BLBjVGoFcviBBZItsS0wYYbUnX2zARX1GJ82Oqgpl31lCbG-ldq6GFj8Z9KnZNn5ZWBHJNuiVG0aaERlUyTNwlxsuTbFAPGc36kbTrFBeQ7t2o7PdG1H8PM1rVuiDJtb0LmSauEGQ6UOA4-SOstyvppRa-AghKhvPd4s2YN65BAj0qyCpY48K4bKozYNdm1EOfvMXK7ekUfqzD25Q7KRMGXray5o35qm4WxR7XRCeERswcI'
+                                        getRandomCoverImage(topic.id)
                                     }')`,
                                 }}
                             />
@@ -295,9 +296,17 @@ const TopicDetail = () => {
                         </div>
                     </div>
 
-                    {topic.tags && topic.tags.length > 0 && (
+                    {(topic.keywords || topic.tags) && (
                         <div className="flex flex-wrap gap-2">
-                            {topic.tags.map((tag, idx) => (
+                            {/* 
+                             * keywords 是逗号分隔的字符串（从数据库返回）
+                             * tags 是数组（创建时发送的格式）
+                             * 这里需要兼容两种格式
+                             */}
+                            {(typeof topic.keywords === 'string' 
+                                ? topic.keywords.split(',').map(k => k.trim()).filter(Boolean)
+                                : topic.tags || []
+                            ).map((tag, idx) => (
                                 <span
                                     key={idx}
                                     className="inline-block px-2.5 py-1 bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary text-xs font-medium rounded-full"

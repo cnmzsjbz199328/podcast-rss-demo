@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { podcastApi } from '@/services/podcastApi';
 import { episodeFormatters } from '@/utils/formatters';
+import { getRandomCoverImage } from '@/utils/helpers';
 import { useAudioController } from '@/hooks/useAudioController';
 import ScriptCard from '@/components/podcast/ScriptCard';
 import PlaybackControls from '@/components/podcast/PlaybackControls';
@@ -130,7 +131,7 @@ const PodcastPlayer = () => {
             <div
               className="absolute inset-0 bg-center bg-no-repeat bg-cover"
               style={{
-                backgroundImage: `url('${episode.imageUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLLimdLg5EGtNuZglsvyjmPPCFWXf1d1SwzaWk9ODNxbKt3wC9vTSSknitAgeW6r6EDXuKfHNdIkjQvgfJ9g8Aw7QABhjOCOu8743xXTX13oX63cb_cNad7GmMgyY2A7A1QNYqu2TRiS3bZEnJp_3tFzONPI3Km-F70PFOGz2870zFBNLHERTjMPGA7QmgguPd-zuaxaEmlbyYwEeaFqVNHj_9enZrR7FA6w3A8DKx29bx5T3IGL-fm4gvGQpvTVMb3w2g26c2C0g'}`
+                backgroundImage: `url('${episode.imageUrl || getRandomCoverImage(episode.id)}')`
               }}
             />
             {episode.scriptUrl && isTranscriptExpanded && (
