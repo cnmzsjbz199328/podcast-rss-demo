@@ -81,17 +81,22 @@ export interface CreateTopicRequest {
 
 export interface CreateTopicResponse {
   success: boolean
-  data: {
+  data?: {
     /**
-     * 新创建的主题ID
-     * @remarks 后端返回的是 topicId，不是完整的 Topic 对象
-     */
+      * 新创建的主题ID
+      * @remarks 后端返回的是 topicId，不是完整的 Topic 对象
+      */
     topicId?: number
     /**
-     * @deprecated 后端返回的实际上是 topicId，不是完整的 Topic 对象
-     */
+      * @deprecated 后端返回的实际上是 topicId，不是完整的 Topic 对象
+      */
     topic?: Topic
   }
+  /**
+   * 错误信息（仅在 success=false 时存在）
+   * @remarks 包含验证错误或异常信息
+   */
+  error?: string
 }
 
 export interface GenerateTopicResponse {
