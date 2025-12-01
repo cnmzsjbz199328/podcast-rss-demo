@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { podcastApi } from '@/services/podcastApi';
 import { episodeFormatters } from '@/utils/formatters';
 import { getRandomCoverImage } from '@/utils/helpers';
 import Button from '@/components/common/Button';
-import type { Episode } from '@/types';
+import { EpisodeSearchBar } from '@/components/EpisodeSearchBar';
+import type { Episode, SearchedEpisode } from '@/types';
 
 /**
  * Home 组件 - 首页
  * 展示精选和最新播客剧集
  */
 const Home = () => {
+    const navigate = useNavigate();
     const [featuredEpisodes, setFeaturedEpisodes] = useState<Episode[]>([]);
     const [latestEpisodes, setLatestEpisodes] = useState<Episode[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [searchResults, setSearchResults] = useState<SearchedEpisode[] | null>(null);
 
     useEffect(() => {
         const fetchEpisodes = async () => {
@@ -49,12 +52,11 @@ const Home = () => {
         <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
             {/* Header Bar */}
             <header className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-background-light/80 px-4 py-3 backdrop-blur-sm dark:bg-background-dark/80">
-                <div className="flex flex-1 items-center gap-2 rounded-lg bg-white/10 px-3 py-2">
-                    <span className="material-symbols-outlined text-secondary-text-dark">search</span>
-                    <input
-                        className="w-full flex-1 bg-transparent text-white placeholder-secondary-text-dark focus:outline-none"
+                <div className="flex-1">
+                    <EpisodeSearchBar
+                        onResults={(results) => setSearchResults(results)}
+                        onSelect={(episode) => navigate(`/podcast/${episode.id}`)}
                         placeholder="搜索新闻、主题或创作者"
-                        type="search"
                     />
                 </div>
                 <Link to="/topics" className="flex items-center justify-center hover:opacity-80 transition-opacity" aria-label="我的主题">
@@ -70,7 +72,54 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Featured Carousel */}
+                {/* Show search results if available */}
+                {searchResults !== null && searchResults.length > 0 ? (
+                    <div className="flex flex-col">
+                        <h2 className="text-[22px] font-bold leading-tight tracking-[-0.015em] text-white dark:text-white px-4 py-4">
+                            搜索结果 ({searchResults.length})
+                        </h2>
+                        <div className="flex flex-col gap-2 px-4 pb-4">
+                            {searchResults.map((episode) => (
+                                <Link
+                                    key={episode.id}
+                                    to={`/podcast/${episode.id}`}
+                                    className="flex items-center gap-4 p-3 rounded-lg bg-slate-800/50 hover:bg-slate-700 transition-colors group"
+                                >
+                                    <button className="flex-shrink-0 flex size-9 items-center justify-center rounded-full bg-primary/80 hover:bg-primary transition-colors">
+                                        <span className="material-symbols-outlined text-white pl-0.5 text-lg">
+                                            play_arrow
+                                        </span>
+                                    </button>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="truncate text-base font-medium leading-normal text-white dark:text-white">
+                                            {episode.title}
+                                        </p>
+                                        <p className="text-sm font-normal leading-normal text-slate-400 dark:text-slate-400 truncate">
+                                            {episode.description}
+                                        </p>
+                                    </div>
+                                    <span className="material-symbols-outlined text-slate-400 flex-shrink-0">
+                                        chevron_right
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        {/* No search results message */}
+                        {searchResults !== null && searchResults.length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <span className="material-symbols-outlined text-6xl text-slate-400 dark:text-slate-500 mb-4">
+                                    search
+                                </span>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-8">
+                                    未找到匹配的剧集
+                                </h2>
+                            </div>
+                        )}
+
+                        {/* Featured Carousel */}
                 <div className="flex overflow-x-auto hide-scrollbar">
                     <div className="flex items-stretch gap-3 p-4">
                         {featuredEpisodes.map((episode) => (
@@ -138,6 +187,8 @@ const Home = () => {
                         </Link>
                     ))}
                 </div>
+                    </>
+                )}
             </main>
         </div>
     );

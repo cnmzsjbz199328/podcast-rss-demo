@@ -83,3 +83,28 @@ export interface PollAudioResponse {
   error?: string
   retryable?: boolean
 }
+
+/**
+ * 搜索结果中的剧集（精简版）
+ */
+export interface SearchedEpisode {
+  id: string
+  title: string
+  description: string
+}
+
+/**
+ * 剧集搜索响应
+ */
+export interface EpisodeSearchResponse {
+  success: boolean
+  data: {
+    episodes: SearchedEpisode[]
+    pagination: {
+      limit: number
+      offset: number
+      total: number
+    }
+  }
+  error?: string
+}

@@ -249,4 +249,82 @@ export class EpisodeApiHandler {
       }, 500);
     }
   }
+
+  /**
+   * 搜索剧集
+   * GET /episodes/search?q=keyword&limit=20&offset=0
+   * 
+   * @param {Request} request - HTTP 请求
+   * @param {Object} services - 服务集合，包含 episodeRepository
+   * @returns {Response} JSON 响应
+   * 
+   * 搜索支持：
+   * - title（剧集标题）
+   * - description（剧集描述）
+   * - 只返回已发布的剧集
+   * - 只返回精简字段 (id, title, description)
+   */
+  async handleSearchEpisodes(request, services) {
+    try {
+      const url = new URL(request.url);
+      const q = url.searchParams.get('q') || '';
+      const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+      const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+
+      // 空搜索词返回空结果
+      if (!q.trim()) {
+        return this.jsonResponse({
+          success: true,
+          data: {
+            episodes: [],
+            pagination: { limit, offset, total: 0 }
+          }
+        });
+      }
+
+      // 验证搜索词长度（防止过长的搜索）
+      if (q.length > 100) {
+        return this.jsonResponse({
+          success: false,
+          error: 'Search term too long (max 100 characters)'
+        }, 400);
+      }
+
+      this.logger.info('Searching episodes', { q, limit, offset });
+
+      // 调用数据库搜索方法
+      const results = await services.database.episodes.searchEpisodes(q, {
+        limit,
+        offset
+      });
+
+      // 返回格式化的搜索结果
+      const episodes = results.map(ep => ({
+        id: ep.id,
+        title: ep.title,
+        description: ep.description || ''
+      }));
+
+      this.logger.info('Episode search completed', { q, resultsCount: episodes.length });
+
+      return this.jsonResponse({
+        success: true,
+        data: {
+          episodes,
+          pagination: {
+            limit,
+            offset,
+            total: episodes.length
+          }
+        }
+      });
+
+    } catch (error) {
+      this.logger.error('Failed to search episodes', error);
+      return this.jsonResponse({
+        success: false,
+        error: error.message
+      }, 500);
+    }
+  }
 }

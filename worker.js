@@ -23,6 +23,7 @@ const topicApiHandler = new TopicApiHandler();
 // 注册路由
 // 新闻播客路由
 router.register('POST', '/generate', (req, services) => podcastHandler.handleGenerate(req, services));
+router.register('GET', '/episodes/search', (req, services) => apiHandler.handleSearchEpisodes(req, services));
 router.register('GET', '/episodes', (req, services) => apiHandler.handleEpisodes(req, services));
 router.register('GET', '/episodes/*/poll-audio', (req, services, params) => apiHandler.handlePollAudio(req, services, params));
 router.register('GET', '/episodes/*', (req, services, params) => apiHandler.handleEpisodeDetail(req, services, params));

@@ -247,4 +247,40 @@ export class EpisodeRepository {
       throw error;
     }
   }
+
+  /**
+   * 搜索剧集
+   * @param {string} searchTerm - 搜索关键词（搜索title和description）
+   * @param {Object} filters - 过滤选项
+   * @param {number} filters.limit - 限制数量（默认20）
+   * @param {number} filters.offset - 分页偏移（默认0）
+   * @returns {Promise<Array>} 搜索结果数组
+   */
+  async searchEpisodes(searchTerm, filters = {}) {
+    const { limit = 20, offset = 0 } = filters;
+
+    this.logger.info('Searching episodes', { searchTerm, limit, offset });
+
+    try {
+      const query = `
+        SELECT id, title, description
+        FROM episodes
+        WHERE (title LIKE ? OR description LIKE ?)
+        AND status = 'published'
+        ORDER BY published_at DESC
+        LIMIT ? OFFSET ?
+      `;
+      const params = [`%${searchTerm}%`, `%${searchTerm}%`, limit, offset];
+
+      const result = await this.db.prepare(query).bind(...params).all();
+      const episodes = result.results || [];
+
+      this.logger.info('Episodes search completed', { searchTerm, count: episodes.length });
+      return episodes;
+
+    } catch (error) {
+      this.logger.error('Failed to search episodes', { searchTerm, error: error.message });
+      throw new Error(`Failed to search episodes: ${error.message}`);
+    }
+  }
 }

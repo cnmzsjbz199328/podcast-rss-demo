@@ -32,6 +32,13 @@ export class ApiHandler {
   }
 
   /**
+   * 处理剧集搜索请求
+   */
+  async handleSearchEpisodes(request, services) {
+    return await this.episodes.handleSearchEpisodes(request, services);
+  }
+
+  /**
    * 处理RSS Feed请求
    */
   async handleRssFeed(request, services) {

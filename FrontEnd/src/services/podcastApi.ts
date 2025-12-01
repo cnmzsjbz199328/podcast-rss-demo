@@ -6,6 +6,7 @@ import type {
   GenerateResponse,
   AsyncGenerateResponse,
   PollAudioResponse,
+  EpisodeSearchResponse,
 } from '@/types'
 
 const normalizeEpisode = (episode: Episode): Episode => ({
@@ -62,5 +63,22 @@ export const podcastApi = {
   // 轮询音频生成状态
   async pollAudio(episodeId: string, eventId: string): Promise<PollAudioResponse> {
     return apiRequest<PollAudioResponse>(`/episodes/${episodeId}/poll-audio?eventId=${eventId}`)
+  },
+
+  // 搜索剧集
+  async searchEpisodes(
+    query: string,
+    params?: {
+      limit?: number
+      offset?: number
+    }
+  ): Promise<EpisodeSearchResponse> {
+    const searchParams = new URLSearchParams()
+    searchParams.set('q', query)
+    if (params?.limit) searchParams.set('limit', params.limit.toString())
+    if (params?.offset) searchParams.set('offset', params.offset.toString())
+
+    const queryString = searchParams.toString()
+    return apiRequest<EpisodeSearchResponse>(`/episodes/search?${queryString}`)
   },
 }
