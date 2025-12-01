@@ -5,7 +5,6 @@ import { topicFormatters } from '@/utils/formatters';
 import { getRandomCoverImage } from '@/utils/helpers';
 import { CATEGORY_OPTIONS, DEFAULT_GENERATION_INTERVAL_HOURS, FORM_VALIDATION } from '@/utils/constants';
 import Button from '@/components/common/Button';
-import Toast from '@/components/common/Toast';
 import type { Topic, TopicStats } from '@/types';
 
 const TopicDetail = () => {
@@ -14,6 +13,7 @@ const TopicDetail = () => {
     const [topic, setTopic] = useState<Topic | null>(null);
     const [stats, setStats] = useState<TopicStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [generating, setGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
@@ -25,10 +25,7 @@ const TopicDetail = () => {
         generation_interval_hours: DEFAULT_GENERATION_INTERVAL_HOURS,
     });
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-    const [toastMessage, setToastMessage] = useState<{
-        message: string;
-        type: 'error' | 'success';
-    } | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
         if (!topicId) return;
@@ -67,82 +64,78 @@ const TopicDetail = () => {
                         stats.totalEpisodes = podcastResponse.data.pagination.total || sortedPodcasts.length;
                     }
                     setStats(stats);
-                    
+
                     setEditValues({
                         is_active: topicResponse.data.topic.is_active,
                         generation_interval_hours: topicResponse.data.topic.generation_interval_hours,
                     });
-                    }
-                    } catch (err) {
-                    console.error('Failed to fetch topic:', err);
-                    } finally {
-                    setLoading(false);
-                    }
+                } else {
+                    setError('获取主题详情失败');
+                }
+            } catch (err) {
+                setError(err instanceof Error ? err.message : '未知错误');
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchTopic();
     }, [topicId]);
 
     const handleGenerateNext = async () => {
-         if (!topicId) return;
+        if (!topicId) return;
 
-         try {
-             setGenerating(true);
-             setToastMessage(null);
-             const response = await topicApi.generateNextTopicEpisode(parseInt(topicId));
-             
-             if (response.success) {
-                 setToastMessage({
-                     message: '下一集已生成成功！',
-                     type: 'success',
-                 });
-                 const [topicResponse, podcastResponse] = await Promise.all([
-                     topicApi.getTopic(parseInt(topicId)),
-                     topicApi.getTopicPodcasts(parseInt(topicId))
-                 ]);
-                 
-                 if (topicResponse.success) {
-                     setTopic(topicResponse.data.topic);
-                     const stats = topicResponse.data.stats || {
-                         totalEpisodes: 0,
-                         totalDuration: 0,
-                         avgDuration: 0,
-                         totalWordCount: 0,
-                         avgWordCount: 0,
-                         recentEpisodes: []
-                     };
-                     
-                     if (podcastResponse.success && podcastResponse.data?.podcasts) {
-                          const sortedPodcasts = [...podcastResponse.data.podcasts].sort((a: any, b: any) => 
-                              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-                          );
-                          stats.recentEpisodes = sortedPodcasts.map((p: any, index: number) => ({
-                              episodeNumber: index + 1,
-                              episodeId: p.episodeId,
-                              title: p.title,
-                              createdAt: p.createdAt
-                          }));
-                          stats.totalEpisodes = podcastResponse.data.pagination.total || sortedPodcasts.length;
-                       }
-                     setStats(stats);
-                 }
-             } else {
-                 // 处理业务错误（如生成间隔未达到）
-                 const errorMsg = response.message || '生成失败';
-                 setToastMessage({
-                     message: errorMsg,
-                     type: 'error',
-                 });
-             }
-         } catch (err) {
-             setToastMessage({
-                 message: err instanceof Error ? err.message : '生成失败',
-                 type: 'error',
-             });
-         } finally {
-             setGenerating(false);
-         }
-     };
+        try {
+            setGenerating(true);
+            setError(null);
+            setSuccessMessage(null);
+            const response = await topicApi.generateNextTopicEpisode(parseInt(topicId));
+
+            if (response.success) {
+                setSuccessMessage('下一集已生成成功！');
+                const [topicResponse, podcastResponse] = await Promise.all([
+                    topicApi.getTopic(parseInt(topicId)),
+                    topicApi.getTopicPodcasts(parseInt(topicId))
+                ]);
+
+                if (topicResponse.success) {
+                    setTopic(topicResponse.data.topic);
+                    const stats = topicResponse.data.stats || {
+                        totalEpisodes: 0,
+                        totalDuration: 0,
+                        avgDuration: 0,
+                        totalWordCount: 0,
+                        avgWordCount: 0,
+                        recentEpisodes: []
+                    };
+
+                    if (podcastResponse.success && podcastResponse.data?.podcasts) {
+                        const sortedPodcasts = [...podcastResponse.data.podcasts].sort((a: any, b: any) =>
+                            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                        );
+                        stats.recentEpisodes = sortedPodcasts.map((p: any, index: number) => ({
+                            episodeNumber: index + 1,
+                            episodeId: p.episodeId,
+                            title: p.title,
+                            createdAt: p.createdAt
+                        }));
+                        stats.totalEpisodes = podcastResponse.data.pagination.total || sortedPodcasts.length;
+                    }
+                    setStats(stats);
+                }
+                // 3秒后自动清除成功提示
+                setTimeout(() => setSuccessMessage(null), 3000);
+            } else {
+                // 处理业务错误（如生成间隔未达到）
+                const errorMsg = response.message || '生成失败';
+                setError(errorMsg);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : '生成失败');
+        } finally {
+            setGenerating(false);
+        }
+    };
 
     const handleChangeActiveStatus = (value: boolean) => {
         setEditValues((prev) => ({
@@ -175,6 +168,7 @@ const TopicDetail = () => {
 
         try {
             setIsSaving(true);
+            setError(null);
             const response = await topicApi.updateTopic(parseInt(topicId), {
                 is_active: editValues.is_active,
                 generation_interval_hours: editValues.generation_interval_hours,
@@ -187,29 +181,19 @@ const TopicDetail = () => {
                 setTopic((prev) =>
                     prev
                         ? {
-                              ...prev,
-                              is_active: editValues.is_active,
-                              generation_interval_hours:
-                                  editValues.generation_interval_hours,
-                          }
+                            ...prev,
+                            is_active: editValues.is_active,
+                            generation_interval_hours:
+                                editValues.generation_interval_hours,
+                        }
                         : null
                 );
                 setHasChanges(false);
-                setToastMessage({
-                    message: '保存成功！',
-                    type: 'success',
-                });
             } else {
-                setToastMessage({
-                    message: '保存失败，请稍后重试',
-                    type: 'error',
-                });
+                setError('保存失败，请稍后重试');
             }
         } catch (err) {
-            setToastMessage({
-                message: err instanceof Error ? err.message : '保存失败',
-                type: 'error',
-            });
+            setError(err instanceof Error ? err.message : '保存失败');
         } finally {
             setIsSaving(false);
         }
@@ -248,6 +232,38 @@ const TopicDetail = () => {
                 </h2>
                 <div className="flex w-10 items-center justify-center" />
             </div>
+
+            {/* Error Alert */}
+            {error && (
+                <div className="mx-4 mt-4 flex items-start gap-3 rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-red-600 dark:text-red-400">
+                    <span className="material-symbols-outlined shrink-0 text-xl">error</span>
+                    <div className="flex-1">
+                        <p className="font-medium">{error}</p>
+                    </div>
+                    <button
+                        onClick={() => setError(null)}
+                        className="shrink-0 hover:opacity-70 transition-opacity"
+                    >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                    </button>
+                </div>
+            )}
+
+            {/* Success Alert */}
+            {successMessage && (
+                <div className="mx-4 mt-4 flex items-start gap-3 rounded-lg bg-green-500/10 border border-green-500/20 p-4 text-green-600 dark:text-green-400">
+                    <span className="material-symbols-outlined shrink-0 text-xl">check_circle</span>
+                    <div className="flex-1">
+                        <p className="font-medium">{successMessage}</p>
+                    </div>
+                    <button
+                        onClick={() => setSuccessMessage(null)}
+                        className="shrink-0 hover:opacity-70 transition-opacity"
+                    >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                    </button>
+                </div>
+            )}
 
             <div className="flex flex-col gap-4">
                 {/* ProfileHeader */}
@@ -409,39 +425,29 @@ const TopicDetail = () => {
             </div>
 
             {/* Action Buttons */}
-             <div className="fixed bottom-6 right-6 flex flex-col-reverse gap-3">
-                 {hasChanges && (
-                     <button
-                         onClick={handleSaveChanges}
-                         disabled={isSaving}
-                         className="flex h-14 min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/30 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-background-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                     >
-                         <span className="material-symbols-outlined">save</span>
-                         <span className="text-sm font-bold">{isSaving ? '保存中...' : '保存'}</span>
-                     </button>
-                 )}
-                 <div title="生成下一集" className="group">
-                     <Button
-                         onClick={handleGenerateNext}
-                         loading={generating}
-                         className="flex h-16 w-16 cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full shadow-lg"
-                     >
-                         <span className="material-symbols-outlined !text-3xl">auto_awesome</span>
-                     </Button>
-                 </div>
-             </div>
-
-             {/* Toast Notification */}
-             {toastMessage && (
-                 <Toast
-                     message={toastMessage.message}
-                     type={toastMessage.type}
-                     duration={2000}
-                     onClose={() => setToastMessage(null)}
-                 />
-             )}
+            <div className="fixed bottom-6 right-6 flex flex-col-reverse gap-3">
+                {hasChanges && (
+                    <button
+                        onClick={handleSaveChanges}
+                        disabled={isSaving}
+                        className="flex h-14 min-w-[140px] cursor-pointer items-center justify-center gap-2 rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/30 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-background-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                        <span className="material-symbols-outlined">save</span>
+                        <span className="text-sm font-bold">{isSaving ? '保存中...' : '保存'}</span>
+                    </button>
+                )}
+                <div title="生成下一集" className="group">
+                    <Button
+                        onClick={handleGenerateNext}
+                        loading={generating}
+                        className="flex h-16 w-16 cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full shadow-lg"
+                    >
+                        <span className="material-symbols-outlined !text-3xl">auto_awesome</span>
+                    </Button>
+                </div>
             </div>
-            );
-            };
+        </div>
+    );
+};
 
 export default TopicDetail;

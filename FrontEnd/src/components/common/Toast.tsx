@@ -38,17 +38,12 @@ const Toast = ({
         <>
             {isVisible && (
                 <div
-                    className={`fixed bottom-20 right-32 flex items-center gap-3 rounded-lg ${bgColor} px-4 py-3 text-white shadow-xl transition-all duration-300 transform ${
-                        isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-                    }`}
-                    style={{
-                        animation: 'slideInFromLeft 0.3s ease-out forwards',
-                    }}
+                    className={`fixed bottom-24 right-6 flex items-center gap-3 rounded-lg ${bgColor} px-4 py-3 text-white shadow-lg animate-in slide-in-from-right-4 duration-300`}
                 >
                     <span className="material-symbols-outlined shrink-0 text-xl">
                         {icon}
                     </span>
-                    <div className="flex-1 text-sm font-medium max-w-xs">{message}</div>
+                    <div className="flex-1 text-sm font-medium">{message}</div>
                     {action ? (
                         <button
                             onClick={() => {
@@ -73,18 +68,6 @@ const Toast = ({
                     )}
                 </div>
             )}
-            <style>{`
-                @keyframes slideInFromLeft {
-                    from {
-                        transform: translateX(-20px);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-            `}</style>
         </>
     );
 };
