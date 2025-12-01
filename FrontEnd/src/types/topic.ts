@@ -114,7 +114,8 @@ export interface GenerateTopicResponse {
 
 export interface GenerateNextTopicResponse {
   success: boolean
-  data: {
+  message?: string
+  data?: {
     episodeNumber: number
     episodeId: string
     topicId: number
