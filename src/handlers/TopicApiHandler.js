@@ -80,10 +80,17 @@ export class TopicApiHandler {
         offset
       });
 
-      // 精简返回数据：仅返回 id 和 title
+      // 返回完整的主题信息，包括激活状态
       const topics = topicsData.map(t => ({
         id: t.id,
-        title: t.title
+        title: t.title,
+        description: t.description,
+        is_active: Boolean(t.is_active),
+        category: t.category,
+        episode_count: t.episode_count,
+        generation_interval_hours: t.generation_interval_hours,
+        created_at: t.created_at,
+        last_generated_at: t.last_generated_at
       }));
 
       return this.jsonResponse({

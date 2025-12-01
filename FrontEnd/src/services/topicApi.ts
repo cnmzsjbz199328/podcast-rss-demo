@@ -11,24 +11,22 @@ import type {
 
 export const topicApi = {
   /**
-   * 获取主题列表，支持按活跃状态和分类筛选
-   * @param params - 查询参数
-   * @param params.status - 激活状态 ('active' | 'inactive')
-   * @param params.category - 分类筛选
-   * @param params.limit - 每页数量，默认20
-   * @param params.offset - 偏移量，默认0
-   * @returns TopicListResponse - 主题列表响应
-   */
+    * 获取主题列表，支持按活跃状态和分类筛选
+    * @param params - 查询参数
+    * @param params.is_active - 激活状态 (true | false | undefined)
+    * @param params.category - 分类筛选
+    * @param params.limit - 每页数量，默认20
+    * @param params.offset - 偏移量，默认0
+    * @returns TopicListResponse - 主题列表响应
+    */
   async getTopics(params?: {
-    status?: 'active' | 'inactive'
     is_active?: boolean
     category?: string
     limit?: number
     offset?: number
   }): Promise<TopicListResponse> {
     const searchParams = new URLSearchParams()
-    // 支持 status 或 is_active 参数（后端可能接收两种格式）
-    if (params?.status) searchParams.set('status', params.status)
+    // 仅使用 is_active 参数，与后端接口保持一致
     if (params?.is_active !== undefined) searchParams.set('is_active', params.is_active.toString())
     if (params?.category) searchParams.set('category', params.category)
     if (params?.limit) searchParams.set('limit', params.limit.toString())

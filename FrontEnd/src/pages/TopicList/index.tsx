@@ -29,7 +29,7 @@ const TopicList = () => {
         try {
             setLoading(true);
             const response = await topicApi.getTopics({
-                status: filter.activeOnly ? 'active' : undefined,
+                is_active: filter.activeOnly ? true : undefined,
                 category: filter.category,
             });
             if (response.success) {
