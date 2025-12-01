@@ -105,19 +105,19 @@ const Home = () => {
                             ))}
                         </div>
                     </div>
+                ) : searchResults !== null && searchResults.length === 0 ? (
+                    // No search results message - 只在进行过搜索但无结果时显示
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <span className="material-symbols-outlined text-6xl text-slate-400 dark:text-slate-500 mb-4">
+                            search
+                        </span>
+                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-8">
+                            未找到匹配的剧集
+                        </h2>
+                    </div>
                 ) : (
                     <>
-                        {/* No search results message */}
-                        {searchResults !== null && searchResults.length === 0 && (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <span className="material-symbols-outlined text-6xl text-slate-400 dark:text-slate-500 mb-4">
-                                    search
-                                </span>
-                                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-8">
-                                    未找到匹配的剧集
-                                </h2>
-                            </div>
-                        )}
+                        {/* Default content - 未搜索时显示 */}
 
                         {/* Featured Carousel */}
                 <div className="flex overflow-x-auto hide-scrollbar">

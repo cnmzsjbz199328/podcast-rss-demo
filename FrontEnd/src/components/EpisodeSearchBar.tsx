@@ -55,11 +55,10 @@ export const EpisodeSearchBar = ({
 
   // 实时搜索，带防抖
   useEffect(() => {
-    // 空搜索词处理
+    // 空搜索词处理 - 不调用回调，保持搜索状态为 null
     if (!searchTerm.trim()) {
       setResults([])
       setError(null)
-      onResults?.([])
       return
     }
 
@@ -96,7 +95,7 @@ export const EpisodeSearchBar = ({
     setSearchTerm('')
     setResults([])
     setError(null)
-    onResults?.([])
+    // 不调用 onResults，让父组件恢复默认显示
   }, [onResults])
 
   const handleSelectEpisode = useCallback(
@@ -116,7 +115,7 @@ export const EpisodeSearchBar = ({
         <span className="material-symbols-outlined text-secondary-text-dark">search</span>
 
         <input
-          type="search"
+          type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => setIsFocused(true)}
