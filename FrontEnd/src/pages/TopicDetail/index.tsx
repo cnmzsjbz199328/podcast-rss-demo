@@ -19,7 +19,7 @@ const TopicDetail = () => {
     const [hasChanges, setHasChanges] = useState(false);
     const [editValues, setEditValues] = useState<{
         is_active: boolean;
-        generation_interval_hours: number;
+        generation_interval_hours: number | string;
     }>({
         is_active: true,
         generation_interval_hours: DEFAULT_GENERATION_INTERVAL_HOURS,
@@ -155,11 +155,22 @@ const TopicDetail = () => {
         );
     };
 
-    const handleGenerationIntervalInput = (value: number) => {
-        setEditValues((prev) => ({
-            ...prev,
-            generation_interval_hours: clampGenerationInterval(value),
-        }));
+    const handleGenerationIntervalInput = (value: string) => {
+        // Allow empty string to let users clear the input
+        if (value === '') {
+            setEditValues((prev) => ({
+                ...prev,
+                generation_interval_hours: '',
+            }));
+        } else {
+            const numValue = parseInt(value, 10);
+            if (!Number.isNaN(numValue)) {
+                setEditValues((prev) => ({
+                    ...prev,
+                    generation_interval_hours: clampGenerationInterval(numValue),
+                }));
+            }
+        }
         setHasChanges(true);
     };
 
@@ -169,9 +180,22 @@ const TopicDetail = () => {
         try {
             setIsSaving(true);
             setError(null);
+            
+            // Validate generation_interval_hours
+            let intervalValue = editValues.generation_interval_hours;
+            if (intervalValue === '' || Number.isNaN(intervalValue)) {
+                setError('请输入有效的生成间隔时间');
+                setIsSaving(false);
+                return;
+            }
+            
+            const numericInterval = typeof intervalValue === 'string' 
+                ? parseInt(intervalValue, 10) 
+                : intervalValue;
+            
             const response = await topicApi.updateTopic(parseInt(topicId), {
                 is_active: editValues.is_active,
-                generation_interval_hours: editValues.generation_interval_hours,
+                generation_interval_hours: numericInterval,
             });
 
             // 判断保存是否成功（API返回success: true即为成功）
@@ -183,8 +207,7 @@ const TopicDetail = () => {
                         ? {
                             ...prev,
                             is_active: editValues.is_active,
-                            generation_interval_hours:
-                                editValues.generation_interval_hours,
+                            generation_interval_hours: numericInterval,
                         }
                         : null
                 );
@@ -323,7 +346,7 @@ const TopicDetail = () => {
                                     max={FORM_VALIDATION.GENERATION_INTERVAL.MAX}
                                     step={1}
                                     value={editValues.generation_interval_hours}
-                                    onChange={(e) => handleGenerationIntervalInput(parseInt(e.target.value, 10))}
+                                    onChange={(e) => handleGenerationIntervalInput(e.target.value)}
                                     className="w-16 rounded-lg bg-white p-2.5 text-base font-medium text-slate-900 text-center focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:text-white"
                                 />
                                 <span className="text-sm text-slate-500 dark:text-slate-400">hours</span>
