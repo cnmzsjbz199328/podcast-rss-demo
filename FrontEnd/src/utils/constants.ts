@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://podcast-rss-demo.tj15982183241.workers.dev'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://podcasts.badtom.dpdns.org'
 
 export const PODCAST_STYLES = {
   NEWS_ANCHOR: 'news-anchor',

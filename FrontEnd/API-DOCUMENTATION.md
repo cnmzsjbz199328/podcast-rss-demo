@@ -1,7 +1,7 @@
 # Podcast RSS API 文档
 
 **版本**: 2.0.0  
-**基础URL**: `https://podcast-rss-demo.tj15982183241.workers.dev`  
+**基础URL**: `https://podcasts.badtom.dpdns.org`  
 
 > ℹ️ 返回的 `episodes[].scriptUrl` 字段直接对应 D1 中 `episodes.transcript`（保存脚本TXT的R2链接），同时适用于 `news-anchor` 与 `topic-explainer` 两种风格。
 
@@ -93,10 +93,10 @@ Access-Control-Allow-Headers: Content-Type
 **请求示例**:
 ```bash
 # 同步生成（测试推荐）
-curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=news-anchor&useAsyncTts=false"
+curl -X POST "https://podcasts.badtom.dpdns.org/generate?style=news-anchor&useAsyncTts=false"
 
 # 异步生成（生产推荐）
-curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=news-anchor&useAsyncTts=true"
+curl -X POST "https://podcasts.badtom.dpdns.org/generate?style=news-anchor&useAsyncTts=true"
 ```
 
 **响应示例（同步）** *(来自 `PodcastHandler.handleGenerate` → `NewsPodcastHelper.formatPodcastResult`)*:
@@ -156,10 +156,10 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=
 **请求示例**:
 ```bash
 # 获取前10个剧集
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes?limit=10&offset=0"
+curl "https://podcasts.badtom.dpdns.org/episodes?limit=10&offset=0"
 
 # 仅获取News播客
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes?style=news-anchor&limit=5"
+curl "https://podcasts.badtom.dpdns.org/episodes?style=news-anchor&limit=5"
 ```
 
 **响应示例**:
@@ -211,7 +211,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes?style=news-anc
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-1732291200000"
+curl "https://podcasts.badtom.dpdns.org/episodes/episode-1732291200000"
 ```
 
 **响应示例** *(来自 `EpisodeApiHandler.handleEpisodeDetail`)*:
@@ -255,7 +255,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-173229
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-1732291200000/poll-audio?eventId=async-audio-event-123456"
+curl "https://podcasts.badtom.dpdns.org/episodes/episode-1732291200000/poll-audio?eventId=async-audio-event-123456"
 ```
 
 **响应示例（处理中）**:
@@ -322,7 +322,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/episodes/episode-173229
 
 **请求示例**:
 ```bash
-curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics" \
+curl -X POST "https://podcasts.badtom.dpdns.org/topics" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "人工智能基础",
@@ -363,7 +363,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics" \
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics?status=active&limit=10"
+curl "https://podcasts.badtom.dpdns.org/topics?status=active&limit=10"
 ```
 
 **响应示例**:
@@ -422,7 +422,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics?status=active&li
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1"
+curl "https://podcasts.badtom.dpdns.org/topics/1"
 ```
 
 **响应示例**:
@@ -482,7 +482,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1"
 
 **请求示例**:
 ```bash
-curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/generate?style=topic-explainer"
+curl -X POST "https://podcasts.badtom.dpdns.org/topics/1/generate?style=topic-explainer"
 ```
 
 **响应示例**:
@@ -523,7 +523,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/genera
 
 **请求示例**:
 ```bash
-curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/generate-next?style=topic-explainer"
+curl -X POST "https://podcasts.badtom.dpdns.org/topics/1/generate-next?style=topic-explainer"
 ```
 
 **响应示例**:
@@ -576,13 +576,13 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/genera
 **请求示例**:
 ```bash
 # 获取主题1的播客列表（默认10条）
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/podcasts"
+curl "https://podcasts.badtom.dpdns.org/topics/1/podcasts"
 
 # 仅获取已完成的播客，限制5条
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/podcasts?status=completed&limit=5"
+curl "https://podcasts.badtom.dpdns.org/topics/1/podcasts?status=completed&limit=5"
 
 # 分页查询第二页（第11-20条）
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/podcasts?limit=10&offset=10"
+curl "https://podcasts.badtom.dpdns.org/topics/1/podcasts?limit=10&offset=10"
 ```
 
 **响应示例** *(包含准确的总数统计)*:
@@ -665,7 +665,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1/podcasts?limit
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/podcasts/topic-podcast-1-ep1"
+curl "https://podcasts.badtom.dpdns.org/topics/podcasts/topic-podcast-1-ep1"
 ```
 
 **响应示例** *(完整信息，用于详情页)*:
@@ -719,7 +719,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/podcasts/topic-p
 
 **请求示例**:
 ```bash
-curl -X PUT "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1" \
+curl -X PUT "https://podcasts.badtom.dpdns.org/topics/1" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "人工智能进阶",
@@ -760,7 +760,7 @@ curl -X PUT "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1" \
 
 **请求示例**:
 ```bash
-curl -X DELETE "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1"
+curl -X DELETE "https://podcasts.badtom.dpdns.org/topics/1"
 ```
 
 **响应示例**:
@@ -789,7 +789,7 @@ curl -X DELETE "https://podcast-rss-demo.tj15982183241.workers.dev/topics/1"
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/podcasts/topic-podcast-1-ep6/poll-audio?eventId=async-123"
+curl "https://podcasts.badtom.dpdns.org/topics/podcasts/topic-podcast-1-ep6/poll-audio?eventId=async-123"
 ```
 
 **响应示例**: 同News播客轮询接口
@@ -806,7 +806,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/topics/podcasts/topic-p
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/rss.xml"
+curl "https://podcasts.badtom.dpdns.org/rss.xml"
 ```
 
 **响应示例** (XML):
@@ -817,7 +817,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/rss.xml"
     <title>AI Generated Podcast</title>
     <description>AI-powered news and topic podcasts</description>
     <language>zh-cn</language>
-    <link>https://podcast-rss-demo.tj15982183241.workers.dev</link>
+    <link>https://podcasts.badtom.dpdns.org</link>
     <item>
       <title>BBC News Podcast - November 22, 2024</title>
       <description>Latest news from BBC...</description>
@@ -841,7 +841,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/rss.xml"
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/health"
+curl "https://podcasts.badtom.dpdns.org/health"
 ```
 
 **响应示例（健康）**:
@@ -883,7 +883,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/health"
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/stats"
+curl "https://podcasts.badtom.dpdns.org/stats"
 ```
 
 **响应示例**:
@@ -927,7 +927,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/stats"
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/info"
+curl "https://podcasts.badtom.dpdns.org/info"
 ```
 
 **响应示例**:
@@ -940,7 +940,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/info"
     "POST /generate": {
       "description": "生成Podcast",
       "parameters": {"style": "news-anchor"},
-      "example": "https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=news-anchor"
+      "example": "https://podcasts.badtom.dpdns.org/generate?style=news-anchor"
     }
   },
   "styles": ["news-anchor - News主播风格", "topic-explainer - 主题讲解风格"]
@@ -957,7 +957,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/info"
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/opml.xml"
+curl "https://podcasts.badtom.dpdns.org/opml.xml"
 ```
 
 **响应示例** (XML):
@@ -970,7 +970,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/opml.xml"
   <body>
     <outline text="AI Generated Podcast" 
              type="rss" 
-             xmlUrl="https://podcast-rss-demo.tj15982183241.workers.dev/rss.xml"/>
+             xmlUrl="https://podcasts.badtom.dpdns.org/rss.xml"/>
   </body>
 </opml>
 ```
@@ -995,7 +995,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/opml.xml"
 
 **请求示例**:
 ```bash
-curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/test/tts" \
+curl -X POST "https://podcasts.badtom.dpdns.org/test/tts" \
   -H "Content-Type: application/json" \
   -d '{"text": "测试文本", "provider": "kokoro"}'
 ```
@@ -1020,7 +1020,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/test/tts" \
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/test/rss"
+curl "https://podcasts.badtom.dpdns.org/test/rss"
 ```
 
 **响应示例**:
@@ -1056,7 +1056,7 @@ curl "https://podcast-rss-demo.tj15982183241.workers.dev/test/rss"
 
 **请求示例**:
 ```bash
-curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/test/script" \
+curl -X POST "https://podcasts.badtom.dpdns.org/test/script" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "AI简介",
@@ -1084,7 +1084,7 @@ curl -X POST "https://podcast-rss-demo.tj15982183241.workers.dev/test/script" \
 
 **请求示例**:
 ```bash
-curl "https://podcast-rss-demo.tj15982183241.workers.dev/debug/env"
+curl "https://podcasts.badtom.dpdns.org/debug/env"
 ```
 
 **响应示例**:
@@ -1276,7 +1276,7 @@ interface SystemStats {
 ```typescript
 import { useState, useEffect } from 'react';
 
-const API_BASE = 'https://podcast-rss-demo.tj15982183241.workers.dev';
+const API_BASE = 'https://podcasts.badtom.dpdns.org';
 
 // 获取剧集列表
 export function EpisodeList() {
@@ -1425,7 +1425,7 @@ export default {
   methods: {
     async fetchEpisodes() {
       try {
-        const res = await fetch('https://podcast-rss-demo.tj15982183241.workers.dev/episodes?limit=10');
+        const res = await fetch('https://podcasts.badtom.dpdns.org/episodes?limit=10');
         const data = await res.json();
         
         if (data.success) {
@@ -1448,7 +1448,7 @@ export default {
 // 获取剧集列表
 async function fetchEpisodes() {
   try {
-    const response = await fetch('https://podcast-rss-demo.tj15982183241.workers.dev/episodes?limit=10');
+    const response = await fetch('https://podcasts.badtom.dpdns.org/episodes?limit=10');
     const data = await response.json();
     
     if (data.success) {
@@ -1477,7 +1477,7 @@ async function generatePodcast() {
   button.textContent = '生成中...';
   
   try {
-    const response = await fetch('https://podcast-rss-demo.tj15982183241.workers.dev/generate?style=news-anchor', {
+    const response = await fetch('https://podcasts.badtom.dpdns.org/generate?style=news-anchor', {
       method: 'POST'
     });
     const data = await response.json();

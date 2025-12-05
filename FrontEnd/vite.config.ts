@@ -14,7 +14,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://podcast-rss-demo.tj15982183241.workers.dev',
+        target: process.env.VITE_API_BASE_URL || 'https://podcasts.badtom.dpdns.org',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },

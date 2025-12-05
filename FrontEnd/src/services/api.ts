@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://podcast-rss-demo.tj15982183241.workers.dev'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://podcasts.badtom.dpdns.org'
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {

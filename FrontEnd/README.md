@@ -84,12 +84,18 @@ FrontEnd/
    npm install
    ```
 
-2. **Start development server**:
-   ```bash
-   npm run dev
-   ```
+2. **Configure environment variables**:
+    ```bash
+    cp .env.example .env
+    # Edit .env and set VITE_API_BASE_URL to your backend URL
+    ```
 
-3. **Backend API**: Ensure Podcast RSS API is running at `https://podcast-rss-demo.tj15982183241.workers.dev`
+3. **Start development server**:
+    ```bash
+    npm run dev
+    ```
+
+4. **Backend API**: Ensure Podcast RSS API is running (default: `https://podcasts.badtom.dpdns.org`)
 
 ### Available Scripts
 
