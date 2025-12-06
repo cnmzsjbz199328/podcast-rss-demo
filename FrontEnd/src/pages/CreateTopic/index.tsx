@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { topicApi } from '@/services/topicApi';
 import { CATEGORY_OPTIONS, FORM_VALIDATION, DEFAULT_GENERATION_INTERVAL_HOURS } from '@/utils/constants';
+import { useLocale } from '@/hooks/useLocale';
 import type { CreateTopicRequest } from '@/types';
 
 interface FormErrors {
@@ -31,6 +32,7 @@ interface FormErrors {
  */
 const CreateTopic = () => {
     const navigate = useNavigate();
+    const { t, tf } = useLocale();
     const [formData, setFormData] = useState<CreateTopicRequest>({
         title: '',
         description: '',
@@ -54,29 +56,29 @@ const CreateTopic = () => {
 
         // 验证标题
         if (!formData.title.trim()) {
-            errors.title = '标题不能为空';
+            errors.title = t('createTopic.validation.titleRequired');
             isValid = false;
         } else if (formData.title.length < FORM_VALIDATION.TITLE.MIN_LENGTH) {
-            errors.title = `标题至少需要 ${FORM_VALIDATION.TITLE.MIN_LENGTH} 个字符`;
+            errors.title = tf('createTopic.validation.titleMinLength', { min: FORM_VALIDATION.TITLE.MIN_LENGTH });
             isValid = false;
         } else if (formData.title.length > FORM_VALIDATION.TITLE.MAX_LENGTH) {
-            errors.title = `标题不能超过 ${FORM_VALIDATION.TITLE.MAX_LENGTH} 个字符`;
+            errors.title = tf('createTopic.validation.titleMaxLength', { max: FORM_VALIDATION.TITLE.MAX_LENGTH });
             isValid = false;
         }
 
         // 验证描述
         if (formData.description && formData.description.length > FORM_VALIDATION.DESCRIPTION.MAX_LENGTH) {
-            errors.description = `描述不能超过 ${FORM_VALIDATION.DESCRIPTION.MAX_LENGTH} 个字符`;
+            errors.description = tf('createTopic.validation.descriptionMaxLength', { max: FORM_VALIDATION.DESCRIPTION.MAX_LENGTH });
             isValid = false;
         }
 
         // 验证生成间隔
         if (formData.generation_interval_hours) {
             if (formData.generation_interval_hours < FORM_VALIDATION.GENERATION_INTERVAL.MIN) {
-                errors.generation_interval_hours = `生成间隔不能少于 ${FORM_VALIDATION.GENERATION_INTERVAL.MIN} 小时`;
+                errors.generation_interval_hours = tf('createTopic.validation.intervalMin', { min: FORM_VALIDATION.GENERATION_INTERVAL.MIN });
                 isValid = false;
             } else if (formData.generation_interval_hours > FORM_VALIDATION.GENERATION_INTERVAL.MAX) {
-                errors.generation_interval_hours = `生成间隔不能超过 ${FORM_VALIDATION.GENERATION_INTERVAL.MAX} 小时`;
+                errors.generation_interval_hours = tf('createTopic.validation.intervalMax', { max: FORM_VALIDATION.GENERATION_INTERVAL.MAX });
                 isValid = false;
             }
         }
@@ -135,17 +137,17 @@ const CreateTopic = () => {
                         navigate(`/topics/${response.data!.topicId}`);
                     }, 1500);
                 } else {
-                    const errorMsg = response.error || '创建主题失败，请稍后重试';
+                    const errorMsg = response.error || t('createTopic.createFailed');
                     setError(errorMsg);
                 }
             } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : '创建失败，请检查网络连接';
+                const errorMessage = err instanceof Error ? err.message : t('common.unknown');
                 setError(errorMessage);
             } finally {
                 setLoading(false);
             }
         },
-        [formData, validateForm, navigate]
+        [formData, validateForm, navigate, t, tf]
     );
 
     return (
@@ -159,7 +161,7 @@ const CreateTopic = () => {
                     <span className="material-symbols-outlined text-2xl">arrow_back</span>
                 </button>
                 <h1 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-10">
-                    创建新的主题播客
+                    {t('createTopic.title')}
                 </h1>
             </header>
 
@@ -181,13 +183,13 @@ const CreateTopic = () => {
                     {/* Section 1: 基本信息 */}
                     <section className="mb-6">
                         <h2 className="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">
-                            基本信息
+                            {t('createTopic.basicInfo')}
                         </h2>
                         <div className="space-y-4">
                             <label className="flex flex-col">
                                 <div className="flex items-center justify-between pb-2">
                                     <p className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal">
-                                        播客系列标题 <span className="text-red-500">*</span>
+                                        {t('createTopic.seriesTitle')} <span className="text-red-500">*</span>
                                     </p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
                                         {formData.title.length}/{FORM_VALIDATION.TITLE.MAX_LENGTH}
@@ -198,7 +200,7 @@ const CreateTopic = () => {
                                             ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/50'
                                             : 'border-slate-300 focus:border-primary focus:ring-primary'
                                         }`}
-                                    placeholder="例如：AI前沿动态"
+                                    placeholder={t('placeholders.seriesTitle')}
                                     type="text"
                                     name="title"
                                     value={formData.title}
@@ -216,7 +218,7 @@ const CreateTopic = () => {
                             <label className="flex flex-col">
                                 <div className="flex items-center justify-between pb-2">
                                     <p className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal">
-                                        播客系列描述
+                                        {t('createTopic.seriesDescription')}
                                     </p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
                                         {(formData.description?.length || 0)}/{FORM_VALIDATION.DESCRIPTION.MAX_LENGTH}
@@ -227,7 +229,7 @@ const CreateTopic = () => {
                                             ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/50'
                                             : 'border-slate-300 focus:border-primary focus:ring-primary'
                                         }`}
-                                    placeholder="例如：每周探讨人工智能领域的最新进展和趋势"
+                                    placeholder={t('placeholders.seriesDescription')}
                                     name="description"
                                     value={formData.description}
                                     onChange={handleInputChange}
@@ -246,13 +248,13 @@ const CreateTopic = () => {
                     {/* Section 2: 生成设置 */}
                     <section className="mb-6">
                         <h2 className="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">
-                            生成设置
+                            {t('createTopic.generationSettings')}
                         </h2>
                         <div className="grid gap-3 md:grid-cols-3">
                             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/60">
                                 <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                                     <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">toggle_off</span>
-                                    status
+                                    {t('createTopic.status')}
                                 </div>
                                 <label className="relative inline-flex cursor-pointer items-center">
                                     <input
@@ -268,7 +270,7 @@ const CreateTopic = () => {
                             <div className="rounded-xl border border-slate-200 bg-white/90 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/40">
                                 <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                                     <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">schedule</span>
-                                generation_interval
+                                    {t('createTopic.generationInterval')}
                                 </div>
                                 <div className="mt-2 flex items-center gap-2">
                                     <input
@@ -284,10 +286,10 @@ const CreateTopic = () => {
                                         value={formData.generation_interval_hours}
                                         onChange={handleInputChange}
                                     />
-                                    <span className="text-sm text-slate-500 dark:text-slate-400">小时</span>
+                                    <span className="text-sm text-slate-500 dark:text-slate-400">{t('playback.hours')}</span>
                                 </div>
                                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                    默认 {DEFAULT_GENERATION_INTERVAL_HOURS} 小时，可自定义 {FORM_VALIDATION.GENERATION_INTERVAL.MIN}-{FORM_VALIDATION.GENERATION_INTERVAL.MAX} 小时
+                                    {tf('createTopic.generationIntervalDesc', { default: DEFAULT_GENERATION_INTERVAL_HOURS, min: FORM_VALIDATION.GENERATION_INTERVAL.MIN, max: FORM_VALIDATION.GENERATION_INTERVAL.MAX })}
                                 </p>
                                 {formErrors.generation_interval_hours && (
                                     <div className="mt-1 text-red-600 dark:text-red-400 text-sm flex items-center gap-1">
@@ -300,7 +302,7 @@ const CreateTopic = () => {
                             <div className="rounded-xl border border-slate-200 bg-white/90 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/40">
                                 <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                                     <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">label</span>
-                                    内容分类
+                                    {t('createTopic.category')}
                                 </div>
                                 <div className="relative mt-2">
                                     <select
@@ -326,13 +328,13 @@ const CreateTopic = () => {
                     {/* Section 3: 内容关键词 */}
                     <section className="mb-6">
                         <h2 className="text-slate-800 dark:text-white text-lg font-bold leading-tight tracking-tight px-0 pb-2 pt-4">
-                            内容关键词
+                            {t('createTopic.contentKeywords')}
                         </h2>
                         <div className="space-y-3">
                             <label className="flex flex-col">
                                 <div className="flex items-center justify-between pb-2">
                                     <p className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-normal">
-                                        关键词（逗号分隔）
+                                        {t('createTopic.keywordsLabel')}
                                     </p>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
                                         {(formData.keywords?.length || 0)}/200
@@ -343,7 +345,7 @@ const CreateTopic = () => {
                                             ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/50'
                                             : 'border-slate-300 focus:border-primary focus:ring-primary'
                                         }`}
-                                    placeholder="例如：AI, 机器学习, 深度学习, 自然语言处理"
+                                    placeholder={t('placeholders.keywords')}
                                     name="keywords"
                                     value={formData.keywords || ''}
                                     onChange={handleInputChange}
@@ -356,7 +358,7 @@ const CreateTopic = () => {
                                     </div>
                                 )}
                                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                    用逗号分隔多个关键词，用于描述播客内容的主要话题
+                                    {t('createTopic.keywordsTip')}
                                 </p>
                             </label>
                         </div>
@@ -378,7 +380,7 @@ const CreateTopic = () => {
                                 <span className="material-symbols-outlined text-xl">sync</span>
                             </span>
                         )}
-                        <span>{loading ? '正在创建...' : '完成并创建'}</span>
+                        <span>{loading ? t('createTopic.creating') : t('createTopic.completeCreate')}</span>
                     </div>
                 </button>
             </footer>

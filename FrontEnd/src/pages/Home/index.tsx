@@ -5,6 +5,8 @@ import { episodeFormatters } from '@/utils/formatters';
 import { getRandomCoverImage } from '@/utils/helpers';
 import Button from '@/components/common/Button';
 import { EpisodeSearchBar } from '@/components/EpisodeSearchBar';
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { useLocale } from '@/hooks/useLocale';
 import type { Episode, SearchedEpisode } from '@/types';
 
 /**
@@ -13,6 +15,7 @@ import type { Episode, SearchedEpisode } from '@/types';
  */
 const Home = () => {
     const navigate = useNavigate();
+    const { t } = useLocale();
     const [featuredEpisodes, setFeaturedEpisodes] = useState<Episode[]>([]);
     const [latestEpisodes, setLatestEpisodes] = useState<Episode[]>([]);
     const [loading, setLoading] = useState(true);
@@ -28,10 +31,10 @@ const Home = () => {
                     setFeaturedEpisodes(episodes.slice(0, 3));
                     setLatestEpisodes(episodes.slice(0, 6));
                 } else {
-                    setError('获取播客列表失败');
+                    setError(t('home.fetchFailed'));
                 }
             } catch (err) {
-                setError(err instanceof Error ? err.message : '未知错误');
+                setError(err instanceof Error ? err.message : t('common.unknown'));
             } finally {
                 setLoading(false);
             }
@@ -43,7 +46,7 @@ const Home = () => {
     if (loading && latestEpisodes.length === 0) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <p className="text-secondary-text-dark">加载中...</p>
+                <p className="text-secondary-text-dark">{t('common.loading')}</p>
             </div>
         );
     }
@@ -56,10 +59,11 @@ const Home = () => {
                     <EpisodeSearchBar
                         onResults={(results) => setSearchResults(results)}
                         onSelect={(episode) => navigate(`/podcast/${episode.id}`)}
-                        placeholder="搜索新闻、主题或创作者"
+                        placeholder={t('home.searchPlaceholder')}
                     />
                 </div>
-                <Link to="/topics" className="flex items-center justify-center hover:opacity-80 transition-opacity" aria-label="我的主题">
+                <LanguageSwitcher />
+                <Link to="/topics" className="flex items-center justify-center hover:opacity-80 transition-opacity" aria-label="My Topics">
                     <span className="material-symbols-outlined text-white text-2xl">podcasts</span>
                 </Link>
             </header>
@@ -76,7 +80,7 @@ const Home = () => {
                 {searchResults !== null && searchResults.length > 0 ? (
                     <div className="flex flex-col">
                         <h2 className="text-[22px] font-bold leading-tight tracking-[-0.015em] text-white dark:text-white px-4 py-4">
-                            搜索结果 ({searchResults.length})
+                            {t('home.searchResults')} ({searchResults.length})
                         </h2>
                         <div className="flex flex-col gap-2 px-4 pb-4">
                             {searchResults.map((episode) => (
@@ -112,7 +116,7 @@ const Home = () => {
                             search
                         </span>
                         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-8">
-                            未找到匹配的剧集
+                            {t('home.noResults')}
                         </h2>
                     </div>
                 ) : (
@@ -144,7 +148,7 @@ const Home = () => {
                                 <div className="flex flex-col flex-1 justify-between p-4 pt-0">
                                     <Button variant="primary" size="small">
                                         <span className="material-symbols-outlined">play_arrow</span>
-                                        <span>立即播放</span>
+                                        <span>{t('home.playNow')}</span>
                                     </Button>
                                 </div>
                             </Link>
@@ -154,7 +158,7 @@ const Home = () => {
 
                 {/* Latest Episodes */}
                 <h2 className="px-4 pb-3 pt-5 text-[22px] font-bold leading-tight tracking-[-0.015em] text-white dark:text-white">
-                    最新发布
+                    {t('home.latestRelease')}
                 </h2>
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4 pt-0 pb-20">
                     {latestEpisodes.map((episode) => (
@@ -181,7 +185,7 @@ const Home = () => {
                                     {episode.title}
                                 </p>
                                 <p className="text-sm font-normal leading-normal text-secondary-text-dark">
-                                    播客 · {episodeFormatters.publishedAt(episode.publishedAt)}
+                                    {t('home.podcast')} · {episodeFormatters.publishedAt(episode.publishedAt)}
                                 </p>
                             </div>
                         </Link>

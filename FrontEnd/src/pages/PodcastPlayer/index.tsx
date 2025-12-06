@@ -4,6 +4,7 @@ import { podcastApi } from '@/services/podcastApi';
 import { episodeFormatters } from '@/utils/formatters';
 import { getRandomCoverImage } from '@/utils/helpers';
 import { useAudioController } from '@/hooks/useAudioController';
+import { useLocale } from '@/hooks/useLocale';
 import ScriptCard from '@/components/podcast/ScriptCard';
 import PlaybackControls from '@/components/podcast/PlaybackControls';
 import ActionButtonBar from '@/components/podcast/ActionButtonBar';
@@ -12,6 +13,7 @@ import type { Episode } from '@/types';
 const PodcastPlayer = () => {
   const { episodeId } = useParams<{ episodeId: string }>();
   const navigate = useNavigate();
+  const { t } = useLocale();
   const audioRef = useRef<HTMLAudioElement>(null);
   
   const [episode, setEpisode] = useState<Episode | null>(null);
@@ -40,10 +42,10 @@ const PodcastPlayer = () => {
         if (response.success) {
           setEpisode(response.data);
         } else {
-          setError('获取播客详情失败');
+          setError(t('player.fetchFailed'));
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : '未知错误');
+        setError(err instanceof Error ? err.message : t('common.unknown'));
       } finally {
         setLoading(false);
       }
@@ -94,7 +96,7 @@ const PodcastPlayer = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-secondary-text-dark">加载中...</p>
+        <p className="text-secondary-text-dark">{t('common.loading')}</p>
       </div>
     );
   }
@@ -103,7 +105,7 @@ const PodcastPlayer = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 px-6 py-4 rounded-lg">
-          {error || '播客不存在'}
+          {error || t('player.podcastNotFound')}
         </div>
       </div>
     );
@@ -119,14 +121,14 @@ const PodcastPlayer = () => {
           <button
             className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-transparent hover:bg-white/10 transition-colors"
             onClick={() => navigate(-1)}
-            aria-label="返回"
+            aria-label={t('player.goBack')}
           >
             <span className="material-symbols-outlined text-lg text-white">expand_more</span>
           </button>
           <button
             className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-transparent hover:bg-white/10 transition-colors"
             onClick={() => navigate('/')}
-            aria-label="返回主页"
+            aria-label={t('player.goHome')}
           >
             <span className="material-symbols-outlined text-lg text-white">home</span>
           </button>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { topicApi } from '@/services/topicApi';
 import { CATEGORY_OPTIONS } from '@/utils/constants';
+import { useLocale } from '@/hooks/useLocale';
 import type { TopicWithStats } from '@/types';
 
 /**
@@ -13,6 +14,7 @@ import type { TopicWithStats } from '@/types';
  * - 显示剧集数量和统计信息
  */
 const TopicList = () => {
+    const { t } = useLocale();
     const [topics, setTopics] = useState<TopicWithStats[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -35,10 +37,10 @@ const TopicList = () => {
             if (response.success) {
                 setTopics(response.data.topics);
             } else {
-                setError('获取主题列表失败');
+                setError(t('topicList.fetchFailed'));
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : '未知错误');
+            setError(err instanceof Error ? err.message : t('common.unknown'));
         } finally {
             setLoading(false);
         }
@@ -51,7 +53,7 @@ const TopicList = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <p className="text-secondary-text-dark">加载中...</p>
+                <p className="text-secondary-text-dark">{t('common.loading')}</p>
             </div>
         );
     }
@@ -67,7 +69,7 @@ const TopicList = () => {
                     <span className="material-symbols-outlined text-2xl">arrow_back</span>
                 </button>
                 <h1 className="flex-1 text-center text-lg font-bold text-slate-900 dark:text-white">
-                    我的主题播客
+                    {t('topicList.title')}
                 </h1>
                 <button className="flex h-12 w-12 items-center justify-center text-slate-800 dark:text-white hover:bg-white/10 rounded-full transition-colors">
                     <span className="material-symbols-outlined text-2xl">search</span>
@@ -85,7 +87,7 @@ const TopicList = () => {
                                 : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                             }`}
                     >
-                        激活中
+                        {t('topicList.activeOnly')}
                     </button>
                     <button
                         onClick={() => setFilter((prev) => ({ ...prev, activeOnly: false }))}
@@ -94,7 +96,7 @@ const TopicList = () => {
                                 : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                             }`}
                     >
-                        全部
+                        {t('topicList.allTopics')}
                     </button>
                 </div>
 
@@ -107,7 +109,7 @@ const TopicList = () => {
                                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                             }`}
                     >
-                        全部分类
+                        {t('topicList.allCategories')}
                     </button>
                     {CATEGORY_OPTIONS.map((cat) => (
                         <button
@@ -143,15 +145,15 @@ const TopicList = () => {
                             </div>
                             <div className="mt-6 max-w-xs">
                                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                                    开始你的第一个播客系列
+                                    {t('topicList.noTopics')}
                                 </h2>
                                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                                    还没有主题播客，点击下方按钮开始创作吧！
+                                    {t('topicList.startFirstDesc')}
                                 </p>
                             </div>
                             <Link to="/topics/create" className="mt-8">
                                 <button className="flex h-10 min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-5 text-sm font-bold text-white hover:bg-primary/90 transition-colors">
-                                    <span>创建新系列</span>
+                                    <span>{t('topicList.createSeries')}</span>
                                 </button>
                             </Link>
                         </div>
@@ -177,11 +179,11 @@ const TopicList = () => {
                                              {topic.title}
                                          </h3>
                                          {topic.is_active && (
-                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full whitespace-nowrap flex-shrink-0">
-                                                 <span className="w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full" />
-                                                 激活
-                                             </span>
-                                         )}
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full whitespace-nowrap flex-shrink-0">
+                                                  <span className="w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full" />
+                                                  {t('topicList.activeOnly')}
+                                              </span>
+                                          )}
                                      </div>
                                      <p className="mt-1 truncate text-sm text-slate-600 dark:text-slate-400">
                                          {topic.description}

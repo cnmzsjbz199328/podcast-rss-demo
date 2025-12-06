@@ -30,6 +30,8 @@
       "@/types/*": ["src/types/*"],
       "@/utils/*": ["src/utils/*"],
       "@/hooks/*": ["src/hooks/*"],
+      "@/contexts/*": ["src/contexts/*"],
+      "@/locales/*": ["src/locales/*"],
       "@/assets/*": ["src/assets/*"]
     }
   },
