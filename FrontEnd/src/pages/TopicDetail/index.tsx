@@ -5,11 +5,13 @@ import { topicFormatters } from '@/utils/formatters';
 import { getRandomCoverImage } from '@/utils/helpers';
 import { CATEGORY_OPTIONS, DEFAULT_GENERATION_INTERVAL_HOURS, FORM_VALIDATION } from '@/utils/constants';
 import Button from '@/components/common/Button';
+import { useLocale } from '@/hooks/useLocale';
 import type { Topic, TopicStats } from '@/types';
 
 const TopicDetail = () => {
     const { topicId } = useParams<{ topicId: string }>();
     const navigate = useNavigate();
+    const { t } = useLocale();
     const [topic, setTopic] = useState<Topic | null>(null);
     const [stats, setStats] = useState<TopicStats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -182,7 +184,7 @@ const TopicDetail = () => {
             setError(null);
             
             // Validate generation_interval_hours
-            let intervalValue = editValues.generation_interval_hours;
+             const intervalValue = editValues.generation_interval_hours;
             if (intervalValue === '' || Number.isNaN(intervalValue)) {
                 setError('请输入有效的生成间隔时间');
                 setIsSaving(false);
@@ -321,7 +323,7 @@ const TopicDetail = () => {
                                 <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">
                                     {editValues.is_active ? 'toggle_on' : 'toggle_off'}
                                 </span>
-                                status
+                                {t('createTopic.status')}
                             </div>
                             <label className="relative inline-flex cursor-pointer items-center">
                                 <input
@@ -337,7 +339,7 @@ const TopicDetail = () => {
                         <div className="flex items-center justify-between rounded-lg bg-white/60 px-4 py-3 dark:bg-slate-800/40">
                             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
                                 <span className="material-symbols-outlined text-base text-slate-500 dark:text-slate-400">schedule</span>
-                                generation interval
+                                {t('createTopic.generationInterval')}
                             </div>
                             <div className="flex items-center gap-2">
                                 <input
@@ -349,7 +351,7 @@ const TopicDetail = () => {
                                     onChange={(e) => handleGenerationIntervalInput(e.target.value)}
                                     className="w-16 rounded-lg bg-white p-2.5 text-base font-medium text-slate-900 text-center focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:text-white"
                                 />
-                                <span className="text-sm text-slate-500 dark:text-slate-400">hours</span>
+                                <span className="text-sm text-slate-500 dark:text-slate-400">{t('playback.hours')}</span>
                             </div>
                         </div>
 
@@ -385,7 +387,7 @@ const TopicDetail = () => {
                 {/* SectionHeader with Sort Control */}
                 <div className="px-4 pb-2 pt-6 flex items-center justify-between">
                     <h3 className="text-lg font-bold leading-tight tracking-[-0.015em] text-slate-900 dark:text-white">
-                        所有剧集<span className="text-base font-medium text-slate-600 dark:text-slate-400">（{stats?.totalEpisodes || topic.episode_count} 集）</span>
+                        {t('topicDetail.allEpisodes')}<span className="text-base font-medium text-slate-600 dark:text-slate-400">（{stats?.totalEpisodes || topic.episode_count} {t('topicDetail.episodes')}）</span>
                     </h3>
                     <button
                         onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -394,7 +396,7 @@ const TopicDetail = () => {
                         <span className="material-symbols-outlined text-base">
                             {sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward'}
                         </span>
-                        {sortOrder === 'asc' ? '时间正序' : '时间倒序'}
+                        {sortOrder === 'asc' ? t('topicDetail.timeAsc') : t('topicDetail.timeDesc')}
                     </button>
                 </div>
 
